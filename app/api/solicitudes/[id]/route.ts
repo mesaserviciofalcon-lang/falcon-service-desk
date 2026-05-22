@@ -89,7 +89,7 @@ if (
   solicitud.correoSolicitante
 ) {
 
-  await enviarCorreo({
+  enviarCorreo({
 
     para:
       solicitud.correoSolicitante,
@@ -172,7 +172,7 @@ if (
     responsables.length > 0
   ) {
 
-    await enviarCorreo({
+    enviarCorreo({
 
       para:
         responsables.join(","),

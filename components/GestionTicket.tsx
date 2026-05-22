@@ -104,17 +104,14 @@ export default function GestionTicket({
             body: JSON.stringify({
 
   estado:
-    role ===
-      "SOLICITANTE"
-
+    role === "SOLICITANTE"
       ? "REABIERTO"
-
       : estado,
 
-  observacion:
+  observacionesTecnico:
     observaciones,
 
-  usuario:
+  gestionadoPor:
     usuario,
 }),
           }
