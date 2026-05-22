@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Solicitud {
+
+  id                     Int      @id @default(autoincrement())
+
+  tipo                   String
+
+  solicitante            String
+
+  correoSolicitante      String?
+
+  estado                 String   @default("Pendiente")
+
+  asignadoA              String?
+
+  fechaCreacion          DateTime @default(now())
+
+  fechaCierre            DateTime?
+
+  observacionesTecnico   String?
+
+  gestionadoPor          String?
+
+  fechaGestion           DateTime?
+
+  gestiones              GestionTicket[]
+
+  archivos               ArchivoAdjunto[]
+
+  cctv                   SolicitudCCTV?
+
+  visita                 SolicitudVisita?
+
+  radio                  SolicitudRadio?
+
+  antecedente            SolicitudAntecedente?
+
+  novedad                SeguridadNovedad?
+}
+
+model GestionTicket {
+
+  id                     Int      @id @default(autoincrement())
+
+  solicitudId            Int
+
+  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+
+  usuario                String
+
+  estado                 String
+
+  observacion            String
+
+  fecha                  DateTime @default(now())
+}
+
+model ArchivoAdjunto {
+
+  id                     Int      @id @default(autoincrement())
+
+  solicitudId            Int
+
+  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+
+  nombre                 String
+
+  ruta                   String
+
+  tipo                   String
+
+  createdAt              DateTime @default(now())
+}
+
+model SolicitudCCTV {
+
+  id                     Int      @id @default(autoincrement())
+
+  solicitudId            Int      @unique
+
+  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+
+  fincaEAI               String?
+
+  camaraAfectada         String?
+
+  descripcionFalla       String?
+
+  prioridad              String?
+
+  observaciones          String?
+}
+
+model SolicitudVisita {
+
+  id                     Int      @id @default(autoincrement())
+
+  solicitudId            Int      @unique
+
+  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+
+  nombreCandidato        String?
+
+  cedula                 String?
+
+  fechaExpedicion        String?
+
+  telefono               String?
+
+  direccion              String?
+
+  municipio              String?
+
+  zona                   String?
+
+  cargo                  String?
+
+  fincaEAI               String?
+
+  motivoVisita           String?
+
+  fechaRealizada         DateTime?
+
+  observaciones          String?
+
+  resultadoVisita        String?
+}
+
+model SolicitudRadio {
+
+  id                     Int      @id @default(autoincrement())
+
+  solicitudId            Int      @unique
+
+  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+
+  radio                  String?
+
+  serial                 String?
+
+  tipoFalla              String?
+
+  fincaEAI               String?
+
+  descripcion            String?
+
+  prioridad              String?
+
+  observaciones          String?
+}
+
+model Usuario {
+
+  id                     Int      @id @default(autoincrement())
+
+  nombre                 String
+
+  email                  String   @unique
+
+  password               String
+
+  rol                    String
+
+  fincaEAI               String?
+
+  activo                 Boolean  @default(true)
+
+  createdAt              DateTime @default(now())
+}
+
+model SolicitudAntecedente {
+
+  id                     Int      @id @default(autoincrement())
+
+  solicitudId            Int      @unique
+
+  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+
+  fincaEAI               String?
+
+  observaciones          String?
+
+  prioridad              String?
+}
+
+model SeguridadNovedad {
+
+  id                     Int      @id @default(autoincrement())
+
+  solicitudId            Int      @unique
+
+  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+
+  fincaEAI               String?
+
+  contexto               String?
+}
