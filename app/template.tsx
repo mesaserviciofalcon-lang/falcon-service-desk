@@ -8,7 +8,7 @@ export default function Template({
 }) {
   return (
     <main className="flex bg-gray-100 min-h-screen">
-      <Sidebar />
+      <Sidebar role="ADMIN" />
 
       <section className="flex-1">
         <Header />
