@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { useState }
 from "react";
 
@@ -45,6 +47,7 @@ export default function GestionTicket({
     loading,
     setLoading,
   ] = useState(false);
+  const router = useRouter();
 
   async function guardarGestion() {
 
@@ -136,7 +139,7 @@ export default function GestionTicket({
         "Gestión guardada"
       );
 
-      window.location.reload();
+      router.refresh();
 
     } catch (error) {
 
