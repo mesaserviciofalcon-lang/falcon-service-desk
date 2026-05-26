@@ -100,30 +100,7 @@ export default function Sidebar({
             Tickets
 
           </Link>
-
-          {(
-
-            role === "ADMIN"
-
-            ||
-
-            role === "VISITA"
-
-          ) && (
-
-            <Link
-
-              href="/exportar-visitas"
-
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
-            >
-
-              <BarChart3 size={20} />
-
-              Reportes
-
-            </Link>
-          )}
+      
 
         </nav>
 
