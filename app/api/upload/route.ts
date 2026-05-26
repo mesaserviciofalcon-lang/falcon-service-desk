@@ -1,118 +1,82 @@
-import { writeFile }
-from "fs/promises";
+import { v2 as cloudinary } from "cloudinary";
 
-import { NextResponse }
-from "next/server";
+import { prisma } from "@/lib/prisma";
 
-import { v4 as uuidv4 }
-from "uuid";
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-import path
-from "path";
-
-import { prisma }
-from "@/lib/prisma";
-
-export async function POST(
-  request: Request
-) {
+export async function POST(request: Request) {
 
   try {
 
-    const data =
-      await request.formData();
+    const formData = await request.formData();
 
-    const file =
-      data.get("file") as File;
+    const file = formData.get("file") as File;
 
-    const solicitudId =
-      data.get(
-        "solicitudId"
-      ) as string;
+    const solicitudId = Number(
+      formData.get("solicitudId")
+    );
 
     if (!file) {
 
-      return NextResponse.json(
-
-        {
-          error:
-            "No hay archivo",
-        },
-
-        {
-          status: 400,
-        }
+      return Response.json(
+        { error: "Archivo requerido" },
+        { status: 400 }
       );
     }
 
-    const bytes =
-      await file.arrayBuffer();
+    const bytes = await file.arrayBuffer();
 
-    const buffer =
-      Buffer.from(bytes);
+    const buffer = Buffer.from(bytes);
 
-    const extension =
-      file.name
-        .split(".")
-        .pop();
+    const resultado: any =
+      await new Promise((resolve, reject) => {
 
-    const fileName =
-      `${uuidv4()}.${extension}`;
+        cloudinary.uploader.upload_stream(
 
-    const filePath =
-      path.join(
+          {
+            resource_type: "auto",
+            folder: "falcon-service-desk",
+          },
 
-        process.cwd(),
+          (error, result) => {
 
-        "public/uploads",
+            if (error) reject(error);
 
-        fileName
-      );
+            else resolve(result);
+          }
 
-    await writeFile(
-      filePath,
-      buffer
-    );
-
-    // GUARDAR EN BD
-
-    const archivo =
-      await prisma.archivoAdjunto.create({
-
-        data: {
-
-          solicitudId:
-            Number(
-              solicitudId
-            ),
-
-          nombre:
-            file.name,
-
-          ruta:
-            `/uploads/${fileName}`,
-
-          tipo:
-            file.type,
-        },
+        ).end(buffer);
       });
 
-    return NextResponse.json({
+    const archivo =
+  await prisma.archivoAdjunto.create({
 
-      success: true,
+    data: {
 
-      archivo,
-    });
+      solicitudId,
+
+      nombre: file.name,
+
+      ruta: resultado.secure_url,
+
+      tipo: file.type,
+    },
+  });
+
+    return Response.json(archivo);
 
   } catch (error) {
 
     console.error(error);
 
-    return NextResponse.json(
+    return Response.json(
 
       {
-        error:
-          "Error al subir archivo",
+        error: "Error subiendo archivo",
       },
 
       {
