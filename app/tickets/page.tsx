@@ -19,7 +19,7 @@ from "@/components/FiltrosTickets";
 async function obtenerSolicitudes() {
 
   const response = await fetch(
-  `${process.env.NEXTAUTH_URL}/api/solicitudes`,
+  "http://localhost:3000/api/solicitudes",
   {
     cache: "no-store",
   }
