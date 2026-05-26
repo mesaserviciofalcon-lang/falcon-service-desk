@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useState }
 from "react";
 
+import UploadButton
+from "@/components/uploadthing/UploadButton";
+
 export default function GestionTicket({
 
   ticketId,
@@ -36,12 +39,8 @@ export default function GestionTicket({
     setObservaciones,
   ] = useState("");
 
-  const [
-    archivo,
-    setArchivo,
-  ] = useState<File | null>(
-    null
-  );
+  const [archivo, setArchivo] =
+  useState<any>(null);
 
   const [
     loading,
@@ -59,29 +58,34 @@ export default function GestionTicket({
 
       if (archivo) {
 
-        const formData =
-          new FormData();
-
-        formData.append(
-          "file",
-          archivo
-        );
-
-        formData.append(
-          "solicitudId",
-          ticketId.toString()
-        );
-
         await fetch(
-          "/api/upload",
-          {
+  "/api/guardar-archivo",
+  {
 
-            method: "POST",
+    method: "POST",
 
-            body:
-              formData,
-          }
-        );
+    headers: {
+
+      "Content-Type":
+        "application/json",
+    },
+
+    body: JSON.stringify({
+
+      solicitudId:
+        ticketId,
+
+      nombre:
+        archivo.nombre,
+
+      ruta:
+        archivo.url,
+
+      tipo:
+        archivo.tipo,
+    }),
+  }
+);
       }
 
       // ACTUALIZAR TICKET
@@ -216,20 +220,26 @@ export default function GestionTicket({
         className="border p-3 rounded-lg"
       />
 
-      <input
+      <UploadButton
 
-        type="file"
+  onComplete={(
 
-        onChange={(e) =>
-          setArchivo(
+  url: any,
 
-            e.target.files?.[0] ||
-            null
-          )
-        }
+  nombre: any,
 
-        className="border p-3 rounded-lg"
-      />
+  tipo: any
+
+) => {
+
+    setArchivo({
+
+      url,
+      nombre,
+      tipo,
+    } as any);
+  }}
+/>
 
       <button
 
