@@ -89,67 +89,80 @@ if (
   solicitud.correoSolicitante
 ) {
 
-  enviarCorreo({
+  try {
 
-  to:
-    solicitud.correoSolicitante,
+    await enviarCorreo({
 
-  subject:
-    `Actualización Ticket #${solicitud.id}`,
+      to:
+        solicitud.correoSolicitante,
 
-  html: `
+      subject:
+        `Actualización Ticket #${solicitud.id}`,
 
-      <div style="font-family: Arial;">
+      html: `
 
-        <h2>
-          Actualización de ticket
-        </h2>
+        <div style="
+          font-family: Arial;
+          padding: 20px;
+        ">
 
-        <hr />
+          <h2>
+            Actualización de ticket
+          </h2>
 
-        <p>
+          <hr />
 
-          <strong>
-            Ticket:
-          </strong>
+          <p>
 
-          #${solicitud.id}
+            <strong>
+              Ticket:
+            </strong>
 
-        </p>
+            #${solicitud.id}
 
-        <p>
+          </p>
 
-          <strong>
-            Nuevo estado:
-          </strong>
+          <p>
 
-          ${body.estado}
+            <strong>
+              Nuevo estado:
+            </strong>
 
-        </p>
+            ${body.estado}
 
-        <p>
+          </p>
 
-          <strong>
-            Gestionado por:
-          </strong>
+          <p>
 
-          ${body.usuario || "Sistema"}
+            <strong>
+              Gestionado por:
+            </strong>
 
-        </p>
+            ${body.gestionadoPor || "Sistema"}
 
-        <p>
+          </p>
 
-          <strong>
-            Observación:
-          </strong>
+          <p>
 
-          ${body.observacion || "Sin observación"}
+            <strong>
+              Observación:
+            </strong>
 
-        </p>
+            ${body.observacionesTecnico || "Sin observación"}
 
-      </div>
-    `,
-  });
+          </p>
+
+        </div>
+      `,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Error enviando correo actualización ticket",
+      error
+    );
+  }
 }
 
 
@@ -172,87 +185,101 @@ if (
     responsables.length > 0
   ) {
 
-    await enviarCorreo({
+    try {
 
-  to:
-    responsables.join(","),
+      await enviarCorreo({
 
-  subject:
-        `Ticket #${solicitud.id} REABIERTO`,
+        to:
+          responsables.join(","),
 
-      html: `
+        subject:
+          `Ticket #${solicitud.id} REABIERTO`,
 
-        <div style="font-family: Arial;">
+        html: `
 
-          <h2>
-            Ticket reabierto
-          </h2>
+          <div style="
+            font-family: Arial;
+            padding: 20px;
+          ">
 
-          <hr />
+            <h2>
+              Ticket reabierto
+            </h2>
 
-          <p>
+            <hr />
 
-            <strong>
-              Ticket:
-            </strong>
+            <p>
 
-            #${solicitud.id}
+              <strong>
+                Ticket:
+              </strong>
 
-          </p>
+              #${solicitud.id}
 
-          <p>
+            </p>
 
-            <strong>
-              Tipo:
-            </strong>
+            <p>
 
-            ${solicitud.tipo}
+              <strong>
+                Tipo:
+              </strong>
 
-          </p>
+              ${solicitud.tipo}
 
-          <p>
+            </p>
 
-            <strong>
-              Reabierto por:
-            </strong>
+            <p>
 
-            ${body.usuario || "Solicitante"}
+              <strong>
+                Reabierto por:
+              </strong>
 
-          </p>
+              ${body.gestionadoPor || "Solicitante"}
 
-          <p>
+            </p>
 
-            <strong>
-              Observación:
-            </strong>
+            <p>
 
-            ${body.observacion || "Sin observación"}
+              <strong>
+                Observación:
+              </strong>
 
-          </p>
+              ${body.observacionesTecnico || "Sin observación"}
 
-        </div>
-      `,
-    });
+            </p>
+
+          </div>
+        `,
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Error enviando correo ticket reabierto",
+        error
+      );
+    }
   }
 }
-    return Response.json(
-      solicitud
-    );
 
-  } catch (error) {
+return Response.json(
+  solicitud
+);
 
-    console.error(error);
+} catch (error) {
 
-    return Response.json(
+  console.error(error);
 
-      {
-        error:
-          "Error al actualizar ticket",
-      },
+  return Response.json(
 
-      {
-        status: 500,
-      }
-    );
-  }
+    {
+      error:
+        "Error al actualizar ticket",
+    },
+
+    {
+      status: 500,
+    }
+  );
+}
 }
