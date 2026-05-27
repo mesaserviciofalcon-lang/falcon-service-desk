@@ -261,79 +261,95 @@ export async function POST(
     }
 // ENVIAR CORREO
 
-await enviarCorreo({
+if (body.correoSolicitante) {
 
-  to:
-    body.correoSolicitante,
+  try {
 
-  subject:
-    `Ticket #${solicitud.id} creado`,
+    await enviarCorreo({
 
-  html: `
+      to:
+        body.correoSolicitante,
 
-    <div style="font-family: Arial;">
+      subject:
+        `Ticket #${solicitud.id} creado`,
 
-      <h2>
-        Mesa de Servicios Falcon
-      </h2>
+      html: `
 
-      <p>
+        <div style="
+          font-family: Arial;
+          padding: 20px;
+        ">
 
-        Su solicitud fue creada correctamente.
+          <h2>
+            Mesa de Servicios Falcon
+          </h2>
 
-      </p>
+          <p>
 
-      <hr />
+            Su solicitud fue creada correctamente.
 
-      <p>
+          </p>
 
-        <strong>
-          Ticket:
-        </strong>
+          <hr />
 
-        #${solicitud.id}
+          <p>
 
-      </p>
+            <strong>
+              Ticket:
+            </strong>
 
-      <p>
+            #${solicitud.id}
 
-        <strong>
-          Tipo:
-        </strong>
+          </p>
 
-        ${body.tipo}
+          <p>
 
-      </p>
+            <strong>
+              Tipo:
+            </strong>
 
-      <p>
+            ${body.tipo}
 
-        <strong>
-          Estado:
-        </strong>
+          </p>
 
-        PENDIENTE
+          <p>
 
-      </p>
+            <strong>
+              Estado:
+            </strong>
 
-      <p>
+            PENDIENTE
 
-        <strong>
-          Asignado:
-        </strong>
+          </p>
 
-        ${asignadoA}
+          <p>
 
-      </p>
+            <strong>
+              Asignado:
+            </strong>
 
-      <br />
+            ${asignadoA}
 
-      <p>
-        Falcon Farms
-      </p>
+          </p>
 
-    </div>
-  `,
-});
+          <br />
+
+          <p>
+            Falcon Farms
+          </p>
+
+        </div>
+      `,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Error enviando correo al solicitante",
+      error
+    );
+  }
+}
 // CORREO RESPONSABLES
 
 const responsables =
@@ -347,67 +363,80 @@ if (
   responsables.length > 0
 ) {
 
-  await enviarCorreo({
+  try {
 
-  to:
-    responsables.join(","),
+    await enviarCorreo({
 
-  subject:
-      `Nuevo ticket #${solicitud.id}`,
+      to:
+        responsables.join(","),
 
-    html: `
+      subject:
+        `Nuevo ticket #${solicitud.id}`,
 
-      <div style="font-family: Arial;">
+      html: `
 
-        <h2>
-          Nuevo ticket asignado
-        </h2>
+        <div style="
+          font-family: Arial;
+          padding: 20px;
+        ">
 
-        <hr />
+          <h2>
+            Nuevo ticket asignado
+          </h2>
 
-        <p>
+          <hr />
 
-          <strong>
-            Ticket:
-          </strong>
+          <p>
 
-          #${solicitud.id}
+            <strong>
+              Ticket:
+            </strong>
 
-        </p>
+            #${solicitud.id}
 
-        <p>
+          </p>
 
-          <strong>
-            Tipo:
-          </strong>
+          <p>
 
-          ${body.tipo}
+            <strong>
+              Tipo:
+            </strong>
 
-        </p>
+            ${body.tipo}
 
-        <p>
+          </p>
 
-          <strong>
-            Solicitante:
-          </strong>
+          <p>
 
-          ${body.solicitante}
+            <strong>
+              Solicitante:
+            </strong>
 
-        </p>
+            ${body.solicitante}
 
-        <p>
+          </p>
 
-          <strong>
-            Estado:
-          </strong>
+          <p>
 
-          PENDIENTE
+            <strong>
+              Estado:
+            </strong>
 
-        </p>
+            PENDIENTE
 
-      </div>
-    `,
-  });
+          </p>
+
+        </div>
+      `,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Error enviando correo a responsables",
+      error
+    );
+  }
 }
     return Response.json(
       solicitud
