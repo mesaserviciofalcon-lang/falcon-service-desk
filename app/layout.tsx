@@ -3,6 +3,10 @@ import "./globals.css";
 import AuthProvider
 from "@/providers/SessionProvider";
 
+import {
+  headers,
+} from "next/headers";
+
 export const metadata = {
 
   title:
@@ -12,11 +16,30 @@ export const metadata = {
     "Sistema de gestión de solicitudes",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
+
   children,
+
 }: {
+
   children: React.ReactNode;
+
 }) {
+
+  const headersList =
+    await headers();
+
+  const pathname =
+
+    headersList.get(
+      "x-pathname"
+    ) || "";
+
+  const isLogin =
+
+    pathname.includes(
+      "/login"
+    );
 
   return (
 
@@ -26,7 +49,11 @@ export default function RootLayout({
 
         <AuthProvider>
 
-          {children}
+          <div>
+
+            {children}
+
+          </div>
 
         </AuthProvider>
 

@@ -39,72 +39,200 @@ export default async function DashboardPage() {
   let tickets =
     solicitudes;
 
+const hace3Dias =
+  new Date();
+
+hace3Dias.setDate(
+  hace3Dias.getDate() - 3
+);
   if (role === "SOLICITANTE") {
 
-    tickets =
-      solicitudes.filter(
-        (s: any) =>
+  tickets =
+    solicitudes.filter(
+      (s: any) => {
 
-          s.correoSolicitante ===
-          email
-      );
-  }
+        const visible =
 
-  if (role === "TECNICO") {
-
-    tickets =
-      solicitudes.filter(
-        (s: any) =>
-
-          s.tipo === "CCTV"
+          s.estado !==
+            "COMPLETADO"
 
           ||
 
-          s.tipo === "RADIOS"
-      );
-  }
+          (
+
+            s.fechaCierre &&
+
+            new Date(
+              s.fechaCierre
+            ) >= hace3Dias
+          );
+
+        return (
+
+          s.correoSolicitante ===
+            email
+
+          &&
+
+          visible
+        );
+      }
+    );
+}
+
+ if (role === "TECNICO") {
+
+  tickets =
+    solicitudes.filter(
+      (s: any) => {
+
+        const visible =
+
+          s.estado !==
+            "COMPLETADO"
+
+          ||
+
+          (
+
+            s.fechaCierre &&
+
+            new Date(
+              s.fechaCierre
+            ) >= hace3Dias
+          );
+
+        return (
+
+          (
+
+            s.tipo === "CCTV"
+
+            ||
+
+            s.tipo === "RADIOS"
+          )
+
+          &&
+
+          visible
+        );
+      }
+    );
+}
 
   if (role === "VISITA") {
 
-    tickets =
-      solicitudes.filter(
-        (s: any) =>
+  tickets =
+    solicitudes.filter(
+      (s: any) => {
+
+        const visible =
+
+          s.estado !==
+            "COMPLETADO"
+
+          ||
+
+          (
+
+            s.fechaCierre &&
+
+            new Date(
+              s.fechaCierre
+            ) >= hace3Dias
+          );
+
+        return (
 
           s.tipo ===
-          "VISITA DOMICILIARIA"
-      );
-  }
+            "VISITA DOMICILIARIA"
+
+          &&
+
+          visible
+        );
+      }
+    );
+}
 
   if (role === "SUPERVISOR") {
 
-    tickets =
-      solicitudes.filter(
-        (s: any) =>
+  tickets =
+    solicitudes.filter(
+      (s: any) => {
+
+        const visible =
+
+          s.estado !==
+            "COMPLETADO"
+
+          ||
+
+          (
+
+            s.fechaCierre &&
+
+            new Date(
+              s.fechaCierre
+            ) >= hace3Dias
+          );
+
+        return (
 
           s.tipo ===
-          "ANTECEDENTES"
-      );
-  }
+            "ANTECEDENTES"
+
+          &&
+
+          visible
+        );
+      }
+    );
+}
 
   if (
 
-    role ===
-      "JEFE_SEG"
+  role === "JEFE_SEG"
 
-    ||
+  ||
 
-    role ===
-      "DIRECTOR_SEG"
-  ) {
+  role === "DIRECTOR_SEG"
 
-    tickets =
-      solicitudes.filter(
-        (s: any) =>
+) {
+
+  tickets =
+    solicitudes.filter(
+      (s: any) => {
+
+        const visible =
+
+          s.estado !==
+            "COMPLETADO"
+
+          ||
+
+          (
+
+            s.fechaCierre &&
+
+            new Date(
+              s.fechaCierre
+            ) >= hace3Dias
+          );
+
+        return (
 
           s.tipo ===
-          "NOVEDAD SEGURIDAD"
-      );
-  }
+            "NOVEDAD SEGURIDAD"
+
+          &&
+
+          visible
+        );
+      }
+    );
+}
 
   // CONTADORES
 

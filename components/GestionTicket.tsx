@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter }
+from "next/navigation";
 
 import { useState }
 from "react";
@@ -27,6 +28,7 @@ export default function GestionTicket({
   role: string;
 
   estadoActual: string;
+
 }) {
 
   const [
@@ -39,14 +41,21 @@ export default function GestionTicket({
     setObservaciones,
   ] = useState("");
 
-  const [archivo, setArchivo] =
-  useState<any>(null);
+  const [
+
+    archivos,
+
+    setArchivos
+
+  ] = useState<any[]>([]);
 
   const [
     loading,
     setLoading,
   ] = useState(false);
-  const router = useRouter();
+
+  const router =
+    useRouter();
 
   async function guardarGestion() {
 
@@ -54,38 +63,41 @@ export default function GestionTicket({
 
       setLoading(true);
 
-      // SUBIR ARCHIVO
+      // GUARDAR ARCHIVOS
 
-      if (archivo) {
+      if (archivos.length > 0) {
 
-        await fetch(
-  "/api/guardar-archivo",
-  {
+        for (const archivo of archivos) {
 
-    method: "POST",
+          await fetch(
+            "/api/guardar-archivo",
+            {
 
-    headers: {
+              method: "POST",
 
-      "Content-Type":
-        "application/json",
-    },
+              headers: {
 
-    body: JSON.stringify({
+                "Content-Type":
+                  "application/json",
+              },
 
-      solicitudId:
-        ticketId,
+              body: JSON.stringify({
 
-      nombre:
-        archivo.nombre,
+                solicitudId:
+                  ticketId,
 
-      ruta:
-        archivo.url,
+                nombre:
+                  archivo.nombre,
 
-      tipo:
-        archivo.tipo,
-    }),
-  }
-);
+                ruta:
+                  archivo.url,
+
+                tipo:
+                  archivo.tipo,
+              }),
+            }
+          );
+        }
       }
 
       // ACTUALIZAR TICKET
@@ -107,17 +119,17 @@ export default function GestionTicket({
 
             body: JSON.stringify({
 
-  estado:
-    role === "SOLICITANTE"
-      ? "REABIERTO"
-      : estado,
+              estado:
+                role === "SOLICITANTE"
+                  ? "REABIERTO"
+                  : estado,
 
-  observacionesTecnico:
-    observaciones,
+              observacionesTecnico:
+                observaciones,
 
-  gestionadoPor:
-    usuario,
-}),
+              gestionadoPor:
+                usuario,
+            }),
           }
         );
 
@@ -161,7 +173,9 @@ export default function GestionTicket({
     <div className="mt-4 border-t pt-4 flex flex-col gap-4">
 
       <h3 className="font-bold text-lg">
+
         Gestionar Ticket
+
       </h3>
 
       {/* SOLO TECNICOS */}
@@ -183,15 +197,21 @@ export default function GestionTicket({
         >
 
           <option value="EN PROCESO">
+
             EN PROCESO
+
           </option>
 
           <option value="COMPLETADO">
+
             COMPLETADO
+
           </option>
 
           <option value="REABIERTO">
+
             REABIERTO
+
           </option>
 
         </select>
@@ -220,26 +240,79 @@ export default function GestionTicket({
         className="border p-3 rounded-lg"
       />
 
+      {/* ARCHIVOS */}
+
       <UploadButton
 
-  onComplete={(
+        onComplete={(
 
-  url: any,
+          url: string,
 
-  nombre: any,
+          nombre: string,
 
-  tipo: any
+          tipo: string
 
-) => {
+        ) => {
 
-    setArchivo({
+          setArchivos((prev) => [
 
-      url,
-      nombre,
-      tipo,
-    } as any);
-  }}
-/>
+            ...prev,
+
+            {
+              url,
+              nombre,
+              tipo,
+            },
+          ]);
+        }}
+      />
+
+      {/* LISTA ARCHIVOS */}
+
+      {archivos.length > 0 && (
+
+        <div className="mt-4">
+
+          <h3 className="font-bold mb-2">
+
+            Archivos cargados
+
+          </h3>
+
+          <div className="flex flex-col gap-2">
+
+            {archivos.map(
+              (
+                archivo: any,
+                index: number
+              ) => (
+
+                <div
+
+                  key={index}
+
+                  className="
+                    border
+                    rounded-lg
+                    p-3
+                    bg-gray-50
+                  "
+                >
+
+                  <p className="font-medium">
+
+                    {archivo.nombre}
+
+                  </p>
+
+                </div>
+              )
+            )}
+
+          </div>
+
+        </div>
+      )}
 
       <button
 
@@ -249,10 +322,17 @@ export default function GestionTicket({
 
         disabled={loading}
 
-        className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700"
+        className="
+          bg-blue-600
+          text-white
+          p-3
+          rounded-lg
+          hover:bg-blue-700
+        "
       >
 
         {
+
           loading
 
             ? "Guardando..."

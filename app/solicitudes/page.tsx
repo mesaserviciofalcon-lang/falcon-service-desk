@@ -653,8 +653,17 @@ export default function SolicitudesPage() {
 
         {/* ARCHIVOS */}
 
-        <UploadButton
-  onComplete={(url: string, nombre: string, tipo: string) => {
+<UploadButton
+
+  onComplete={(
+
+    url: string,
+
+    nombre: string,
+
+    tipo: string
+
+  ) => {
 
     setArchivos((prev) => [
 
@@ -669,19 +678,73 @@ export default function SolicitudesPage() {
   }}
 />
 
-        <button
+{/* LISTA ARCHIVOS */}
 
-          type="submit"
+{archivos.length > 0 && (
 
-          className="bg-black text-white p-3 rounded-lg hover:bg-gray-800"
-        >
+  <div className="mt-4">
 
-          Crear Solicitud
+    <h3 className="font-bold mb-2">
 
-        </button>
+      Archivos cargados
 
-      </form>
+    </h3>
+
+    <div className="flex flex-col gap-2">
+
+      {archivos.map(
+        (
+          archivo: any,
+          index: number
+        ) => (
+
+          <div
+
+            key={index}
+
+            className="
+              border
+              rounded-lg
+              p-3
+              bg-gray-50
+            "
+          >
+
+            <p className="font-medium">
+
+              {archivo.nombre}
+
+            </p>
+
+          </div>
+        )
+      )}
 
     </div>
-  );
+
+  </div>
+)}
+
+<button
+
+  type="submit"
+
+  className="
+    bg-black
+    text-white
+    p-3
+    rounded-lg
+    hover:bg-gray-800
+  "
+>
+
+  Crear Solicitud
+
+</button>
+
+</form>
+
+</div>
+
+);
 }

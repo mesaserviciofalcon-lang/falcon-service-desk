@@ -11,7 +11,15 @@ import {
 
   Ticket,
 
-  BarChart3,
+  ShieldCheck,
+
+  Camera,
+
+  Radio,
+
+  UserSearch,
+
+  FileWarning,
 
 } from "lucide-react";
 
@@ -62,6 +70,8 @@ export default function Sidebar({
 
         <nav className="flex flex-col gap-2 p-4">
 
+          {/* DASHBOARD */}
+
           <Link
 
             href="/dashboard"
@@ -74,6 +84,8 @@ export default function Sidebar({
             Dashboard
 
           </Link>
+
+          {/* SOLICITUDES */}
 
           <Link
 
@@ -88,6 +100,8 @@ export default function Sidebar({
 
           </Link>
 
+          {/* TICKETS */}
+
           <Link
 
             href="/tickets"
@@ -100,7 +114,139 @@ export default function Sidebar({
             Tickets
 
           </Link>
-      
+
+          {/* ADMIN */}
+
+          {role === "ADMIN" && (
+
+            <>
+
+              <div className="border-t border-green-800 my-3" />
+
+              <p className="text-xs text-green-300 uppercase px-3">
+
+                Administración
+
+              </p>
+
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-[#14532d]">
+
+                <ShieldCheck size={20} />
+
+                Acceso total
+
+              </div>
+
+            </>
+          )}
+
+          {/* TECNICO */}
+
+          {role === "TECNICO" && (
+
+            <>
+
+              <div className="border-t border-green-800 my-3" />
+
+              <p className="text-xs text-green-300 uppercase px-3">
+
+                Área Técnica
+
+              </p>
+
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-[#14532d]">
+
+                <Camera size={20} />
+
+                CCTV y Radios
+
+              </div>
+
+            </>
+          )}
+
+          {/* VISITA */}
+
+          {role === "VISITA" && (
+
+            <>
+
+              <div className="border-t border-green-800 my-3" />
+
+              <p className="text-xs text-green-300 uppercase px-3">
+
+                Visitas
+
+              </p>
+
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-[#14532d]">
+
+                <UserSearch size={20} />
+
+                Visita domiciliaria
+
+              </div>
+
+            </>
+          )}
+
+          {/* SUPERVISOR */}
+
+          {role === "SUPERVISOR" && (
+
+            <>
+
+              <div className="border-t border-green-800 my-3" />
+
+              <p className="text-xs text-green-300 uppercase px-3">
+
+                Antecedentes
+
+              </p>
+
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-[#14532d]">
+
+                <ShieldCheck size={20} />
+
+                Estudios de seguridad
+
+              </div>
+
+            </>
+          )}
+
+          {/* JEFE SEGURIDAD */}
+
+          {(
+
+            role === "JEFE_SEG"
+
+            ||
+
+            role === "DIRECTOR_SEG"
+
+          ) && (
+
+            <>
+
+              <div className="border-t border-green-800 my-3" />
+
+              <p className="text-xs text-green-300 uppercase px-3">
+
+                Seguridad
+
+              </p>
+
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-[#14532d]">
+
+                <FileWarning size={20} />
+
+                Novedades seguridad
+
+              </div>
+
+            </>
+          )}
 
         </nav>
 
