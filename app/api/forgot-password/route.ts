@@ -12,9 +12,9 @@ import {
 
 import {
 
-  resend,
+  enviarCorreo,
 
-} from "@/lib/resend";
+} from "@/lib/email";
 
 import {
 
@@ -89,65 +89,61 @@ export async function POST(
 
     // ENVIAR EMAIL
 
-    await resend.emails.send({
+    await enviarCorreo({
 
-      from:
-        "Falcon Service Desk <onboarding@resend.dev>",
+  to: email,
 
-      to:
-"falcon.mesaservicios@gmail.com",
+  subject:
+    "Recuperación de contraseña",
 
-      subject:
-        "Recuperación de contraseña",
+  html: `
 
-      html: `
+    <div style="
+      font-family: Arial;
+      padding: 20px;
+    ">
 
-        <div style="
-          font-family: Arial;
-          padding: 20px;
-        ">
+      <h1>
+        Recuperar contraseña
+      </h1>
 
-          <h1>
-            Recuperar contraseña
-          </h1>
+      <p>
+        Se solicitó un cambio de contraseña.
+      </p>
 
-          <p>
-            Se solicitó un cambio de contraseña.
-          </p>
+      <p>
+        Haz click en el siguiente botón:
+      </p>
 
-          <p>
-            Haz click en el siguiente botón:
-          </p>
+      <a
+        href="${resetLink}"
+        style="
+          display: inline-block;
+          background: #0F3D1F;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          text-decoration: none;
+          margin-top: 10px;
+        "
+      >
 
-          <a
-            href="${resetLink}"
-            style="
-              display: inline-block;
-              background: #0F3D1F;
-              color: white;
-              padding: 12px 20px;
-              border-radius: 8px;
-              text-decoration: none;
-              margin-top: 10px;
-            "
-          >
+        Cambiar contraseña
 
-            Cambiar contraseña
+      </a>
 
-          </a>
+      <p style="
+        margin-top: 20px;
+        color: gray;
+      ">
 
-          <p style="
-            margin-top: 20px;
-            color: gray;
-          ">
+        Este enlace expira en 1 hora.
 
-            Este enlace expira en 1 hora.
+      </p>
 
-          </p>
-
-        </div>
-      `,
-    });
+    </div>
+  `,
+});
 
     return NextResponse.json({
 
