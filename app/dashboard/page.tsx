@@ -7,6 +7,9 @@ from "next-auth";
 import { authOptions }
 from "@/lib/auth";
 
+import Link
+from "next/link";
+
 export default async function DashboardPage() {
 
   const session =
@@ -284,13 +287,32 @@ export default async function DashboardPage() {
                 .map((ticket: any) => (
 
                 <tr
-                  key={ticket.id}
-                  className="border-b"
-                >
+  key={ticket.id}
+  className="
+    border-b
+    hover:bg-green-50
+    transition
+  "
+>
 
                   <td className="p-3">
-                    #{ticket.id}
-                  </td>
+
+  <Link
+
+    href={`/tickets/${ticket.id}`}
+
+    className="
+      font-bold
+      text-blue-700
+      hover:underline
+    "
+  >
+
+    #{ticket.id}
+
+  </Link>
+
+</td>
 
                   <td className="p-3">
                     {ticket.tipo}

@@ -434,68 +434,137 @@ export default function TicketCard({
 
       {/* ARCHIVOS */}
 
-      {solicitud.archivos &&
-        solicitud.archivos.length > 0 && (
+      {/* ARCHIVOS */}
 
-        <div className="mt-4 border-t pt-4">
+{solicitud.archivos &&
+  solicitud.archivos.length > 0 && (
 
-          <h3 className="font-bold text-lg mb-3">
-            Archivos Adjuntos
-          </h3>
+  <div className="mt-4 border-t pt-4">
 
-          <div className="flex flex-col gap-3">
+    <h3 className="font-bold text-lg mb-3">
+      Archivos Adjuntos
+    </h3>
 
-            {solicitud.archivos.map(
-              (archivo: any) => (
+    <div className="flex flex-col gap-3">
 
-                <div
-                  key={archivo.id}
-                  className="border rounded-lg p-3"
+      {solicitud.archivos.map(
+        (archivo: any) => (
+
+          <div
+            key={archivo.id}
+            className="border rounded-lg p-3"
+          >
+
+            <p className="font-semibold">
+              {archivo.nombre}
+            </p>
+
+            {/* IMAGEN */}
+
+            {(
+
+              archivo.tipo?.includes(
+                "image"
+              )
+
+              ||
+
+              archivo.ruta.match(
+                /\.(jpg|jpeg|png|gif|webp)$/i
+              )
+
+            ) && (
+
+              <div className="mt-2 flex flex-col gap-2">
+
+                <img
+
+                  src={archivo.ruta}
+
+                  alt={archivo.nombre}
+
+                  className="rounded-lg max-h-64 border"
+                />
+
+                <a
+
+                  href={archivo.ruta}
+
+                  target="_blank"
+
+                  rel="noopener noreferrer"
+
+                  className="text-blue-600 underline"
                 >
 
-                  <p className="font-semibold">
-                    {archivo.nombre}
-                  </p>
+                  Descargar imagen
 
-                  {archivo.tipo.startsWith(
-                    "image"
-                  ) && (
+                </a>
 
-                    <img
+              </div>
+            )}
 
-                      src={archivo.ruta}
+            {/* PDF */}
 
-                      alt={archivo.nombre}
+            {archivo.tipo ===
+              "application/pdf" && (
 
-                      className="mt-2 rounded-lg max-h-64 border"
-                    />
-                  )}
+              <a
 
-                  {archivo.tipo ===
-                    "application/pdf" && (
+                href={archivo.ruta}
 
-                    <a
+                target="_blank"
 
-                      href={archivo.ruta}
+                rel="noopener noreferrer"
 
-                      target="_blank"
+                className="text-red-600 underline block mt-2"
+              >
 
-                      className="text-blue-600 underline"
-                    >
+                Ver PDF
 
-                      Ver PDF
+              </a>
+            )}
 
-                    </a>
-                  )}
+            {/* EXCEL */}
 
-                </div>
+            {(
+
+              archivo.tipo?.includes(
+                "sheet"
               )
+
+              ||
+
+              archivo.nombre.match(
+                /\.(xlsx|xls)$/i
+              )
+
+            ) && (
+
+              <a
+
+                href={archivo.ruta}
+
+                target="_blank"
+
+                rel="noopener noreferrer"
+
+                className="text-green-600 underline block mt-2"
+              >
+
+                Descargar Excel
+
+              </a>
             )}
 
           </div>
-
-        </div>
+        )
       )}
+
+    </div>
+
+  </div>
+)}
 
       {/* REABRIR */}
 

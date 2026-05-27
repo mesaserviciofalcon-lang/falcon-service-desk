@@ -9,6 +9,8 @@ from "next/navigation";
 import { useSession }
 from "next-auth/react";
 
+import UploadButton from "@/components/uploadthing/UploadButton";
+
 export default function SolicitudesPage() {
 
   const router =
@@ -112,11 +114,9 @@ export default function SolicitudesPage() {
   // ARCHIVOS
 
   const [
-    archivos,
-    setArchivos
-  ] = useState<FileList | null>(
-    null
-  );
+  archivos,
+  setArchivos
+] = useState<any[]>([]);
 
   // CARGAR DATOS SESION
 
@@ -198,6 +198,8 @@ export default function SolicitudesPage() {
               serial,
 
               tipoFalla,
+
+              archivos,
             }),
           }
         );
@@ -212,40 +214,6 @@ export default function SolicitudesPage() {
       const solicitud =
         await response.json();
 
-      // SUBIR ARCHIVOS
-
-      if (archivos) {
-
-        for (
-          let i = 0;
-          i < archivos.length;
-          i++
-        ) {
-
-          const formData =
-            new FormData();
-
-          formData.append(
-            "file",
-            archivos[i]
-          );
-
-          formData.append(
-            "solicitudId",
-            solicitud.id.toString()
-          );
-
-          await fetch(
-            "/api/upload",
-            {
-
-              method: "POST",
-
-              body: formData,
-            }
-          );
-        }
-      }
 
       alert(
         "Solicitud creada correctamente"
@@ -611,18 +579,6 @@ export default function SolicitudesPage() {
 
   <div className="flex flex-col gap-4">
 
-    <input
-      type="text"
-      placeholder="Finca EAI"
-      className="border p-3 rounded-lg"
-      value={fincaEAI}
-      onChange={(e) =>
-        setFincaEAI(
-          e.target.value
-        )
-      }
-    />
-
     <textarea
       placeholder="Observaciones"
       className="border p-3 rounded-lg"
@@ -681,18 +637,6 @@ export default function SolicitudesPage() {
 
   <div className="flex flex-col gap-4">
 
-    <input
-      type="text"
-      placeholder="Finca EAI"
-      className="border p-3 rounded-lg"
-      value={fincaEAI}
-      onChange={(e) =>
-        setFincaEAI(
-          e.target.value
-        )
-      }
-    />
-
     <textarea
       placeholder="Contexto de la novedad o queja"
       className="border p-3 rounded-lg"
@@ -709,20 +653,21 @@ export default function SolicitudesPage() {
 
         {/* ARCHIVOS */}
 
-        <input
+        <UploadButton
+  onComplete={(url: string, nombre: string, tipo: string) => {
 
-          type="file"
+    setArchivos((prev) => [
 
-          multiple
+      ...prev,
 
-          onChange={(e) =>
-            setArchivos(
-              e.target.files
-            )
-          }
-
-          className="border p-3 rounded-lg"
-        />
+      {
+        url,
+        nombre,
+        tipo,
+      },
+    ]);
+  }}
+/>
 
         <button
 

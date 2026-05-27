@@ -72,6 +72,24 @@ export async function POST(
             body.correoSolicitante,
 
           asignadoA,
+          archivos: {
+
+  create:
+
+    body.archivos?.map(
+      (archivo: any) => ({
+
+        nombre:
+          archivo.nombre,
+
+        ruta:
+          archivo.url,
+
+        tipo:
+          archivo.tipo,
+      })
+    ) || [],
+},
         },
       });
 

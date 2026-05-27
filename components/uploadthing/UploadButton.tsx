@@ -15,32 +15,49 @@ export default function UploadButton({
 
   return (
 
-    <UploadButtonBase
+    <div className="mt-4">
 
-      endpoint="archivoUploader"
+      <UploadButtonBase
 
-      onClientUploadComplete={(res: any) => {
+        endpoint="archivoUploader"
 
-        if (!res) return;
+        onClientUploadComplete={(res: any) => {
 
-        const archivo = res[0];
+          if (!res) return;
 
-        onComplete(
+          const archivo = res[0];
 
-          archivo.url,
+          onComplete(
 
-          archivo.name,
+            archivo.url,
 
-          archivo.type
-        );
-      }}
+            archivo.name,
 
-      onUploadError={(error: any) => {
+            archivo.type
+          );
+        }}
 
-        alert(
-          `ERROR: ${error.message}`
-        );
-      }}
-    />
+        onUploadError={(error: any) => {
+
+          alert(
+            `ERROR: ${error.message}`
+          );
+        }}
+
+        appearance={{
+
+          button:
+            "bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800",
+
+          container:
+            "flex flex-col items-center gap-2 border-2 border-dashed border-gray-300 rounded-xl p-6",
+
+          allowedContent:
+            "text-gray-500 text-sm",
+
+        }}
+      />
+
+    </div>
   );
 }
