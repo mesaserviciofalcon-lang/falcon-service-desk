@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
 import { enviarCorreo }
-from "@/lib/mail";
+from "@/lib/email";
 
 import { correosResponsables }
 from "@/lib/correos";
@@ -263,10 +263,10 @@ export async function POST(
 
 await enviarCorreo({
 
-  para:
+  to:
     body.correoSolicitante,
 
-  asunto:
+  subject:
     `Ticket #${solicitud.id} creado`,
 
   html: `
@@ -349,10 +349,10 @@ if (
 
   await enviarCorreo({
 
-    para:
-      responsables.join(","),
+  to:
+    responsables.join(","),
 
-    asunto:
+  subject:
       `Nuevo ticket #${solicitud.id}`,
 
     html: `

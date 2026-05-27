@@ -2,7 +2,7 @@ import { prisma }
 from "@/lib/prisma";
 
 import { enviarCorreo }
-from "@/lib/mail";
+from "@/lib/email";
 
 import { correosResponsables }
 from "@/lib/correos";
@@ -91,13 +91,13 @@ if (
 
   enviarCorreo({
 
-    para:
-      solicitud.correoSolicitante,
+  to:
+    solicitud.correoSolicitante,
 
-    asunto:
-      `Actualización Ticket #${solicitud.id}`,
+  subject:
+    `Actualización Ticket #${solicitud.id}`,
 
-    html: `
+  html: `
 
       <div style="font-family: Arial;">
 
@@ -172,12 +172,12 @@ if (
     responsables.length > 0
   ) {
 
-    enviarCorreo({
+    await enviarCorreo({
 
-      para:
-        responsables.join(","),
+  to:
+    responsables.join(","),
 
-      asunto:
+  subject:
         `Ticket #${solicitud.id} REABIERTO`,
 
       html: `
