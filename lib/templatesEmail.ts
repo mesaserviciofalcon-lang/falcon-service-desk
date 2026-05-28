@@ -48,15 +48,6 @@ export function ticketCreadoTemplate({
       text-align: center;
     ">
 
-      <img
-        src="https://falcon-service-desk-e7f4w9w1q-falcon-s-projects89.vercel.app/logo-falcon.png"
-        alt="Falcon"
-        style="
-          width: 120px;
-          margin-bottom: 15px;
-        "
-      />
-
       <h1 style="
         color: white;
         margin: 0;
@@ -259,15 +250,6 @@ export function ticketAsignadoTemplate({
       text-align: center;
     ">
 
-      <img
-        src="https://falcon-service-desk-e7f4w9w1q-falcon-s-projects89.vercel.app/logo-falcon.png"
-        alt="Falcon"
-        style="
-          width: 120px;
-          margin-bottom: 15px;
-        "
-      />
-
       <h1 style="
         color: white;
         margin: 0;
@@ -455,15 +437,6 @@ export function ticketActualizadoTemplate({
       padding: 30px;
       text-align: center;
     ">
-
-      <img
-        src="https://falcon-service-desk-e7f4w9w1q-falcon-s-projects89.vercel.app/logo-falcon.png"
-        alt="Falcon"
-        style="
-          width: 120px;
-          margin-bottom: 15px;
-        "
-      />
 
       <h1 style="
         color: white;
