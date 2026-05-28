@@ -46,7 +46,6 @@ export function ticketCreadoTemplate({
       background: #0F3D1F;
       padding: 30px;
       text-align: center;
-    ">
 
       <h1 style="
         color: white;
@@ -248,7 +247,6 @@ export function ticketAsignadoTemplate({
       background: #0F3D1F;
       padding: 30px;
       text-align: center;
-    ">
 
       <h1 style="
         color: white;
@@ -436,7 +434,6 @@ export function ticketActualizadoTemplate({
       background: #0F3D1F;
       padding: 30px;
       text-align: center;
-    ">
 
       <h1 style="
         color: white;
