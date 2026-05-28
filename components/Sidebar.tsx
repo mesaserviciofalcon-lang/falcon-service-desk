@@ -41,7 +41,18 @@ export default function Sidebar({
 
         {/* LOGO */}
 
-        <div className="flex flex-col items-center pt-6 pb-4 border-b border-green-900">
+        <Link
+  href="/dashboard"
+  className="
+  flex
+  flex-col
+  items-center
+  pt-8
+  pb-5
+  border-b
+  border-green-900
+"
+>
 
           <img
 
@@ -49,24 +60,24 @@ export default function Sidebar({
 
             alt="Falcon"
 
-            className="w-32 h-32 object-cover rounded-full bg-white shadow-lg"
+            className="w-40 h-40 object-cover rounded-full bg-white shadow-lg"
           />
 
-          <h1 className="mt-4 text-xl font-bold text-center">
+          <h1 className="mt-2 text-xl font-bold text-center">
 
             Falcon Service Desk
 
           </h1>
 
-          <p className="text-sm text-green-200 mt-1">
+          <p className="text-sm text-green-200">
 
             Security Department
 
           </p>
 
-        </div>
+        </Link>
 
-        {/* MENU */}
+{/* MENU */}
 
         <nav className="flex flex-col gap-2 p-4">
 

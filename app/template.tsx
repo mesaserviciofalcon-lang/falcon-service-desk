@@ -12,6 +12,12 @@ import {
 
 } from "next/navigation";
 
+import {
+
+  useSession,
+
+} from "next-auth/react";
+
 export default function Template({
 
   children,
@@ -24,6 +30,10 @@ export default function Template({
 
   const pathname =
     usePathname();
+
+  const {
+    data: session,
+  } = useSession();
 
   // PAGINAS SIN LAYOUT
 
@@ -51,7 +61,13 @@ export default function Template({
 
     <main className="flex bg-gray-100 min-h-screen">
 
-      <Sidebar role="ADMIN" />
+      <Sidebar
+
+        role={
+          session?.user?.role || ""
+        }
+
+      />
 
       <section className="flex-1">
 

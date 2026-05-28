@@ -6,6 +6,14 @@ from "@/lib/email";
 import { correosResponsables }
 from "@/lib/correos";
 
+import {
+
+ticketCreadoTemplate,
+
+ticketAsignadoTemplate,
+
+} from "@/lib/templatesEmail";
+
 export async function POST(
   request: Request
 ) {
@@ -117,9 +125,6 @@ export async function POST(
 
             descripcionFalla:
               body.descripcion,
-
-            prioridad:
-              body.prioridad,
           },
         });
     }
@@ -200,9 +205,6 @@ export async function POST(
 
             descripcion:
               body.descripcion,
-
-            prioridad:
-              body.prioridad,
           },
         });
     }
@@ -228,9 +230,6 @@ export async function POST(
 
             observaciones:
               body.descripcion,
-
-            prioridad:
-              body.prioridad,
           },
         });
     }
@@ -259,6 +258,23 @@ export async function POST(
           },
         });
     }
+    // CORREO RESPONSABLES
+
+const responsables =
+
+  correosResponsables[
+    body.tipo as keyof typeof correosResponsables
+  ];
+const responsableCorreo =
+
+  responsables?.[0] || "";
+
+const responsableNombre =
+
+  responsableCorreo
+    .split("@")[0]
+    .replace(".", " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
 // ENVIAR CORREO
 
 if (body.correoSolicitante) {
@@ -273,73 +289,23 @@ if (body.correoSolicitante) {
       subject:
         `Ticket #${solicitud.id} creado`,
 
-      html: `
+      html: ticketCreadoTemplate({
 
-        <div style="
-          font-family: Arial;
-          padding: 20px;
-        ">
+  ticket:
+    solicitud.id,
 
-          <h2>
-            Mesa de Servicios Falcon
-          </h2>
+  tipo:
+    solicitud.tipo,
 
-          <p>
+  estado:
+    solicitud.estado,
 
-            Su solicitud fue creada correctamente.
+  responsable:
+    responsableNombre || "Mesa de Servicios",
 
-          </p>
-
-          <hr />
-
-          <p>
-
-            <strong>
-              Ticket:
-            </strong>
-
-            #${solicitud.id}
-
-          </p>
-
-          <p>
-
-            <strong>
-              Tipo:
-            </strong>
-
-            ${body.tipo}
-
-          </p>
-
-          <p>
-
-            <strong>
-              Estado:
-            </strong>
-
-            PENDIENTE
-
-          </p>
-
-          <p>
-
-            <strong>
-              Asignado:
-            </strong>
-
-            ${asignadoA}
-
-          </p>
-
-          <br />
-
-          <p>
-            Falcon Farms
-          </p>
-
-        </div>
-      `,
+  correo:
+    responsableCorreo || "No disponible",
+}),
     });
 
   } catch (error) {
@@ -350,14 +316,6 @@ if (body.correoSolicitante) {
     );
   }
 }
-// CORREO RESPONSABLES
-
-const responsables =
-
-  correosResponsables[
-    body.tipo as keyof typeof correosResponsables
-  ];
-
 if (
   responsables &&
   responsables.length > 0
@@ -373,61 +331,17 @@ if (
       subject:
         `Nuevo ticket #${solicitud.id}`,
 
-      html: `
+      html: ticketAsignadoTemplate({
 
-        <div style="
-          font-family: Arial;
-          padding: 20px;
-        ">
+  ticket:
+    solicitud.id,
 
-          <h2>
-            Nuevo ticket asignado
-          </h2>
+  tipo:
+    body.tipo,
 
-          <hr />
-
-          <p>
-
-            <strong>
-              Ticket:
-            </strong>
-
-            #${solicitud.id}
-
-          </p>
-
-          <p>
-
-            <strong>
-              Tipo:
-            </strong>
-
-            ${body.tipo}
-
-          </p>
-
-          <p>
-
-            <strong>
-              Solicitante:
-            </strong>
-
-            ${body.solicitante}
-
-          </p>
-
-          <p>
-
-            <strong>
-              Estado:
-            </strong>
-
-            PENDIENTE
-
-          </p>
-
-        </div>
-      `,
+  solicitante:
+    body.solicitante,
+}),
     });
 
   } catch (error) {

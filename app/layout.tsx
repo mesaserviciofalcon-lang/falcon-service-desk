@@ -3,6 +3,9 @@ import "./globals.css";
 import AuthProvider
 from "@/providers/SessionProvider";
 
+import { Toaster }
+from "react-hot-toast";
+
 import {
   headers,
 } from "next/headers";
@@ -45,19 +48,23 @@ export default async function RootLayout({
 
     <html lang="es">
 
-      <body>
+     <body>
 
-        <AuthProvider>
+  <AuthProvider>
 
-          <div>
+    <div>
 
-            {children}
+      {children}
 
-          </div>
+    </div>
 
-        </AuthProvider>
+  </AuthProvider>
 
-      </body>
+  <Toaster
+    position="top-center"
+  />
+
+</body>
 
     </html>
   );

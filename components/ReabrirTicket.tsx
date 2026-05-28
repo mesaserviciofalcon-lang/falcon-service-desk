@@ -1,5 +1,8 @@
 "use client";
 
+import toast
+from "react-hot-toast";
+
 export default function ReabrirTicket({
 
   ticketId,
@@ -59,19 +62,23 @@ export default function ReabrirTicket({
         );
       }
 
-      alert(
-        "Ticket reabierto correctamente"
-      );
+      toast.success(
+  "Ticket reabierto correctamente"
+);
 
-      window.location.reload();
+setTimeout(() => {
+
+  window.location.reload();
+
+}, 1200);
 
     } catch (error) {
 
       console.error(error);
 
-      alert(
-        "Error al reabrir ticket"
-      );
+      toast.error(
+  "Error al reabrir ticket"
+);
     }
   }
 

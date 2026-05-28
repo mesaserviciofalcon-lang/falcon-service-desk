@@ -7,6 +7,12 @@ from "@/lib/email";
 import { correosResponsables }
 from "@/lib/correos";
 
+import {
+
+  ticketActualizadoTemplate,
+
+} from "@/lib/templatesEmail";
+
 export async function PATCH(
 
   request: Request,
@@ -99,61 +105,20 @@ if (
       subject:
         `Actualización Ticket #${solicitud.id}`,
 
-      html: `
+      html: ticketActualizadoTemplate({
 
-        <div style="
-          font-family: Arial;
-          padding: 20px;
-        ">
+  ticket:
+    solicitud.id,
 
-          <h2>
-            Actualización de ticket
-          </h2>
+  estado:
+    body.estado,
 
-          <hr />
+  gestionadoPor:
+    body.gestionadoPor || "Sistema",
 
-          <p>
-
-            <strong>
-              Ticket:
-            </strong>
-
-            #${solicitud.id}
-
-          </p>
-
-          <p>
-
-            <strong>
-              Nuevo estado:
-            </strong>
-
-            ${body.estado}
-
-          </p>
-
-          <p>
-
-            <strong>
-              Gestionado por:
-            </strong>
-
-            ${body.gestionadoPor || "Sistema"}
-
-          </p>
-
-          <p>
-
-            <strong>
-              Observación:
-            </strong>
-
-            ${body.observacionesTecnico || "Sin observación"}
-
-          </p>
-
-        </div>
-      `,
+  observacion:
+    body.observacionesTecnico || "Sin observación",
+}),
     });
 
   } catch (error) {
@@ -195,61 +160,20 @@ if (
         subject:
           `Ticket #${solicitud.id} REABIERTO`,
 
-        html: `
+        html: ticketActualizadoTemplate({
 
-          <div style="
-            font-family: Arial;
-            padding: 20px;
-          ">
+  ticket:
+    solicitud.id,
 
-            <h2>
-              Ticket reabierto
-            </h2>
+  estado:
+    "REABIERTO",
 
-            <hr />
+  gestionadoPor:
+    body.gestionadoPor || "Solicitante",
 
-            <p>
-
-              <strong>
-                Ticket:
-              </strong>
-
-              #${solicitud.id}
-
-            </p>
-
-            <p>
-
-              <strong>
-                Tipo:
-              </strong>
-
-              ${solicitud.tipo}
-
-            </p>
-
-            <p>
-
-              <strong>
-                Reabierto por:
-              </strong>
-
-              ${body.gestionadoPor || "Solicitante"}
-
-            </p>
-
-            <p>
-
-              <strong>
-                Observación:
-              </strong>
-
-              ${body.observacionesTecnico || "Sin observación"}
-
-            </p>
-
-          </div>
-        `,
+  observacion:
+    body.observacionesTecnico || "Sin observación",
+}),
       });
 
     } catch (error) {

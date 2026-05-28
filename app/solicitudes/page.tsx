@@ -2,6 +2,8 @@
 
 import { useState, useEffect }
 from "react";
+import toast
+from "react-hot-toast";
 
 import { useRouter }
 from "next/navigation";
@@ -90,11 +92,6 @@ export default function SolicitudesPage() {
   ] = useState("");
 
   const [
-    prioridad,
-    setPrioridad
-  ] = useState("");
-
-  const [
     serial,
     setSerial
   ] = useState("");
@@ -175,8 +172,6 @@ export default function SolicitudesPage() {
 
               camaraAfectada,
 
-              prioridad,
-
               nombreCandidato,
 
               cedula,
@@ -214,24 +209,40 @@ export default function SolicitudesPage() {
       const solicitud =
         await response.json();
 
+ if (tipo === "ANTECEDENTES") {
 
-      alert(
-        "Solicitud creada correctamente"
-      );
+  toast.success(
 
-      router.push(
-        "/tickets"
-      );
+    "Solicitud creada correctamente. El estudio de antecedentes será analizado dentro de las próximas 24 horas.",
 
-    } catch (error) {
-
-      console.error(error);
-
-      alert(
-        "Error al guardar solicitud"
-      );
+    {
+      duration: 6000,
     }
-  }
+  );
+
+} else {
+
+  toast.success(
+    "Solicitud creada correctamente"
+  );
+}
+
+setTimeout(() => {
+
+  router.push(
+    "/tickets"
+  );
+
+}, 1500);
+
+} catch (error) {
+
+  console.error(error);
+
+  toast.error(
+    "Error al guardar solicitud"
+  );
+}  }
 
   return (
 
@@ -326,6 +337,7 @@ export default function SolicitudesPage() {
               type="text"
               placeholder="Cámara afectada"
               className="border p-3 rounded-lg"
+              required
               value={camaraAfectada}
               onChange={(e) =>
                 setCamaraAfectada(
@@ -345,38 +357,6 @@ export default function SolicitudesPage() {
               }
             />
 
-            <select
-              className="border p-3 rounded-lg"
-              value={prioridad}
-              onChange={(e) =>
-                setPrioridad(
-                  e.target.value
-                )
-              }
-            >
-
-              <option value="">
-                Seleccione prioridad
-              </option>
-
-              <option value="BAJA">
-                Baja
-              </option>
-
-              <option value="MEDIA">
-                Media
-              </option>
-
-              <option value="ALTA">
-                Alta
-              </option>
-
-              <option value="CRITICA">
-                Crítica
-              </option>
-
-            </select>
-
           </div>
         )}
 
@@ -391,6 +371,7 @@ export default function SolicitudesPage() {
               type="text"
               placeholder="Nombre del candidato"
               className="border p-3 rounded-lg"
+              required
               value={nombreCandidato}
               onChange={(e) =>
                 setNombreCandidato(
@@ -403,6 +384,7 @@ export default function SolicitudesPage() {
               type="text"
               placeholder="Cédula"
               className="border p-3 rounded-lg"
+              required
               value={cedula}
               onChange={(e) =>
                 setCedula(
@@ -415,6 +397,7 @@ export default function SolicitudesPage() {
               type="text"
               placeholder="Teléfono"
               className="border p-3 rounded-lg"
+              required
               value={telefono}
               onChange={(e) =>
                 setTelefono(
@@ -427,6 +410,7 @@ export default function SolicitudesPage() {
               type="text"
               placeholder="Dirección"
               className="border p-3 rounded-lg"
+              required
               value={direccion}
               onChange={(e) =>
                 setDireccion(
@@ -439,6 +423,7 @@ export default function SolicitudesPage() {
               type="text"
               placeholder="Municipio"
               className="border p-3 rounded-lg"
+              required
               value={municipio}
               onChange={(e) =>
                 setMunicipio(
@@ -451,6 +436,7 @@ export default function SolicitudesPage() {
               type="text"
               placeholder="Zona"
               className="border p-3 rounded-lg"
+              required
               value={zona}
               onChange={(e) =>
                 setZona(
@@ -463,6 +449,7 @@ export default function SolicitudesPage() {
               type="text"
               placeholder="Cargo"
               className="border p-3 rounded-lg"
+              required
               value={cargo}
               onChange={(e) =>
                 setCargo(
@@ -471,16 +458,39 @@ export default function SolicitudesPage() {
               }
             />
 
-            <textarea
-              placeholder="Motivo de la visita"
-              className="border p-3 rounded-lg"
-              value={motivoVisita}
-              onChange={(e) =>
-                setMotivoVisita(
-                  e.target.value
-                )
-              }
-            />
+            <select
+
+  value={motivoVisita}
+
+  onChange={(e) =>
+
+    setMotivoVisita(
+      e.target.value
+    )
+  }
+
+  className="border p-3 rounded-lg"
+>
+
+  <option value="">
+
+    Seleccione motivo
+
+  </option>
+
+  <option value="INGRESO">
+
+    INGRESO
+
+  </option>
+
+  <option value="MANTENIMIENTO">
+
+    MANTENIMIENTO
+
+  </option>
+
+</select>
 
           </div>
         )}
@@ -495,6 +505,7 @@ export default function SolicitudesPage() {
               type="text"
               placeholder="Radio"
               className="border p-3 rounded-lg"
+              required
               value={radio}
               onChange={(e) =>
                 setRadio(
@@ -507,6 +518,7 @@ export default function SolicitudesPage() {
               type="text"
               placeholder="Serial"
               className="border p-3 rounded-lg"
+              required
               value={serial}
               onChange={(e) =>
                 setSerial(
@@ -519,6 +531,7 @@ export default function SolicitudesPage() {
               type="text"
               placeholder="Tipo de falla"
               className="border p-3 rounded-lg"
+              required
               value={tipoFalla}
               onChange={(e) =>
                 setTipoFalla(
@@ -537,38 +550,6 @@ export default function SolicitudesPage() {
                 )
               }
             />
-
-            <select
-              className="border p-3 rounded-lg"
-              value={prioridad}
-              onChange={(e) =>
-                setPrioridad(
-                  e.target.value
-                )
-              }
-            >
-
-              <option value="">
-                Seleccione prioridad
-              </option>
-
-              <option value="BAJA">
-                Baja
-              </option>
-
-              <option value="MEDIA">
-                Media
-              </option>
-
-              <option value="ALTA">
-                Alta
-              </option>
-
-              <option value="CRITICA">
-                Crítica
-              </option>
-
-            </select>
 
           </div>
         )}
@@ -589,38 +570,6 @@ export default function SolicitudesPage() {
         )
       }
     />
-
-    <select
-      className="border p-3 rounded-lg"
-      value={prioridad}
-      onChange={(e) =>
-        setPrioridad(
-          e.target.value
-        )
-      }
-    >
-
-      <option value="">
-        Seleccione prioridad
-      </option>
-
-      <option value="BAJA">
-        Baja
-      </option>
-
-      <option value="MEDIA">
-        Media
-      </option>
-
-      <option value="ALTA">
-        Alta
-      </option>
-
-      <option value="CRITICA">
-        Crítica
-      </option>
-
-    </select>
 
     <p className="text-sm text-gray-500">
 

@@ -6,6 +6,9 @@ from "next/navigation";
 import { useState }
 from "react";
 
+import toast
+from "react-hot-toast";
+
 import UploadButton
 from "@/components/uploadthing/UploadButton";
 
@@ -148,19 +151,23 @@ export default function GestionTicket({
         );
       }
 
-      alert(
-        "Gestión guardada"
-      );
+      toast.success(
+  "Gestión guardada correctamente"
+);
 
-      router.refresh();
+setTimeout(() => {
+
+  router.refresh();
+
+}, 1200);
 
     } catch (error) {
 
       console.error(error);
 
-      alert(
-        "Error al actualizar"
-      );
+      toast.error(
+  "Error al actualizar ticket"
+);
 
     } finally {
 

@@ -23,7 +23,7 @@ export default function Header() {
 
       <h1 className="text-2xl font-bold text-[#0F3D1F]">
 
-        Mesa de Servicios
+        Service Desk
 
       </h1>
 

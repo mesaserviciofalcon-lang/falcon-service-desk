@@ -21,6 +21,7 @@
     "prisma": "^6.19.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-hot-toast": "^2.6.0",
     "resend": "^6.12.4",
     "uploadthing": "^7.7.4",
     "uuid": "^14.0.0",

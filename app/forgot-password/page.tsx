@@ -142,6 +142,26 @@ export default function ForgotPasswordPage() {
 
         </button>
 
+        <div className="mt-4 text-center">
+
+  <a
+
+    href="/login"
+
+    className="
+      text-sm
+      text-[#0F3D1F]
+      hover:underline
+      font-medium
+    "
+  >
+
+    ← Volver al inicio de sesión
+
+  </a>
+
+</div>
+
       </form>
 
     </div>

@@ -8,6 +8,7 @@ import {
 
 import {
   useRouter,
+  useSearchParams,
 } from "next/navigation";
 
 import {
@@ -18,6 +19,15 @@ export default function LoginPage() {
 
   const router =
     useRouter();
+
+    const searchParams =
+  useSearchParams();
+
+const redirectTo =
+
+  searchParams.get(
+    "redirect"
+  ) || "/dashboard";
 
   const [
     email,
@@ -58,8 +68,8 @@ export default function LoginPage() {
     if (result?.ok) {
 
       router.push(
-        "/dashboard"
-      );
+  redirectTo
+);
 
     } else {
 
