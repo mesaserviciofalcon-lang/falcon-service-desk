@@ -33,12 +33,11 @@ export function ticketCreadoTemplate({
 ">
 
   <div style="
-    max-width: 650px;
-    margin: auto;
-    background: white;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  max-width: 650px;
+  margin: auto;
+  background: white;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+">
   ">
 
     <!-- HEADER -->
@@ -245,12 +244,11 @@ export function ticketAsignadoTemplate({
 ">
 
   <div style="
-    max-width: 650px;
-    margin: auto;
-    background: white;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  max-width: 650px;
+  margin: auto;
+  background: white;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+">
   ">
 
     <!-- HEADER -->
@@ -443,12 +441,11 @@ export function ticketActualizadoTemplate({
 ">
 
   <div style="
-    max-width: 650px;
-    margin: auto;
-    background: white;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  max-width: 650px;
+  margin: auto;
+  background: white;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+">
   ">
 
     <!-- HEADER -->
