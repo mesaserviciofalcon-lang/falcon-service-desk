@@ -38,7 +38,7 @@ export function ticketCreadoTemplate({
   background: white;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 ">
-  ">
+
 
     <!-- HEADER -->
 
@@ -48,11 +48,12 @@ export function ticketCreadoTemplate({
       text-align: center;
 
       <h1 style="
-        color: white;
-        margin: 0;
-        font-size: 28px;
-        Falcon Farms
-      </h1>
+  color: white;
+  margin: 0;
+  font-size: 28px;
+">
+  Falcon Farms
+</h1>
 
       <p style="
         color: #cde7d5;
@@ -238,7 +239,7 @@ export function ticketAsignadoTemplate({
   background: white;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 ">
-  ">
+
 
     <!-- HEADER -->
 
@@ -256,12 +257,12 @@ export function ticketAsignadoTemplate({
       </h1>
 
       <p style="
-        color: #cde7d5;
-        margin-top: 8px;
-        font-size: 14px;
-    
-        Falcon Farms - Service Desk
-      </p>
+  color: #cde7d5;
+  margin-top: 8px;
+  font-size: 14px;
+">
+  Falcon Farms - Service Desk
+</p>
 
     </div>
 
@@ -425,7 +426,7 @@ export function ticketActualizadoTemplate({
   background: white;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 ">
-  ">
+
 
     <!-- HEADER -->
 
@@ -443,12 +444,12 @@ export function ticketActualizadoTemplate({
       </h1>
 
       <p style="
-        color: #cde7d5;
-        margin-top: 8px;
-        font-size: 14px;
-    
-        Falcon Farms - Service Desk
-      </p>
+  color: #cde7d5;
+  margin-top: 8px;
+  font-size: 14px;
+">
+  Falcon Farms - Service Desk
+</p>
 
     </div>
 

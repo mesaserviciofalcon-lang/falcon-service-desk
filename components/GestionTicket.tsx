@@ -62,9 +62,11 @@ export default function GestionTicket({
 
   async function guardarGestion() {
 
-    try {
+  if (loading) return;
 
-      setLoading(true);
+  try {
+
+    setLoading(true);
 
       // GUARDAR ARCHIVOS
 
@@ -342,7 +344,7 @@ setTimeout(() => {
 
           loading
 
-            ? "Guardando..."
+            ? "Guardando gestión..."
 
             : "Guardar gestión"
         }
