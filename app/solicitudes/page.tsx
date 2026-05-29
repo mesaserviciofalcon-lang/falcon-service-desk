@@ -115,6 +115,11 @@ export default function SolicitudesPage() {
   setArchivos
 ] = useState<any[]>([]);
 
+const [
+  guardando,
+  setGuardando
+] = useState(false);
+
   // CARGAR DATOS SESION
 
   useEffect(() => {
@@ -138,10 +143,14 @@ export default function SolicitudesPage() {
   }, [session]);
 
   async function crearSolicitud(
-    e: React.FormEvent
-  ) {
+  e: React.FormEvent
+) {
 
-    e.preventDefault();
+  e.preventDefault();
+
+  if (guardando) return;
+
+  setGuardando(true);
 
     try {
 
@@ -239,10 +248,12 @@ setTimeout(() => {
 
   console.error(error);
 
+  setGuardando(false);
+
   toast.error(
     "Error al guardar solicitud"
   );
-}  }
+} }
 
   return (
 
@@ -678,16 +689,31 @@ setTimeout(() => {
 
   type="submit"
 
-  className="
-    bg-black
+  disabled={guardando}
+
+  className={`
     text-white
     p-3
     rounded-lg
-    hover:bg-gray-800
-  "
+    transition
+
+    ${
+      guardando
+
+        ? "bg-gray-500 cursor-not-allowed"
+
+        : "bg-black hover:bg-gray-800"
+    }
+  `}
 >
 
-  Crear Solicitud
+  {
+    guardando
+
+      ? "Creando ticket..."
+
+      : "Crear Solicitud"
+  }
 
 </button>
 
