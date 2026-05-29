@@ -51,7 +51,6 @@ export function ticketCreadoTemplate({
         color: white;
         margin: 0;
         font-size: 28px;
-      ">
         Falcon Farms
       </h1>
 
@@ -260,7 +259,7 @@ export function ticketAsignadoTemplate({
         color: #cde7d5;
         margin-top: 8px;
         font-size: 14px;
-      ">
+    
         Falcon Farms - Service Desk
       </p>
 
@@ -447,7 +446,7 @@ export function ticketActualizadoTemplate({
         color: #cde7d5;
         margin-top: 8px;
         font-size: 14px;
-      ">
+    
         Falcon Farms - Service Desk
       </p>
 
