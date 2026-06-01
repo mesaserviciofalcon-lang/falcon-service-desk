@@ -46,14 +46,15 @@ export function ticketCreadoTemplate({
       background: #0F3D1F;
       padding: 30px;
       text-align: center;
+">
 
       <h1 style="
-  color: white;
-  margin: 0;
-  font-size: 28px;
-">
-  Falcon Farms
-</h1>
+        color: white;
+        margin: 0;
+        font-size: 28px;
+      ">
+        Falcon Farms
+      </h1>
 
       <p style="
         color: #cde7d5;
@@ -247,6 +248,7 @@ export function ticketAsignadoTemplate({
       background: #0F3D1F;
       padding: 30px;
       text-align: center;
+">
 
       <h1 style="
         color: white;
@@ -434,8 +436,10 @@ export function ticketActualizadoTemplate({
       background: #0F3D1F;
       padding: 30px;
       text-align: center;
+">
 
       <h1 style="
+
         color: white;
         margin: 0;
         font-size: 28px;
@@ -542,6 +546,18 @@ export function ticketActualizadoTemplate({
 
 </div>
     </div>
+<div style="
+  margin-top: 35px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #555;
+">
+
+  Este correo fue generado automáticamente por Falcon Service Desk.
+
+</div>
 
     <!-- FOOTER -->
 
