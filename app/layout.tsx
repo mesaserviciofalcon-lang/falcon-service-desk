@@ -13,7 +13,7 @@ import {
 export const metadata = {
 
   title:
-    "Mesa de Servicios",
+    "Mesa de Servicios Falcon",
 
   description:
     "Sistema de gestión de solicitudes",
