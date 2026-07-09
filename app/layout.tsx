@@ -11,12 +11,13 @@ import {
 } from "next/headers";
 
 export const metadata = {
+  title: "Mesa de Servicios Falcon",
 
-  title:
-    "Mesa de Servicios Falcon",
+  description: "Sistema de gestión de solicitudes",
 
-  description:
-    "Sistema de gestión de solicitudes",
+  icons: {
+    icon: "/favicon-v2.ico",
+  },
 };
 
 export default async function RootLayout({
