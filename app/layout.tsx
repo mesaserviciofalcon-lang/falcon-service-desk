@@ -16,7 +16,8 @@ export const metadata = {
   description: "Sistema de gestión de solicitudes",
 
   icons: {
-    icon: "/favicon-v2.ico",
+    icon: "/favicon-v2.ico?v=2",
+    shortcut: "/favicon-v2.ico?v=2",
   },
 };
 
