@@ -7,7 +7,7 @@ const uploadRouter = {
   archivoUploader: f({
 
     image: {
-      maxFileSize: "8MB",
+      maxFileSize: "16MB",
       maxFileCount: 5,
     },
 
@@ -21,6 +21,20 @@ const uploadRouter = {
       maxFileCount: 5,
     },
 
+  }, {
+    awaitServerData: false,
+  })
+
+  .onUploadError(async ({ error, fileKey }) => {
+
+    console.error(
+      "Error subiendo archivo a UploadThing:",
+      {
+        fileKey,
+        message:
+          error.message,
+      }
+    );
   })
 
   .onUploadComplete(async ({ file }) => {

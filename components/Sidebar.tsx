@@ -252,7 +252,7 @@ export default function Sidebar({
 
                 <FileWarning size={20} />
 
-                Novedades seguridad
+                CCTV, radios y novedades
 
               </div>
 

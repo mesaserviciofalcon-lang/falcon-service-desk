@@ -55,11 +55,29 @@ hace8Dias.setDate(
 
   // TECNICO
 
-  if (role === "TECNICO") {
+  if (
+    role === "TECNICO"
+
+    ||
+
+    role === "JEFE_SEG"
+
+    ||
+
+    role === "DIRECTOR_SEG"
+  ) {
 
   solicitudes =
     todasSolicitudes.filter(
       (solicitud: any) => {
+
+        const esSeguridad =
+
+          role === "JEFE_SEG"
+
+          ||
+
+          role === "DIRECTOR_SEG";
 
         return (
 
@@ -71,6 +89,18 @@ hace8Dias.setDate(
 
             solicitud.tipo ===
               "RADIOS"
+
+            ||
+
+            (
+
+              esSeguridad
+
+              &&
+
+              solicitud.tipo ===
+                "NOVEDAD SEGURIDAD"
+            )
           )
 
           &&
@@ -164,34 +194,6 @@ if (role === "SUPERVISOR") {
     );
 }
 
-if (
-
-  role ===
-    "JEFE_SEG"
-
-  ||
-
-  role ===
-    "DIRECTOR_SEG"
-) {
-
-  solicitudes =
-    todasSolicitudes.filter(
-      (solicitud: any) => {
-
-        return (
-
-          solicitud.tipo ===
-            "NOVEDAD SEGURIDAD"
-
-          &&
-
-          solicitud.estado !==
-            "COMPLETADO"
-        );
-      }
-    );
-}
   return (
 
     <div>

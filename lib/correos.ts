@@ -1,11 +1,13 @@
 export const correosResponsables = {
 
   CCTV: [
-    "cristian.salgado@falconfarms.com.co",
+    "juan.rojas@falconfarms.com.co",
+    "luis.charry@falconfarms.com.co",
   ],
 
   RADIOS: [
-    "cristian.salgado@falconfarms.com.co",
+    "juan.rojas@falconfarms.com.co",
+    "luis.charry@falconfarms.com.co",
   ],
 
   "VISITA DOMICILIARIA": [

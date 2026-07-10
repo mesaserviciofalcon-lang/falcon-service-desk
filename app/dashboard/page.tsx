@@ -80,7 +80,17 @@ hace3Dias.setDate(
     );
 }
 
- if (role === "TECNICO") {
+ if (
+  role === "TECNICO"
+
+  ||
+
+  role === "JEFE_SEG"
+
+  ||
+
+  role === "DIRECTOR_SEG"
+) {
 
   tickets =
     solicitudes.filter(
@@ -102,6 +112,14 @@ hace3Dias.setDate(
             ) >= hace3Dias
           );
 
+        const esSeguridad =
+
+          role === "JEFE_SEG"
+
+          ||
+
+          role === "DIRECTOR_SEG";
+
         return (
 
           (
@@ -111,6 +129,18 @@ hace3Dias.setDate(
             ||
 
             s.tipo === "RADIOS"
+
+            ||
+
+            (
+
+              esSeguridad
+
+              &&
+
+              s.tipo ===
+                "NOVEDAD SEGURIDAD"
+            )
           )
 
           &&
@@ -182,49 +212,6 @@ hace3Dias.setDate(
 
           s.tipo ===
             "ANTECEDENTES"
-
-          &&
-
-          visible
-        );
-      }
-    );
-}
-
-  if (
-
-  role === "JEFE_SEG"
-
-  ||
-
-  role === "DIRECTOR_SEG"
-
-) {
-
-  tickets =
-    solicitudes.filter(
-      (s: any) => {
-
-        const visible =
-
-          s.estado !==
-            "COMPLETADO"
-
-          ||
-
-          (
-
-            s.fechaCierre &&
-
-            new Date(
-              s.fechaCierre
-            ) >= hace3Dias
-          );
-
-        return (
-
-          s.tipo ===
-            "NOVEDAD SEGURIDAD"
 
           &&
 

@@ -7,6 +7,15 @@ import {
 const UploadButtonBase =
   generateUploadButton();
 
+const MAX_FILE_SIZE_MB = 16;
+
+function formatoMb(bytes: number) {
+
+  return (
+    bytes / 1024 / 1024
+  ).toFixed(1);
+}
+
 export default function UploadButton({
 
   onComplete,
@@ -20,6 +29,31 @@ export default function UploadButton({
       <UploadButtonBase
 
         endpoint="archivoUploader"
+
+        onBeforeUploadBegin={(files) => {
+
+          const archivoGrande =
+            files.find(
+              (file) =>
+                file.size >
+                MAX_FILE_SIZE_MB *
+                  1024 *
+                  1024
+            );
+
+          if (archivoGrande) {
+
+            alert(
+              `El archivo "${archivoGrande.name}" pesa ${formatoMb(
+                archivoGrande.size
+              )} MB. El máximo permitido es ${MAX_FILE_SIZE_MB} MB.`
+            );
+
+            return [];
+          }
+
+          return files;
+        }}
 
         onClientUploadComplete={(res: any) => {
 
@@ -39,8 +73,21 @@ export default function UploadButton({
 
         onUploadError={(error: any) => {
 
+          console.error(
+            "UploadThing error:",
+            error
+          );
+
           alert(
-            `ERROR: ${error.message}`
+            [
+              "No se pudo subir el archivo.",
+              "",
+              "Si en otra red funciona, probablemente la red de la finca está bloqueando el servicio de carga.",
+              "Pruebe con datos móviles u otra red.",
+              "Si así funciona, pidan desbloquear uploadthing.com y utfs.io en la red de la finca.",
+              "",
+              `Detalle técnico: ${error.message}`,
+            ].join("\n")
           );
         }}
 

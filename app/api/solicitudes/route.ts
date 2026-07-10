@@ -33,7 +33,7 @@ export async function POST(
     ) {
 
       asignadoA =
-        "TECNICO";
+        "JEFE_SEG / DIRECTOR_SEG";
     }
 
     if (
