@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import * as XLSX
 from "xlsx";
 
+import { formatearFechaColombia }
+from "@/lib/fecha";
+
 export async function GET() {
 
   try {
@@ -82,16 +85,16 @@ export async function GET() {
             ?.observaciones,
 
         FECHA_CREACION:
-          new Date(
+          formatearFechaColombia(
             item.fechaCreacion
-          ).toLocaleString(),
+          ),
 
         FECHA_GESTION:
           item.fechaGestion
 
-            ? new Date(
+            ? formatearFechaColombia(
                 item.fechaGestion
-              ).toLocaleString()
+              )
 
             : "",
       }));

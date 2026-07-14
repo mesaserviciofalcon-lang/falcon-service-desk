@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import * as XLSX
 from "xlsx";
 
+import { formatearFechaColombia }
+from "@/lib/fecha";
+
 export async function GET(
   request: Request
 ) {
@@ -98,9 +101,9 @@ export async function GET(
               item.estado,
 
             FECHA:
-              new Date(
+              formatearFechaColombia(
                 item.fechaCreacion
-              ).toLocaleString(),
+              ),
           })
         );
     }
@@ -143,9 +146,9 @@ export async function GET(
               item.estado,
 
             FECHA:
-              new Date(
+              formatearFechaColombia(
                 item.fechaCreacion
-              ).toLocaleString(),
+              ),
           })
         );
     }
@@ -204,9 +207,9 @@ export async function GET(
               item.estado,
 
             FECHA:
-              new Date(
+              formatearFechaColombia(
                 item.fechaCreacion
-              ).toLocaleString(),
+              ),
           })
         );
     }
@@ -244,9 +247,9 @@ export async function GET(
               item.estado,
 
             FECHA:
-              new Date(
+              formatearFechaColombia(
                 item.fechaCreacion
-              ).toLocaleString(),
+              ),
           })
         );
     }
@@ -280,9 +283,9 @@ export async function GET(
               item.estado,
 
             FECHA:
-              new Date(
+              formatearFechaColombia(
                 item.fechaCreacion
-              ).toLocaleString(),
+              ),
           })
         );
     }

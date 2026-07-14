@@ -10,6 +10,9 @@ from "@/lib/auth";
 import Link
 from "next/link";
 
+import { formatearFechaColombia }
+from "@/lib/fecha";
+
 export default async function DashboardPage() {
 
   const session =
@@ -443,9 +446,9 @@ hace3Dias.setDate(
 
                   <td className="p-3">
 
-                    {new Date(
+                    {formatearFechaColombia(
                       ticket.fechaCreacion
-                    ).toLocaleString()}
+                    )}
 
                   </td>
 

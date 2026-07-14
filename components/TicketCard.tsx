@@ -4,6 +4,9 @@ from "@/components/ReabrirTicket";
 import GestionTicket
 from "@/components/GestionTicket";
 
+import { formatearFechaColombia }
+from "@/lib/fecha";
+
 export default function TicketCard({
 
   solicitud,
@@ -13,6 +16,23 @@ export default function TicketCard({
   session,
 
 }: any) {
+
+  const isSolicitante =
+    role === "SOLICITANTE";
+
+  const estado =
+    solicitud.estado;
+
+  const isCompletado =
+    estado === "COMPLETADO";
+
+  const puedeReabrir =
+    isSolicitante &&
+    isCompletado;
+
+  const puedeGestionar =
+    !isSolicitante &&
+    Boolean(role);
 
   return (
 
@@ -56,23 +76,9 @@ export default function TicketCard({
         <p>
           <strong>Fecha:</strong>
           {" "}
-          {new Date(
-  solicitud.fechaCreacion
-).toLocaleString(
-  "es-CO",
-  {
-
-    day: "2-digit",
-
-    month: "2-digit",
-
-    year: "numeric",
-
-    hour: "2-digit",
-
-    minute: "2-digit",
-  }
-)}
+          {formatearFechaColombia(
+            solicitud.fechaCreacion
+          )}
         </p>
 
       </div>
@@ -580,13 +586,7 @@ export default function TicketCard({
 
       {/* REABRIR */}
 
-      {role ===
-        "SOLICITANTE"
-
-        &&
-
-        solicitud.estado ===
-          "COMPLETADO" && (
+      {puedeReabrir && (
 
         <ReabrirTicket
 
@@ -603,26 +603,7 @@ export default function TicketCard({
 
       {/* GESTION */}
 
-      {(
-
-        (
-          role !==
-          "SOLICITANTE"
-        )
-
-        ||
-
-        (
-          role ===
-            "SOLICITANTE"
-
-          &&
-
-          solicitud.estado ===
-            "REABIERTO"
-        )
-
-      ) && (
+      {puedeGestionar && (
 
         <GestionTicket
 

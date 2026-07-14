@@ -1,3 +1,10 @@
+import { getAppUrl } from "@/lib/appUrl";
+
+function getTicketUrl(ticket: number) {
+
+  return `${getAppUrl()}/login?redirect=/tickets/${ticket}`;
+}
+
 export function ticketCreadoTemplate({
 
   ticket,
@@ -155,7 +162,7 @@ export function ticketCreadoTemplate({
 ">
 
   <a
-    href="https://falcon-service-desk.vercel.app/login?redirect=/tickets/${ticket}"
+    href="${getTicketUrl(ticket)}"
     style="
       background: #0F3D1F;
       color: white;
@@ -340,7 +347,7 @@ export function ticketAsignadoTemplate({
 ">
 
   <a
-    href="https://falcon-service-desk.vercel.app/login?redirect=/tickets/${ticket}"
+    href="${getTicketUrl(ticket)}"
     style="
       background: #0F3D1F;
       color: white;
@@ -529,7 +536,7 @@ export function ticketActualizadoTemplate({
 ">
 
   <a
-    href="https://falcon-service-desk.vercel.app/login?redirect=/tickets/${ticket}"
+    href="${getTicketUrl(ticket)}"
     style="
       background: #0F3D1F;
       color: white;

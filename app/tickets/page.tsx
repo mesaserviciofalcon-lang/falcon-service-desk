@@ -16,10 +16,13 @@ from "@/components/TicketCard";
 import FiltrosTickets
 from "@/components/FiltrosTickets";
 
+import { getAppUrl }
+from "@/lib/appUrl";
+
 async function obtenerSolicitudes() {
 
   const response = await fetch(
-    `${process.env.NEXTAUTH_URL}/api/solicitudes`,
+    `${getAppUrl()}/api/solicitudes`,
     {
       cache: "no-store",
     }

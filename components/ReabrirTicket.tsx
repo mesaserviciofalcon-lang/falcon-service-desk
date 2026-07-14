@@ -35,14 +35,14 @@ export default function ReabrirTicket({
                 "application/json",
             },
 
-            body: JSON.stringify({
+body: JSON.stringify({
 
   estado: "REABIERTO",
 
-  observacion:
+  observacionesTecnico:
   "Ticket reabierto por solicitante",
 
-  usuario:
+  gestionadoPor:
     usuario,
 }),
           }

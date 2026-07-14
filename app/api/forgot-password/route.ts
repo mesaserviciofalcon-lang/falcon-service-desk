@@ -22,6 +22,9 @@ import {
 
 } from "uuid";
 
+import { getAppUrl }
+from "@/lib/appUrl";
+
 export async function POST(
   request: Request
 ) {
@@ -85,7 +88,7 @@ export async function POST(
 
     const resetLink =
 
-      `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
+      `${getAppUrl()}/reset-password?token=${token}`;
 
     // ENVIAR EMAIL
 
