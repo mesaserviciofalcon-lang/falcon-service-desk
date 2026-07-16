@@ -87,9 +87,28 @@ const redirectTo =
 
       {/* PANEL IZQUIERDO */}
 
-      <div className="hidden lg:flex w-1/2 min-h-screen overflow-hidden bg-[#052b17] text-white">
+      <div className="hidden lg:flex relative w-1/2 min-h-screen overflow-hidden bg-[#052b17] text-white">
 
-        <div className="flex min-h-screen w-full flex-col p-10 xl:p-12">
+        <Image
+
+          src="/login-equipo-seguridad.webp"
+
+          alt="Equipo de seguridad Falcon Farms"
+
+          fill
+
+          priority
+
+          quality={95}
+
+          sizes="50vw"
+
+          className="object-cover object-center"
+        />
+
+        <div className="absolute inset-0 bg-gradient-to-b from-[#052b17]/45 via-[#052b17]/10 to-[#052b17]/80" />
+
+        <div className="relative z-10 flex min-h-screen w-full flex-col p-10 xl:p-12">
 
           <div className="flex justify-center">
 
@@ -109,33 +128,11 @@ const redirectTo =
               />
 
             </div>
-
           </div>
 
-          <div className="relative my-8 min-h-0 flex-1 overflow-hidden rounded-2xl bg-[#082f1b] shadow-2xl">
+          <div className="mx-auto mt-auto max-w-xl text-center">
 
-            <Image
-
-              src="/login-equipo-seguridad.webp"
-
-              alt="Equipo de seguridad Falcon Farms"
-
-              fill
-
-              priority
-
-              quality={95}
-
-              sizes="50vw"
-
-              className="object-contain object-center"
-            />
-
-          </div>
-
-          <div className="mx-auto max-w-xl text-center">
-
-          <h1 className="text-5xl font-bold leading-tight mb-5">
+          <h1 className="text-5xl font-bold leading-tight mb-5 drop-shadow-xl">
 
             Falcon
             <span className="text-[#2FAE4A]">
@@ -145,7 +142,7 @@ const redirectTo =
 
           </h1>
 
-          <p className="text-xl text-green-100 leading-relaxed">
+          <p className="text-xl text-green-50 leading-relaxed drop-shadow-lg">
 
             Plataforma corporativa para la gestión
             de tickets y procesos operativos de
