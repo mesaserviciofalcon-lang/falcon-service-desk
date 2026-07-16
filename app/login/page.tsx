@@ -108,7 +108,7 @@ const redirectTo =
 
         <div className="absolute inset-0 bg-gradient-to-b from-[#052b17]/45 via-[#052b17]/10 to-[#052b17]/80" />
 
-        <div className="relative z-10 flex min-h-screen w-full flex-col p-10 xl:p-12">
+        <div className="relative z-10 flex min-h-screen w-full flex-col px-10 pb-10 pt-5 xl:px-12 xl:pb-12 xl:pt-6">
 
           <div className="flex justify-center">
 
