@@ -87,45 +87,55 @@ const redirectTo =
 
       {/* PANEL IZQUIERDO */}
 
-      <div className="hidden lg:flex relative w-1/2 min-h-screen overflow-hidden text-white">
+      <div className="hidden lg:flex w-1/2 min-h-screen overflow-hidden bg-[#052b17] text-white">
 
-        <Image
+        <div className="flex min-h-screen w-full flex-col p-10 xl:p-12">
 
-          src="/login-equipo-seguridad.webp"
+          <div className="flex justify-center">
 
-          alt="Equipo de seguridad Falcon Farms"
+            <div className="bg-white p-3 rounded-full shadow-2xl">
 
-          fill
+              <Image
 
-          priority
+                src="/logo-falcon.png"
 
-          sizes="50vw"
+                alt="Falcon"
 
-          className="object-cover object-center"
-        />
+                width={118}
 
-        <div className="absolute inset-0 bg-gradient-to-r from-[#052b17]/95 via-[#052b17]/65 to-[#052b17]/25" />
+                height={118}
 
-        <div className="relative z-10 flex h-full w-full flex-col p-12 xl:p-16">
+                className="rounded-full"
+              />
 
-          <div className="bg-white p-3 rounded-full shadow-2xl w-fit">
+            </div>
+
+          </div>
+
+          <div className="relative my-8 min-h-0 flex-1 overflow-hidden rounded-2xl bg-[#082f1b] shadow-2xl">
 
             <Image
 
-              src="/logo-falcon.png"
+              src="/login-equipo-seguridad.webp"
 
-              alt="Falcon"
+              alt="Equipo de seguridad Falcon Farms"
 
-              width={112}
+              fill
 
-              height={112}
+              priority
 
-              className="rounded-full"
+              quality={95}
+
+              sizes="50vw"
+
+              className="object-contain object-center"
             />
 
           </div>
 
-          <h1 className="mt-auto text-5xl font-bold leading-tight mb-6 max-w-xl">
+          <div className="mx-auto max-w-xl text-center">
+
+          <h1 className="text-5xl font-bold leading-tight mb-5">
 
             Falcon
             <span className="text-[#2FAE4A]">
@@ -135,13 +145,15 @@ const redirectTo =
 
           </h1>
 
-          <p className="text-xl text-green-100 leading-relaxed max-w-xl">
+          <p className="text-xl text-green-100 leading-relaxed">
 
             Plataforma corporativa para la gestión
             de tickets y procesos operativos de
             seguridad.
 
           </p>
+
+          </div>
 
         </div>
 
