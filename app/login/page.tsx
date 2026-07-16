@@ -112,7 +112,7 @@ const redirectTo =
 
           <div className="flex justify-center">
 
-            <div className="bg-white p-3 rounded-full shadow-2xl">
+            <div className="rounded-full border-2 border-white bg-white/90 shadow-2xl">
 
               <Image
 
