@@ -83,15 +83,32 @@ const redirectTo =
 
   return (
 
-    <div className="min-h-screen flex bg-gradient-to-br from-[#0F3D1F] via-[#14532d] to-black">
+    <div className="min-h-screen flex bg-[#F4F6F8]">
 
       {/* PANEL IZQUIERDO */}
 
-      <div className="hidden lg:flex w-1/2 flex-col justify-center items-center p-16 text-white">
+      <div className="hidden lg:flex relative w-1/2 min-h-screen overflow-hidden text-white">
 
-        <div className="flex flex-col items-center text-center max-w-xl">
+        <Image
 
-          <div className="bg-white p-4 rounded-full shadow-2xl mb-8">
+          src="/login-equipo-seguridad.webp"
+
+          alt="Equipo de seguridad Falcon Farms"
+
+          fill
+
+          priority
+
+          sizes="50vw"
+
+          className="object-cover object-center"
+        />
+
+        <div className="absolute inset-0 bg-gradient-to-r from-[#052b17]/95 via-[#052b17]/65 to-[#052b17]/25" />
+
+        <div className="relative z-10 flex h-full w-full flex-col p-12 xl:p-16">
+
+          <div className="bg-white p-3 rounded-full shadow-2xl w-fit">
 
             <Image
 
@@ -99,16 +116,16 @@ const redirectTo =
 
               alt="Falcon"
 
-              width={180}
+              width={112}
 
-              height={180}
+              height={112}
 
               className="rounded-full"
             />
 
           </div>
 
-          <h1 className="text-5xl font-bold leading-tight mb-6">
+          <h1 className="mt-auto text-5xl font-bold leading-tight mb-6 max-w-xl">
 
             Falcon
             <span className="text-[#2FAE4A]">
@@ -118,7 +135,7 @@ const redirectTo =
 
           </h1>
 
-          <p className="text-xl text-green-100 leading-relaxed">
+          <p className="text-xl text-green-100 leading-relaxed max-w-xl">
 
             Plataforma corporativa para la gestión
             de tickets y procesos operativos de

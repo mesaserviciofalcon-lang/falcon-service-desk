@@ -1,34 +1,47 @@
-import ReabrirTicket
-from "@/components/ReabrirTicket";
-
 import { getServerSession }
 from "next-auth";
 
 import { authOptions }
 from "@/lib/auth";
 
-import GestionTicket
-from "@/components/GestionTicket";
-
-import TicketCard
-from "@/components/TicketCard";
-
 import FiltrosTickets
 from "@/components/FiltrosTickets";
 
-import { getAppUrl }
-from "@/lib/appUrl";
+import { prisma }
+from "@/lib/prisma";
 
 async function obtenerSolicitudes() {
 
-  const response = await fetch(
-    `${getAppUrl()}/api/solicitudes`,
-    {
-      cache: "no-store",
-    }
-  );
+  return prisma.solicitud.findMany({
 
-  return response.json();
+    include: {
+
+      cctv: true,
+
+      visita: true,
+
+      radio: true,
+
+      antecedente: true,
+
+      novedad: true,
+
+      gestiones: {
+
+        orderBy: {
+          fecha: "desc",
+        },
+      },
+
+      archivos: true,
+    },
+
+    orderBy: {
+
+      fechaCreacion:
+        "desc",
+    },
+  });
 }
 
 export default async function TicketsPage() {
