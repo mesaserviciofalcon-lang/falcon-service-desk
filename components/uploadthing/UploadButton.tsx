@@ -94,14 +94,46 @@ export default function UploadButton({
         appearance={{
 
           button:
-            "bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800",
+            "ut-ready:bg-black ut-uploading:bg-gray-800 bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 border border-black shadow-sm transition min-w-52 justify-center",
 
           container:
-            "flex flex-col items-center gap-2 border-2 border-dashed border-gray-300 rounded-xl p-6",
+            "flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 rounded-xl p-6 bg-white",
 
           allowedContent:
             "text-gray-500 text-sm",
 
+        }}
+
+        content={{
+
+          button({
+            ready,
+            isUploading,
+            uploadProgress,
+          }) {
+
+            if (!ready) {
+
+              return "Preparando...";
+            }
+
+            if (isUploading) {
+
+              return `Subiendo ${uploadProgress}%`;
+            }
+
+            return "Seleccionar archivos";
+          },
+
+          allowedContent() {
+
+            return `Imágenes, PDF y archivos hasta ${MAX_FILE_SIZE_MB} MB`;
+          },
+
+          clearBtn() {
+
+            return "Quitar";
+          },
         }}
       />
 

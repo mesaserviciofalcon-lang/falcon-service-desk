@@ -46,3 +46,18 @@ select option {
   background-color: #ffffff;
   color: #171717;
 }
+
+input[type="file"] {
+  background-color: #000000;
+  color: #ffffff;
+  border-color: #000000;
+}
+
+input[type="file"]::file-selector-button {
+  background-color: #000000;
+  color: #ffffff;
+  border: 0;
+  padding: 0.75rem 1rem;
+  margin-right: 0.75rem;
+  cursor: pointer;
+}
