@@ -22,6 +22,15 @@ export async function GET() {
         include: {
 
           visita: true,
+
+          gestiones: {
+
+            orderBy: {
+              fecha: "desc",
+            },
+
+            take: 1,
+          },
         },
 
         orderBy: {
@@ -44,6 +53,10 @@ export async function GET() {
         CEDULA:
           item.visita
             ?.cedula,
+
+        FECHA_EXPEDICION:
+          item.visita
+            ?.fechaExpedicion,
 
         TELEFONO:
           item.visita
@@ -83,6 +96,12 @@ export async function GET() {
         OBSERVACIONES:
           item.visita
             ?.observaciones,
+
+        OBSERVACION_TECNICA:
+          item.gestiones?.[0]
+            ?.observacion ||
+          item.observacionesTecnico ||
+          "",
 
         FECHA_CREACION:
           formatearFechaColombia(

@@ -151,6 +151,9 @@ export async function POST(
             cedula:
               body.cedula,
 
+            fechaExpedicion:
+              body.fechaExpedicion,
+
             telefono:
               body.telefono,
 

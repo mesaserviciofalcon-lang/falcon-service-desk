@@ -193,6 +193,21 @@ export default function TicketCard({
           <p>
 
             <strong>
+              Fecha expedición:
+            </strong>
+
+            {" "}
+
+            {
+              solicitud.visita
+                ?.fechaExpedicion
+            }
+
+          </p>
+
+          <p>
+
+            <strong>
               Teléfono:
             </strong>
 

@@ -62,6 +62,11 @@ export default function SolicitudesPage() {
   ] = useState("");
 
   const [
+    fechaExpedicion,
+    setFechaExpedicion
+  ] = useState("");
+
+  const [
     telefono,
     setTelefono
   ] = useState("");
@@ -184,6 +189,8 @@ const [
               nombreCandidato,
 
               cedula,
+
+              fechaExpedicion,
 
               telefono,
 
@@ -403,6 +410,26 @@ setTimeout(() => {
                 )
               }
             />
+
+            <div className="flex flex-col gap-1">
+
+              <label className="text-sm text-gray-600">
+                Fecha de expedición de la cédula
+              </label>
+
+              <input
+                type="date"
+                className="border p-3 rounded-lg"
+                required
+                value={fechaExpedicion}
+                onChange={(e) =>
+                  setFechaExpedicion(
+                    e.target.value
+                  )
+                }
+              />
+
+            </div>
 
             <input
               type="text"
