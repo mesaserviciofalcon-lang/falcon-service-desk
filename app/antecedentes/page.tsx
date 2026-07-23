@@ -239,12 +239,19 @@ export default async function AntecedentesPage({
                           {registro.observaciones || ""}
                         </td>
                         <td className="border p-2">
-                          <a
-                            href={`/tickets/${registro.solicitudId}`}
-                            className="text-blue-600 underline"
-                          >
-                            #{registro.solicitudId}
-                          </a>
+                          {registro.solicitud
+                            .antecedente
+                            ?.fincaEAI ===
+                          "HISTORICO"
+                            ? "Historico"
+                            : (
+                              <a
+                                href={`/tickets/${registro.solicitudId}`}
+                                className="text-blue-600 underline"
+                              >
+                                #{registro.solicitudId}
+                              </a>
+                            )}
                         </td>
                       </>
                     )}

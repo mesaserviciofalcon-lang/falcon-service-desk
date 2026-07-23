@@ -16,6 +16,9 @@ from "@/lib/fecha";
 import { solicitantePuedeVerSolicitud }
 from "@/lib/visibilidadSolicitudes";
 
+import { ocultarSolicitudesHistoricas }
+from "@/lib/solicitudesHistoricas";
+
 function obtenerFincaTicket(
   ticket: any
 ) {
@@ -48,7 +51,8 @@ export default async function DashboardPage() {
   // TODOS LOS TICKETS
 
   const solicitudes =
-    await prisma.solicitud.findMany({
+    ocultarSolicitudesHistoricas(
+      await prisma.solicitud.findMany({
 
       include: {
 
@@ -67,7 +71,8 @@ export default async function DashboardPage() {
         fechaCreacion:
           "desc",
       },
-    });
+    })
+    );
 
   // FILTRO POR ROL
 

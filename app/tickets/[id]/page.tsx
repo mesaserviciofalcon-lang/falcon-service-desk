@@ -13,6 +13,9 @@ from "@/components/TicketCard";
 import { solicitantePuedeVerSolicitud }
 from "@/lib/visibilidadSolicitudes";
 
+import { esSolicitudHistorica }
+from "@/lib/solicitudesHistoricas";
+
 export default async function TicketDetalle({
 
   params,
@@ -73,7 +76,10 @@ export default async function TicketDetalle({
       },
     });
 
-  if (!solicitud) {
+  if (
+    !solicitud ||
+    esSolicitudHistorica(solicitud)
+  ) {
 
     return (
 

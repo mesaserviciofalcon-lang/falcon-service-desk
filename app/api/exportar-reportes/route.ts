@@ -6,6 +6,9 @@ from "xlsx";
 import { formatearFechaColombia }
 from "@/lib/fecha";
 
+import { ocultarSolicitudesHistoricas }
+from "@/lib/solicitudesHistoricas";
+
 export async function GET(
   request: Request
 ) {
@@ -39,7 +42,8 @@ export async function GET(
     }
 
     const solicitudes =
-      await prisma.solicitud.findMany({
+      ocultarSolicitudesHistoricas(
+        await prisma.solicitud.findMany({
 
         where: {
           tipo,
@@ -79,7 +83,8 @@ export async function GET(
           fechaCreacion:
             "desc",
         },
-      });
+      })
+      );
 
     let data: any[] = [];
 

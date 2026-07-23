@@ -17,6 +17,9 @@ ticketAsignadoTemplate,
 import { leerRegistrosAntecedentesDesdeUrl }
 from "@/lib/antecedentesExcel";
 
+import { ocultarSolicitudesHistoricas }
+from "@/lib/solicitudesHistoricas";
+
 export async function POST(
   request: Request
 ) {
@@ -499,7 +502,9 @@ export async function GET() {
       });
 
     return Response.json(
-      solicitudes
+      ocultarSolicitudesHistoricas(
+        solicitudes
+      )
     );
 
   } catch (error) {

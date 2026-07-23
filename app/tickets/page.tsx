@@ -13,6 +13,9 @@ from "@/lib/prisma";
 import { solicitantePuedeVerSolicitud }
 from "@/lib/visibilidadSolicitudes";
 
+import { ocultarSolicitudesHistoricas }
+from "@/lib/solicitudesHistoricas";
+
 async function obtenerSolicitudes() {
 
   return prisma.solicitud.findMany({
@@ -71,7 +74,9 @@ const fincaEAI =
   session?.user?.fincaEAI;
 
   const todasSolicitudes =
-    await obtenerSolicitudes();
+    ocultarSolicitudesHistoricas(
+      await obtenerSolicitudes()
+    );
 
   let solicitudes =
     todasSolicitudes;
