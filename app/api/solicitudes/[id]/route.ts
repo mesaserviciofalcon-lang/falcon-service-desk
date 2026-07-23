@@ -1,6 +1,12 @@
 import { prisma }
 from "@/lib/prisma";
 
+import { getServerSession }
+from "next-auth";
+
+import { authOptions }
+from "@/lib/auth";
+
 import { enviarCorreo }
 from "@/lib/email";
 
@@ -206,4 +212,126 @@ return Response.json(
     }
   );
 }
+}
+
+export async function DELETE(
+
+  _request: Request,
+
+  context: {
+
+    params: Promise<{
+      id: string;
+    }>;
+  }
+) {
+
+  const session =
+    await getServerSession(
+      authOptions
+    );
+
+  if (
+    session?.user?.role !==
+    "ADMIN"
+  ) {
+
+    return Response.json(
+
+      {
+        error:
+          "No tiene permiso para eliminar tickets",
+      },
+
+      {
+        status: 403,
+      }
+    );
+  }
+
+  try {
+
+    const params =
+      await context.params;
+
+    const id =
+      Number(params.id);
+
+    await prisma.$transaction([
+
+      prisma.gestionTicket.deleteMany({
+        where: {
+          solicitudId: id,
+        },
+      }),
+
+      prisma.archivoAdjunto.deleteMany({
+        where: {
+          solicitudId: id,
+        },
+      }),
+
+      prisma.antecedenteRegistro.deleteMany({
+        where: {
+          solicitudId: id,
+        },
+      }),
+
+      prisma.solicitudCCTV.deleteMany({
+        where: {
+          solicitudId: id,
+        },
+      }),
+
+      prisma.solicitudVisita.deleteMany({
+        where: {
+          solicitudId: id,
+        },
+      }),
+
+      prisma.solicitudRadio.deleteMany({
+        where: {
+          solicitudId: id,
+        },
+      }),
+
+      prisma.solicitudAntecedente.deleteMany({
+        where: {
+          solicitudId: id,
+        },
+      }),
+
+      prisma.seguridadNovedad.deleteMany({
+        where: {
+          solicitudId: id,
+        },
+      }),
+
+      prisma.solicitud.delete({
+        where: {
+          id,
+        },
+      }),
+    ]);
+
+    return Response.json({
+      ok: true,
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    return Response.json(
+
+      {
+        error:
+          "Error al eliminar ticket",
+      },
+
+      {
+        status: 500,
+      }
+    );
+  }
 }

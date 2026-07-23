@@ -7,6 +7,9 @@ from "@/components/GestionTicket";
 import AntecedentesTicketTable
 from "@/components/AntecedentesTicketTable";
 
+import EliminarTicketButton
+from "@/components/EliminarTicketButton";
+
 import { formatearFechaColombia }
 from "@/lib/fecha";
 
@@ -55,6 +58,19 @@ export default function TicketCard({
         </span>
 
       </div>
+
+      {role === "ADMIN" && (
+
+        <div className="mt-4 flex justify-end">
+
+          <EliminarTicketButton
+            ticketId={
+              solicitud.id
+            }
+          />
+
+        </div>
+      )}
 
       <div className="mt-4 flex flex-col gap-2">
 

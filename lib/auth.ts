@@ -56,6 +56,11 @@ NextAuthOptions = {
           return null;
         }
 
+        if (!usuario.activo) {
+
+          return null;
+        }
+
         const passwordValido =
           await bcrypt.compare(
 
@@ -106,6 +111,9 @@ NextAuthOptions = {
         token.role =
           (user as any).role;
 
+        token.id =
+          user.id;
+
         token.fincaEAI =
           (user as any).fincaEAI;
       }
@@ -122,6 +130,9 @@ NextAuthOptions = {
 
         session.user.role =
           token.role as string;
+
+        session.user.id =
+          token.id as string;
 
         session.user.fincaEAI =
           token.fincaEAI as string;

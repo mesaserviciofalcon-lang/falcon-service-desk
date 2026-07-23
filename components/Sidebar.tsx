@@ -21,6 +21,8 @@ import {
 
   FileWarning,
 
+  Users,
+
 } from "lucide-react";
 
 export default function Sidebar({
@@ -160,6 +162,19 @@ export default function Sidebar({
                 Acceso total
 
               </div>
+
+              <Link
+
+                href="/usuarios"
+
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
+              >
+
+                <Users size={20} />
+
+                Gestion de usuarios
+
+              </Link>
 
             </>
           )}

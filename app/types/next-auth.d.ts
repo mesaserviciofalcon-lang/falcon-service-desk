@@ -10,6 +10,8 @@ declare module "next-auth" {
 
     user: {
 
+      id?: string;
+
       role?: string;
 
       fincaEAI?: string;
@@ -23,6 +25,8 @@ declare module "next-auth/jwt" {
   interface JWT {
 
     role?: string;
+
+    id?: string;
 
     fincaEAI?: string;
   }

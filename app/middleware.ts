@@ -35,6 +35,26 @@ export default withAuth(
     const role =
       token.role as string;
 
+    if (
+
+      pathname.includes(
+        "/usuarios"
+      )
+
+      &&
+
+      role !== "ADMIN"
+
+    ) {
+
+      return NextResponse.redirect(
+        new URL(
+          "/dashboard",
+          req.url
+        )
+      );
+    }
+
     // VISITA
 
     if (
@@ -101,6 +121,8 @@ export const config = {
     "/tickets/:path*",
 
     "/antecedentes/:path*",
+
+    "/usuarios/:path*",
 
     "/solicitudes/:path*",
 
