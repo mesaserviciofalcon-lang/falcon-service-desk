@@ -56,6 +56,14 @@ export async function POST(
       );
     }
 
+    const registrosAntecedentes =
+      body.tipo === "ANTECEDENTES"
+        ? await leerRegistrosAntecedentesDesdeUrl(
+            archivoAntecedentesExcel.url,
+            archivoAntecedentesExcel.nombre
+          )
+        : [];
+
     let asignadoA = "";
 
     // ASIGNACIONES
@@ -269,20 +277,16 @@ export async function POST(
           },
         });
 
-      const registros =
-        await leerRegistrosAntecedentesDesdeUrl(
-          archivoAntecedentesExcel.url,
-          archivoAntecedentesExcel.nombre
-        );
-
-      if (registros.length > 0) {
+      if (
+        registrosAntecedentes.length > 0
+      ) {
 
         await prisma
           .antecedenteRegistro
           .createMany({
 
             data:
-              registros.map(
+              registrosAntecedentes.map(
                 (registro) => ({
 
                   solicitudId:
@@ -437,7 +441,7 @@ if (
       solicitud
     );
 
-  } catch (error) {
+  } catch (error: any) {
 
     console.error(error);
 
@@ -445,11 +449,12 @@ if (
 
       {
         error:
+          error.message ||
           "Error al crear solicitud",
       },
 
       {
-        status: 500,
+        status: 400,
       }
     );
   }
