@@ -4,6 +4,9 @@ from "@/components/ReabrirTicket";
 import GestionTicket
 from "@/components/GestionTicket";
 
+import AntecedentesTicketTable
+from "@/components/AntecedentesTicketTable";
+
 import { formatearFechaColombia }
 from "@/lib/fecha";
 
@@ -423,6 +426,26 @@ export default function TicketCard({
           </p>
 
         </div>
+      )}
+
+      {solicitud.tipo ===
+        "ANTECEDENTES" && (
+
+        <AntecedentesTicketTable
+
+          registros={
+            solicitud
+              .antecedentesRegistros ||
+            []
+          }
+
+          role={role}
+
+          solicitudId={
+            solicitud.id
+          }
+
+        />
       )}
 
       {/* NOVEDAD */}

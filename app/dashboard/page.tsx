@@ -13,6 +13,9 @@ from "next/link";
 import { formatearFechaColombia }
 from "@/lib/fecha";
 
+import { solicitantePuedeVerSolicitud }
+from "@/lib/visibilidadSolicitudes";
+
 export default async function DashboardPage() {
 
   const session =
@@ -26,10 +29,18 @@ export default async function DashboardPage() {
   const email =
     session?.user?.email;
 
+  const fincaEAI =
+    session?.user?.fincaEAI;
+
   // TODOS LOS TICKETS
 
   const solicitudes =
     await prisma.solicitud.findMany({
+
+      include: {
+
+        antecedente: true,
+      },
 
       orderBy: {
         fechaCreacion:
@@ -72,8 +83,11 @@ hace3Dias.setDate(
 
         return (
 
-          s.correoSolicitante ===
-            email
+          solicitantePuedeVerSolicitud(
+            s,
+            email,
+            fincaEAI
+          )
 
           &&
 

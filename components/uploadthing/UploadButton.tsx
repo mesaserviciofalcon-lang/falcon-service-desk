@@ -20,6 +20,10 @@ export default function UploadButton({
 
   onComplete,
 
+  allowedExtensions,
+
+  requiredFileName,
+
 }: any) {
 
   return (
@@ -31,6 +35,51 @@ export default function UploadButton({
         endpoint="archivoUploader"
 
         onBeforeUploadBegin={(files) => {
+
+          if (requiredFileName) {
+            const archivoNombreIncorrecto =
+              files.find(
+                (file) =>
+                  file.name !==
+                  requiredFileName
+              );
+
+            if (archivoNombreIncorrecto) {
+              alert(
+                `No fue posible subir este archivo. El archivo debe llamarse "${requiredFileName}" y actualmente se llama "${archivoNombreIncorrecto.name}".`
+              );
+
+              return [];
+            }
+          }
+
+          if (
+            allowedExtensions?.length
+          ) {
+            const archivoNoPermitido =
+              files.find((file) => {
+                const extension =
+                  file.name
+                    .split(".")
+                    .pop()
+                    ?.toLowerCase();
+
+                return (
+                  !extension ||
+                  !allowedExtensions.includes(
+                    extension
+                  )
+                );
+              });
+
+            if (archivoNoPermitido) {
+              alert(
+                `El archivo "${archivoNoPermitido.name}" no tiene un formato permitido. Use únicamente Excel (.xlsx o .xls).`
+              );
+
+              return [];
+            }
+          }
 
           const archivoGrande =
             files.find(
@@ -126,6 +175,12 @@ export default function UploadButton({
           },
 
           allowedContent() {
+
+            if (
+              allowedExtensions?.length
+            ) {
+              return `Solo Excel (.xlsx o .xls) hasta ${MAX_FILE_SIZE_MB} MB`;
+            }
 
             return `Imágenes, PDF y archivos hasta ${MAX_FILE_SIZE_MB} MB`;
           },

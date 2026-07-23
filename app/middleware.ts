@@ -100,6 +100,8 @@ export const config = {
 
     "/tickets/:path*",
 
+    "/antecedentes/:path*",
+
     "/solicitudes/:path*",
 
     "/cambiar-password/:path*",

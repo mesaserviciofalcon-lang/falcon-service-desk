@@ -126,6 +126,19 @@ export default function Sidebar({
 
           </Link>
 
+          <Link
+
+            href="/antecedentes"
+
+            className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
+          >
+
+            <ShieldCheck size={20} />
+
+            Antecedentes
+
+          </Link>
+
           {/* ADMIN */}
 
           {role === "ADMIN" && (

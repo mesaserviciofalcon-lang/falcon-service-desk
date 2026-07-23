@@ -14,6 +14,9 @@ ticketAsignadoTemplate,
 
 } from "@/lib/templatesEmail";
 
+import { leerRegistrosAntecedentesDesdeUrl }
+from "@/lib/antecedentesExcel";
+
 export async function POST(
   request: Request
 ) {
@@ -22,6 +25,36 @@ export async function POST(
 
     const body =
       await request.json();
+
+    const archivoAntecedentesExcel =
+      body.tipo === "ANTECEDENTES"
+        ? body.archivos?.find(
+            (archivo: any) =>
+              archivo.tipo?.includes(
+                "sheet"
+              ) ||
+              archivo.nombre?.match(
+                /\.(xlsx|xls)$/i
+              )
+          )
+        : null;
+
+    if (
+      body.tipo === "ANTECEDENTES" &&
+      !archivoAntecedentesExcel?.url
+    ) {
+      return Response.json(
+
+        {
+          error:
+            "Debe adjuntar un archivo Excel para antecedentes",
+        },
+
+        {
+          status: 400,
+        }
+      );
+    }
 
     let asignadoA = "";
 
@@ -235,6 +268,51 @@ export async function POST(
               body.descripcion,
           },
         });
+
+      const registros =
+        await leerRegistrosAntecedentesDesdeUrl(
+          archivoAntecedentesExcel.url,
+          archivoAntecedentesExcel.nombre
+        );
+
+      if (registros.length > 0) {
+
+        await prisma
+          .antecedenteRegistro
+          .createMany({
+
+            data:
+              registros.map(
+                (registro) => ({
+
+                  solicitudId:
+                    solicitud.id,
+
+                  fechaSolicitud:
+                    registro.fechaSolicitud,
+
+                  fechaRespuesta:
+                    registro.fechaRespuesta,
+
+                  eai:
+                    registro.eai,
+
+                  nombresApellidos:
+                    registro.nombresApellidos,
+
+                  tipoDocumento:
+                    registro.tipoDocumento,
+
+                  identificacion:
+                    registro.identificacion,
+
+                  fechaExpedicionDocumento:
+                    registro
+                      .fechaExpedicionDocumento,
+                })
+              ),
+          });
+      }
     }
 
     // NOVEDAD SEGURIDAD
@@ -393,6 +471,8 @@ export async function GET() {
           radio: true,
 
           antecedente: true,
+
+          antecedentesRegistros: true,
 
           novedad: true,
 

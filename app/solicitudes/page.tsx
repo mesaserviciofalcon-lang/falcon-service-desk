@@ -13,6 +13,9 @@ from "next-auth/react";
 
 import UploadButton from "@/components/uploadthing/UploadButton";
 
+import { nombrePlantillaAntecedentes }
+from "@/lib/antecedentesPlantilla";
+
 export default function SolicitudesPage() {
 
   const router =
@@ -155,6 +158,27 @@ const [
 
   if (guardando) return;
 
+  const tieneExcelAntecedentes =
+    archivos.some(
+      (archivo: any) =>
+        archivo.tipo?.includes(
+          "sheet"
+        ) ||
+        archivo.nombre?.match(
+          /\.(xlsx|xls)$/i
+        )
+    );
+
+  if (
+    tipo === "ANTECEDENTES" &&
+    !tieneExcelAntecedentes
+  ) {
+    toast.error(
+      "Debe adjuntar un archivo Excel para antecedentes"
+    );
+    return;
+  }
+
   setGuardando(true);
 
     try {
@@ -217,7 +241,11 @@ const [
 
       if (!response.ok) {
 
+        const errorData =
+          await response.json();
+
         throw new Error(
+          errorData.error ||
           "Error"
         );
       }
@@ -258,7 +286,9 @@ setTimeout(() => {
   setGuardando(false);
 
   toast.error(
-    "Error al guardar solicitud"
+    error instanceof Error
+      ? error.message
+      : "Error al guardar solicitud"
   );
 } }
 
@@ -641,6 +671,18 @@ setTimeout(() => {
         {/* ARCHIVOS */}
 
 <UploadButton
+
+  allowedExtensions={
+    tipo === "ANTECEDENTES"
+      ? ["xlsx", "xls"]
+      : undefined
+  }
+
+  requiredFileName={
+    tipo === "ANTECEDENTES"
+      ? nombrePlantillaAntecedentes
+      : undefined
+  }
 
   onComplete={(
 

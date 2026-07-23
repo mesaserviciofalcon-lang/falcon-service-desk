@@ -10,6 +10,9 @@ from "@/components/FiltrosTickets";
 import { prisma }
 from "@/lib/prisma";
 
+import { solicitantePuedeVerSolicitud }
+from "@/lib/visibilidadSolicitudes";
+
 async function obtenerSolicitudes() {
 
   return prisma.solicitud.findMany({
@@ -23,6 +26,13 @@ async function obtenerSolicitudes() {
       radio: true,
 
       antecedente: true,
+
+      antecedentesRegistros: {
+
+        orderBy: {
+          id: "asc",
+        },
+      },
 
       novedad: true,
 
@@ -56,6 +66,9 @@ export default async function TicketsPage() {
 
 const email =
   session?.user?.email;
+
+const fincaEAI =
+  session?.user?.fincaEAI;
 
   const todasSolicitudes =
     await obtenerSolicitudes();
@@ -151,9 +164,11 @@ if (role === "SOLICITANTE") {
 
         return (
 
-          solicitud
-            .correoSolicitante ===
-          email
+          solicitantePuedeVerSolicitud(
+            solicitud,
+            email,
+            fincaEAI
+          )
 
           &&
 

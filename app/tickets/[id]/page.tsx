@@ -10,6 +10,9 @@ from "@/lib/auth";
 import TicketCard
 from "@/components/TicketCard";
 
+import { solicitantePuedeVerSolicitud }
+from "@/lib/visibilidadSolicitudes";
+
 export default async function TicketDetalle({
 
   params,
@@ -50,6 +53,13 @@ export default async function TicketDetalle({
 
         antecedente: true,
 
+        antecedentesRegistros: {
+
+          orderBy: {
+            id: "asc",
+          },
+        },
+
         novedad: true,
 
         archivos: true,
@@ -70,6 +80,25 @@ export default async function TicketDetalle({
       <div className="p-8">
 
         Ticket no encontrado
+
+      </div>
+    );
+  }
+
+  if (
+    session?.user?.role === "SOLICITANTE" &&
+    !solicitantePuedeVerSolicitud(
+      solicitud,
+      session.user.email,
+      session.user.fincaEAI
+    )
+  ) {
+
+    return (
+
+      <div className="p-8">
+
+        No tiene permiso para ver este ticket
 
       </div>
     );

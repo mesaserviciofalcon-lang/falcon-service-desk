@@ -8,208 +8,241 @@ datasource db {
 }
 
 model Solicitud {
+  id Int @id @default(autoincrement())
 
-  id                     Int      @id @default(autoincrement())
+  tipo String
 
-  tipo                   String
+  solicitante String
 
-  solicitante            String
+  correoSolicitante String?
 
-  correoSolicitante      String?
+  estado String @default("Pendiente")
 
-  estado                 String   @default("Pendiente")
+  asignadoA String?
 
-  asignadoA              String?
+  fechaCreacion DateTime @default(now())
 
-  fechaCreacion          DateTime @default(now())
+  fechaCierre DateTime?
 
-  fechaCierre            DateTime?
+  observacionesTecnico String?
 
-  observacionesTecnico   String?
+  gestionadoPor String?
 
-  gestionadoPor          String?
+  fechaGestion DateTime?
 
-  fechaGestion           DateTime?
+  gestiones GestionTicket[]
 
-  gestiones              GestionTicket[]
+  archivos ArchivoAdjunto[]
 
-  archivos               ArchivoAdjunto[]
+  cctv SolicitudCCTV?
 
-  cctv                   SolicitudCCTV?
+  visita SolicitudVisita?
 
-  visita                 SolicitudVisita?
+  radio SolicitudRadio?
 
-  radio                  SolicitudRadio?
+  antecedente SolicitudAntecedente?
 
-  antecedente            SolicitudAntecedente?
+  antecedentesRegistros AntecedenteRegistro[]
 
-  novedad                SeguridadNovedad?
+  novedad SeguridadNovedad?
 }
 
 model GestionTicket {
+  id Int @id @default(autoincrement())
 
-  id                     Int      @id @default(autoincrement())
+  solicitudId Int
 
-  solicitudId            Int
+  solicitud Solicitud @relation(fields: [solicitudId], references: [id])
 
-  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+  usuario String
 
-  usuario                String
+  estado String
 
-  estado                 String
+  observacion String
 
-  observacion            String
-
-  fecha                  DateTime @default(now())
+  fecha DateTime @default(now())
 }
 
 model ArchivoAdjunto {
+  id Int @id @default(autoincrement())
 
-  id                     Int      @id @default(autoincrement())
+  solicitudId Int
 
-  solicitudId            Int
+  solicitud Solicitud @relation(fields: [solicitudId], references: [id])
 
-  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+  nombre String
 
-  nombre                 String
+  ruta String
 
-  ruta                   String
+  tipo String
 
-  tipo                   String
-
-  createdAt              DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model SolicitudCCTV {
+  id Int @id @default(autoincrement())
 
-  id                     Int      @id @default(autoincrement())
+  solicitudId Int @unique
 
-  solicitudId            Int      @unique
+  solicitud Solicitud @relation(fields: [solicitudId], references: [id])
 
-  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+  fincaEAI String?
 
-  fincaEAI               String?
+  camaraAfectada String?
 
-  camaraAfectada         String?
+  descripcionFalla String?
 
-  descripcionFalla       String?
+  prioridad String?
 
-  prioridad              String?
-
-  observaciones          String?
+  observaciones String?
 }
 
 model SolicitudVisita {
+  id Int @id @default(autoincrement())
 
-  id                     Int      @id @default(autoincrement())
+  solicitudId Int @unique
 
-  solicitudId            Int      @unique
+  solicitud Solicitud @relation(fields: [solicitudId], references: [id])
 
-  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+  nombreCandidato String?
 
-  nombreCandidato        String?
+  cedula String?
 
-  cedula                 String?
+  fechaExpedicion String?
 
-  fechaExpedicion        String?
+  telefono String?
 
-  telefono               String?
+  direccion String?
 
-  direccion              String?
+  municipio String?
 
-  municipio              String?
+  zona String?
 
-  zona                   String?
+  cargo String?
 
-  cargo                  String?
+  fincaEAI String?
 
-  fincaEAI               String?
+  motivoVisita String?
 
-  motivoVisita           String?
+  fechaRealizada DateTime?
 
-  fechaRealizada         DateTime?
+  observaciones String?
 
-  observaciones          String?
-
-  resultadoVisita        String?
+  resultadoVisita String?
 }
 
 model SolicitudRadio {
+  id Int @id @default(autoincrement())
 
-  id                     Int      @id @default(autoincrement())
+  solicitudId Int @unique
 
-  solicitudId            Int      @unique
+  solicitud Solicitud @relation(fields: [solicitudId], references: [id])
 
-  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+  radio String?
 
-  radio                  String?
+  serial String?
 
-  serial                 String?
+  tipoFalla String?
 
-  tipoFalla              String?
+  fincaEAI String?
 
-  fincaEAI               String?
+  descripcion String?
 
-  descripcion            String?
+  prioridad String?
 
-  prioridad              String?
-
-  observaciones          String?
+  observaciones String?
 }
 
 model Usuario {
+  id Int @id @default(autoincrement())
 
-  id                     Int      @id @default(autoincrement())
+  nombre String
 
-  nombre                 String
+  email String @unique
 
-  email                  String   @unique
+  password String
 
-  password               String
+  rol String
 
-  rol                    String
+  fincaEAI String?
 
-  fincaEAI               String?
+  activo Boolean @default(true)
 
-  activo                 Boolean  @default(true)
-
-  createdAt              DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model SolicitudAntecedente {
+  id Int @id @default(autoincrement())
 
-  id                     Int      @id @default(autoincrement())
+  solicitudId Int @unique
 
-  solicitudId            Int      @unique
+  solicitud Solicitud @relation(fields: [solicitudId], references: [id])
 
-  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+  fincaEAI String?
 
-  fincaEAI               String?
+  observaciones String?
 
-  observaciones          String?
+  prioridad String?
+}
 
-  prioridad              String?
+model AntecedenteRegistro {
+  id Int @id @default(autoincrement())
+
+  solicitudId Int
+
+  solicitud Solicitud @relation(fields: [solicitudId], references: [id])
+
+  fechaSolicitud String?
+
+  fechaRespuesta String?
+
+  eai String?
+
+  nombresApellidos String?
+
+  tipoDocumento String?
+
+  identificacion String
+
+  fechaExpedicionDocumento String?
+
+  observacion String?
+
+  revisadoPor String?
+
+  motivo String?
+
+  autorizacion String?
+
+  observaciones String?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([identificacion])
+  @@index([eai])
+  @@index([solicitudId])
 }
 
 model SeguridadNovedad {
+  id Int @id @default(autoincrement())
 
-  id                     Int      @id @default(autoincrement())
+  solicitudId Int @unique
 
-  solicitudId            Int      @unique
+  solicitud Solicitud @relation(fields: [solicitudId], references: [id])
 
-  solicitud              Solicitud @relation(fields: [solicitudId], references: [id])
+  fincaEAI String?
 
-  fincaEAI               String?
-
-  contexto               String?
+  contexto String?
 }
+
 model PasswordResetToken {
+  id Int @id @default(autoincrement())
 
-  id        Int      @id @default(autoincrement())
+  email String
 
-  email     String
-
-  token     String   @unique
+  token String @unique
 
   expiresAt DateTime
 

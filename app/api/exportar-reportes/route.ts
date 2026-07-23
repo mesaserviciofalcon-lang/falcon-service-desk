@@ -55,6 +55,13 @@ export async function GET(
 
           antecedente: true,
 
+          antecedentesRegistros: {
+
+            orderBy: {
+              id: "asc",
+            },
+          },
+
           novedad: true,
 
           gestiones: {
@@ -241,8 +248,12 @@ export async function GET(
     ) {
 
       data =
-        solicitudes.map(
-          (item: any) => ({
+        solicitudes.flatMap(
+          (item: any) =>
+            item.antecedentesRegistros
+              ?.length
+              ? item.antecedentesRegistros.map(
+                  (registro: any) => ({
 
             ID:
               item.id,
@@ -251,12 +262,54 @@ export async function GET(
               item.solicitante,
 
             FINCA:
+              registro.eai ||
               item.antecedente
-                ?.fincaEAI,
+                ?.fincaEAI ||
+              "",
+
+            FECHA_SOLICITUD:
+              registro
+                .fechaSolicitud,
+
+            FECHA_RESPUESTA:
+              registro
+                .fechaRespuesta,
+
+            NOMBRES_Y_APELLIDOS:
+              registro
+                .nombresApellidos,
+
+            TIPO_DOCUMENTO:
+              registro
+                .tipoDocumento,
+
+            IDENTIFICACION:
+              registro
+                .identificacion,
+
+            FECHA_EXPEDICION_DOCUMENTO:
+              registro
+                .fechaExpedicionDocumento,
+
+            OBSERVACION:
+              registro
+                .observacion,
+
+            REVISADO_POR:
+              registro
+                .revisadoPor,
+
+            MOTIVO:
+              registro
+                .motivo,
+
+            AUTORIZACION:
+              registro
+                .autorizacion,
 
             OBSERVACIONES:
-              item.antecedente
-                ?.observaciones,
+              registro
+                .observaciones,
 
             PRIORIDAD:
               item.antecedente
@@ -269,7 +322,36 @@ export async function GET(
               formatearFechaColombia(
                 item.fechaCreacion
               ),
-          })
+                  })
+                )
+              : [{
+
+                  ID:
+                    item.id,
+
+                  SOLICITANTE:
+                    item.solicitante,
+
+                  FINCA:
+                    item.antecedente
+                      ?.fincaEAI,
+
+                  OBSERVACIONES:
+                    item.antecedente
+                      ?.observaciones,
+
+                  PRIORIDAD:
+                    item.antecedente
+                      ?.prioridad,
+
+                  ESTADO:
+                    item.estado,
+
+                  FECHA:
+                    formatearFechaColombia(
+                      item.fechaCreacion
+                    ),
+                }]
         );
     }
 
