@@ -16,6 +16,19 @@ from "@/lib/fecha";
 import { solicitantePuedeVerSolicitud }
 from "@/lib/visibilidadSolicitudes";
 
+function obtenerFincaTicket(
+  ticket: any
+) {
+  return (
+    ticket.cctv?.fincaEAI ||
+    ticket.visita?.fincaEAI ||
+    ticket.radio?.fincaEAI ||
+    ticket.antecedente?.fincaEAI ||
+    ticket.novedad?.fincaEAI ||
+    "Sin finca"
+  );
+}
+
 export default async function DashboardPage() {
 
   const session =
@@ -39,7 +52,15 @@ export default async function DashboardPage() {
 
       include: {
 
+        cctv: true,
+
+        visita: true,
+
+        radio: true,
+
         antecedente: true,
+
+        novedad: true,
       },
 
       orderBy: {
@@ -401,6 +422,10 @@ hace3Dias.setDate(
                 </th>
 
                 <th className="text-left p-3">
+                  Finca
+                </th>
+
+                <th className="text-left p-3">
                   Estado
                 </th>
 
@@ -452,6 +477,12 @@ hace3Dias.setDate(
 
                   <td className="p-3">
                     {ticket.solicitante}
+                  </td>
+
+                  <td className="p-3">
+                    {obtenerFincaTicket(
+                      ticket
+                    )}
                   </td>
 
                   <td className="p-3">

@@ -16,6 +16,12 @@ import {
   tipoDocumentoOpciones,
 } from "@/lib/antecedentesCatalogos";
 
+import {
+  OBSERVACION_DOCUMENTO_NO_CORRESPONDE,
+  OBSERVACION_NO_TENER_EN_CUENTA,
+  validarRegistroAntecedente,
+} from "@/lib/validacionAntecedentesGestion";
+
 type Registro = {
   id: number;
   fechaSolicitud?: string | null;
@@ -31,6 +37,26 @@ type Registro = {
   autorizacion?: string | null;
   observaciones?: string | null;
 };
+
+function claseFilaPorObservacion(
+  observacion?: string | null
+) {
+  if (
+    observacion ===
+    OBSERVACION_NO_TENER_EN_CUENTA
+  ) {
+    return "align-top bg-yellow-100 text-red-700";
+  }
+
+  if (
+    observacion ===
+    OBSERVACION_DOCUMENTO_NO_CORRESPONDE
+  ) {
+    return "align-top bg-green-100 text-black";
+  }
+
+  return "align-top";
+}
 
 function SelectCampo({
   value,
@@ -77,8 +103,10 @@ export default function AntecedentesTicketTable({
   const [filas, setFilas] =
     useState(registros);
 
-  const [guardandoId, setGuardandoId] =
-    useState<number | null>(null);
+  const [
+    guardandoTodo,
+    setGuardandoTodo,
+  ] = useState(false);
 
   const puedeVerCompleto =
     puedeVerAntecedenteCompleto(role);
@@ -100,15 +128,23 @@ export default function AntecedentesTicketTable({
     );
   }
 
-  async function guardarFila(
-    fila: Registro
-  ) {
+  async function guardarTodo() {
     try {
-      setGuardandoId(fila.id);
+      const errorValidacion =
+        filas
+          .map(validarRegistroAntecedente)
+          .find(Boolean);
+
+      if (errorValidacion) {
+        toast.error(errorValidacion);
+        return;
+      }
+
+      setGuardandoTodo(true);
 
       const response =
         await fetch(
-          `/api/antecedentes/${fila.id}`,
+          `/api/antecedentes/guardar-ticket/${solicitudId}`,
           {
             method: "PATCH",
             headers: {
@@ -116,52 +152,42 @@ export default function AntecedentesTicketTable({
                 "application/json",
             },
             body: JSON.stringify({
-              eai: fila.eai,
-              tipoDocumento:
-                fila.tipoDocumento,
-              observacion:
-                fila.observacion,
-              revisadoPor:
-                fila.revisadoPor,
-              motivo: fila.motivo,
-              autorizacion:
-                fila.autorizacion,
-              observaciones:
-                fila.observaciones,
+              registros: filas,
             }),
           }
         );
 
       if (!response.ok) {
+        const data =
+          await response.json();
+
         throw new Error(
+          data.error ||
           "No se pudo guardar"
         );
       }
 
-      const registroActualizado =
+      const data =
         await response.json();
 
-      setFilas((actuales) =>
-        actuales.map((actual) =>
-          actual.id === fila.id
-            ? registroActualizado
-            : actual
-        )
+      setFilas(
+        data.registros || filas
       );
 
       toast.success(
-        "Registro actualizado"
+        "Gestion del ticket guardada correctamente"
       );
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
 
       toast.error(
+        error.message ||
         "Error al guardar antecedente"
       );
 
     } finally {
-      setGuardandoId(null);
+      setGuardandoTodo(false);
     }
   }
 
@@ -231,19 +257,23 @@ export default function AntecedentesTicketTable({
                   <th className="border p-2 text-left">
                     Observaciones
                   </th>
-                  <th className="border p-2 text-left">
-                    Accion
-                  </th>
                 </>
               )}
             </tr>
           </thead>
 
           <tbody>
-            {filas.map((fila) => (
+            {filas.map((fila) => {
+              const requiereMotivo =
+                fila.observacion ===
+                OBSERVACION_NO_TENER_EN_CUENTA;
+
+              return (
               <tr
                 key={fila.id}
-                className="align-top"
+                className={claseFilaPorObservacion(
+                  fila.observacion
+                )}
               >
                 <td className="border p-2">
                   {fila.fechaSolicitud || ""}
@@ -302,6 +332,7 @@ export default function AntecedentesTicketTable({
                 </td>
                 <td className="border p-2">
                   {puedeVerCompleto ? (
+                    <div className="flex flex-col gap-1">
                     <SelectCampo
                       value={fila.observacion}
                       options={
@@ -315,6 +346,10 @@ export default function AntecedentesTicketTable({
                         )
                       }
                     />
+                    <span className="text-xs font-semibold">
+                      Obligatorio
+                    </span>
+                    </div>
                   ) : (
                     fila.observacion || ""
                   )}
@@ -323,6 +358,7 @@ export default function AntecedentesTicketTable({
                 {puedeVerCompleto && (
                   <>
                     <td className="border p-2">
+                      <div className="flex flex-col gap-1">
                       <SelectCampo
                         value={fila.revisadoPor}
                         options={revisadoPorOpciones}
@@ -334,21 +370,10 @@ export default function AntecedentesTicketTable({
                           )
                         }
                       />
-                    </td>
-                    <td className="border p-2">
-                      <SelectCampo
-                        value={fila.motivo}
-                        options={
-                          motivoAntecedenteOpciones
-                        }
-                        onChange={(value) =>
-                          actualizarFila(
-                            fila.id,
-                            "motivo",
-                            value
-                          )
-                        }
-                      />
+                      <span className="text-xs font-semibold">
+                        Obligatorio
+                      </span>
+                      </div>
                     </td>
                     <td className="border p-2">
                       <SelectCampo
@@ -366,6 +391,29 @@ export default function AntecedentesTicketTable({
                       />
                     </td>
                     <td className="border p-2">
+                      <div className="flex flex-col gap-1">
+                      <SelectCampo
+                        value={fila.motivo}
+                        options={
+                          motivoAntecedenteOpciones
+                        }
+                        onChange={(value) =>
+                          actualizarFila(
+                            fila.id,
+                            "motivo",
+                            value
+                          )
+                        }
+                      />
+                      {requiereMotivo && (
+                        <span className="text-xs font-semibold">
+                          Obligatorio
+                        </span>
+                      )}
+                      </div>
+                    </td>
+                    <td className="border p-2">
+                      <div className="flex flex-col gap-1">
                       <textarea
                         value={
                           fila.observaciones || ""
@@ -380,30 +428,36 @@ export default function AntecedentesTicketTable({
                         className="min-w-60 rounded-md border p-2"
                         placeholder="Observaciones internas"
                       />
-                    </td>
-                    <td className="border p-2">
-                      <button
-                        type="button"
-                        disabled={
-                          guardandoId === fila.id
-                        }
-                        onClick={() =>
-                          guardarFila(fila)
-                        }
-                        className="rounded-lg bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
-                      >
-                        {guardandoId === fila.id
-                          ? "Guardando..."
-                          : "Guardar"}
-                      </button>
+                      {requiereMotivo && (
+                        <span className="text-xs font-semibold">
+                          Obligatorio
+                        </span>
+                      )}
+                      </div>
                     </td>
                   </>
                 )}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
+
+      {puedeVerCompleto && (
+        <div className="mt-4 flex justify-start">
+          <button
+            type="button"
+            onClick={guardarTodo}
+            disabled={guardandoTodo}
+            className="rounded-lg bg-blue-600 px-5 py-3 text-white hover:bg-blue-700 disabled:bg-gray-400"
+          >
+            {guardandoTodo
+              ? "Guardando gestion..."
+              : "Guardar gestion del ticket"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
