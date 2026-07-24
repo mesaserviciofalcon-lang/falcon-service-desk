@@ -20,6 +20,9 @@ from "@/lib/antecedentesExcel";
 import { ocultarSolicitudesHistoricas }
 from "@/lib/solicitudesHistoricas";
 
+import { autocompletarAntecedentes }
+from "@/lib/autocompletarAntecedentes";
+
 export async function POST(
   request: Request
 ) {
@@ -59,11 +62,18 @@ export async function POST(
       );
     }
 
-    const registrosAntecedentes =
+    const registrosAntecedentesBase =
       body.tipo === "ANTECEDENTES"
         ? await leerRegistrosAntecedentesDesdeUrl(
             archivoAntecedentesExcel.url,
             archivoAntecedentesExcel.nombre
+          )
+        : [];
+
+    const registrosAntecedentes =
+      body.tipo === "ANTECEDENTES"
+        ? await autocompletarAntecedentes(
+            registrosAntecedentesBase
           )
         : [];
 
@@ -316,6 +326,15 @@ export async function POST(
                   fechaExpedicionDocumento:
                     registro
                       .fechaExpedicionDocumento,
+
+                  observacion:
+                    registro.observacion,
+
+                  motivo:
+                    registro.motivo,
+
+                  observaciones:
+                    registro.observaciones,
                 })
               ),
           });
