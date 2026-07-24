@@ -183,6 +183,174 @@ function obtenerMesRegistroIndicador(
     .slice(0, 7);
 }
 
+type MetricasAntecedentes = {
+  total: number;
+  continuar: number;
+  noTenerEnCuenta: number;
+  documentoNoCorresponde: number;
+  nacionales: number;
+  extranjeros: number;
+};
+
+type ConteoMes = {
+  mes: string;
+};
+
+const metricasAntecedentesVacias: MetricasAntecedentes = {
+  total: 0,
+  continuar: 0,
+  noTenerEnCuenta: 0,
+  documentoNoCorresponde: 0,
+  nacionales: 0,
+  extranjeros: 0,
+};
+
+function normalizarConteo(
+  valor: unknown
+) {
+  return Number(valor || 0);
+}
+
+async function obtenerMetricasAntecedentes(
+  mes?: string,
+  anio?: number
+) {
+  const resultado =
+    await prisma.$queryRaw<
+      Array<{
+        total: bigint | number;
+        continuar: bigint | number;
+        no_tener_en_cuenta: bigint | number;
+        documento_no_corresponde: bigint | number;
+        nacionales: bigint | number;
+        extranjeros: bigint | number;
+      }>
+    >`
+      WITH registros AS (
+        SELECT
+          "observacion",
+          "tipoDocumento",
+          COALESCE(
+            CASE
+              WHEN "fechaRespuesta" ~ '^\\d{4}-\\d{1,2}-\\d{1,2}'
+                THEN "fechaRespuesta"::date
+              WHEN "fechaRespuesta" ~ '^\\d{1,2}[/-]\\d{1,2}[/-]\\d{4}$'
+                THEN to_date(replace("fechaRespuesta", '-', '/'), 'DD/MM/YYYY')
+              ELSE NULL
+            END,
+            CASE
+              WHEN "fechaSolicitud" ~ '^\\d{4}-\\d{1,2}-\\d{1,2}'
+                THEN "fechaSolicitud"::date
+              WHEN "fechaSolicitud" ~ '^\\d{1,2}[/-]\\d{1,2}[/-]\\d{4}$'
+                THEN to_date(replace("fechaSolicitud", '-', '/'), 'DD/MM/YYYY')
+              ELSE NULL
+            END,
+            "createdAt"::date
+          ) AS fecha_indicador
+        FROM "AntecedenteRegistro"
+      ),
+      filtrados AS (
+        SELECT *
+        FROM registros
+        WHERE
+          (${mes || ""} = '' OR to_char(fecha_indicador, 'YYYY-MM') = ${mes || ""})
+          AND
+          (${anio || 0} = 0 OR EXTRACT(YEAR FROM fecha_indicador)::int = ${anio || 0})
+      )
+      SELECT
+        COUNT(*) AS total,
+        COUNT(*) FILTER (
+          WHERE upper(trim("observacion")) IN (
+            'CONTINUAR CON EL PROCESO',
+            'CONTINUAR EL PROCESO'
+          )
+        ) AS continuar,
+        COUNT(*) FILTER (
+          WHERE upper(trim("observacion")) = 'LA PERSONA NO DEBE SER TENIDA EN CUENTA'
+        ) AS no_tener_en_cuenta,
+        COUNT(*) FILTER (
+          WHERE
+            upper(trim("observacion")) LIKE '%NO CORRESPONDE CON EL NOMBRE%'
+            OR upper(trim("observacion")) LIKE '%NO COINCIDE CON EL NOMBRE%'
+        ) AS documento_no_corresponde,
+        COUNT(*) FILTER (
+          WHERE "tipoDocumento" = 'CC'
+        ) AS nacionales,
+        COUNT(*) FILTER (
+          WHERE "tipoDocumento" IN ('PP', 'PPT', 'CE')
+        ) AS extranjeros
+      FROM filtrados
+    `;
+
+  const fila =
+    resultado[0];
+
+  if (!fila) {
+    return metricasAntecedentesVacias;
+  }
+
+  return {
+    total:
+      normalizarConteo(fila.total),
+    continuar:
+      normalizarConteo(fila.continuar),
+    noTenerEnCuenta:
+      normalizarConteo(
+        fila.no_tener_en_cuenta
+      ),
+    documentoNoCorresponde:
+      normalizarConteo(
+        fila.documento_no_corresponde
+      ),
+    nacionales:
+      normalizarConteo(
+        fila.nacionales
+      ),
+    extranjeros:
+      normalizarConteo(
+        fila.extranjeros
+      ),
+  };
+}
+
+async function obtenerMesesAntecedentes(
+  anio: number
+) {
+  const resultado =
+    await prisma.$queryRaw<ConteoMes[]>`
+      WITH registros AS (
+        SELECT
+          COALESCE(
+            CASE
+              WHEN "fechaRespuesta" ~ '^\\d{4}-\\d{1,2}-\\d{1,2}'
+                THEN "fechaRespuesta"::date
+              WHEN "fechaRespuesta" ~ '^\\d{1,2}[/-]\\d{1,2}[/-]\\d{4}$'
+                THEN to_date(replace("fechaRespuesta", '-', '/'), 'DD/MM/YYYY')
+              ELSE NULL
+            END,
+            CASE
+              WHEN "fechaSolicitud" ~ '^\\d{4}-\\d{1,2}-\\d{1,2}'
+                THEN "fechaSolicitud"::date
+              WHEN "fechaSolicitud" ~ '^\\d{1,2}[/-]\\d{1,2}[/-]\\d{4}$'
+                THEN to_date(replace("fechaSolicitud", '-', '/'), 'DD/MM/YYYY')
+              ELSE NULL
+            END,
+            "createdAt"::date
+          ) AS fecha_indicador
+        FROM "AntecedenteRegistro"
+      )
+      SELECT DISTINCT
+        to_char(fecha_indicador, 'YYYY-MM') AS mes
+      FROM registros
+      WHERE EXTRACT(YEAR FROM fecha_indicador)::int = ${anio}
+      ORDER BY mes DESC
+    `;
+
+  return resultado.map(
+    (fila) => fila.mes
+  );
+}
+
 function formatearMes(
   mes: string
 ) {
@@ -266,8 +434,6 @@ export default async function DashboardPage({
         radio: true,
 
         antecedente: true,
-
-        antecedentesRegistros: true,
 
         novedad: true,
       },
@@ -500,21 +666,6 @@ hace3Dias.setDate(
 
     role === "SUPERVISOR";
 
-  const registrosAntecedentesIndicadores =
-    puedeVerMetricasAntecedentes
-      ? await prisma
-          .antecedenteRegistro
-          .findMany({
-            select: {
-              observacion: true,
-              tipoDocumento: true,
-              fechaRespuesta: true,
-              fechaSolicitud: true,
-              createdAt: true,
-            },
-          })
-      : [];
-
   const aplicarFiltroMes =
     role === "ADMIN";
 
@@ -538,6 +689,30 @@ hace3Dias.setDate(
   const anioActual =
     new Date().getFullYear();
 
+  const metricasAntecedentesMes =
+    puedeVerMetricasAntecedentes
+      ? await obtenerMetricasAntecedentes(
+          role === "ADMIN"
+            ? mesIndicadores
+            : undefined
+        )
+      : metricasAntecedentesVacias;
+
+  const metricasAntecedentesAnio =
+    puedeVerMetricasAntecedentes
+      ? await obtenerMetricasAntecedentes(
+          undefined,
+          anioActual
+        )
+      : metricasAntecedentesVacias;
+
+  const mesesAntecedentesDisponibles =
+    role === "ADMIN"
+      ? await obtenerMesesAntecedentes(
+          anioActual
+        )
+      : [];
+
   const mesesDisponibles =
     Array.from(
       new Set(
@@ -556,20 +731,7 @@ hace3Dias.setDate(
                   ticket.fechaCreacion
                 )
             ),
-          ...registrosAntecedentesIndicadores
-            .filter(
-              (registro: any) =>
-                obtenerFechaRegistroIndicador(
-                  registro
-                ).getFullYear() ===
-                anioActual
-            )
-            .map(
-              (registro: any) =>
-                obtenerMesRegistroIndicador(
-                  registro
-                )
-            ),
+          ...mesesAntecedentesDisponibles,
         ]
       )
     ).sort(
@@ -786,68 +948,26 @@ hace3Dias.setDate(
       )
       .slice(0, 5);
 
-  const registrosAntecedentesMetricas =
-    aplicarFiltroMes
-      ? registrosAntecedentesIndicadores.filter(
-          (registro: any) =>
-            obtenerMesRegistroIndicador(
-              registro
-            ) ===
-            mesIndicadores
-        )
-      : registrosAntecedentesIndicadores;
-
-  const registrosAntecedentesAnioCurso =
-    registrosAntecedentesIndicadores.filter(
-      (registro: any) =>
-        obtenerFechaRegistroIndicador(
-          registro
-        ).getFullYear() ===
-        anioActual
-    ).length;
-
   const continuarProceso =
-    registrosAntecedentesMetricas.filter(
-      (registro: any) =>
-        esConceptoContinuar(
-          registro.observacion
-        )
-    ).length;
+    metricasAntecedentesMes.continuar;
 
   const noPuedeContinuar =
-    registrosAntecedentesMetricas.filter(
-      (registro: any) =>
-        esConceptoNoTenerEnCuenta(
-          registro.observacion
-        )
-    ).length;
+    metricasAntecedentesMes.noTenerEnCuenta;
 
   const documentoNoCorresponde =
-    registrosAntecedentesMetricas.filter(
-      (registro: any) =>
-        esConceptoDocumentoNoCorresponde(
-          registro.observacion
-        )
-    ).length;
+    metricasAntecedentesMes.documentoNoCorresponde;
 
   const nacionales =
-    registrosAntecedentesMetricas.filter(
-      (registro: any) =>
-        registro.tipoDocumento ===
-        "CC"
-    ).length;
+    metricasAntecedentesMes.nacionales;
 
   const extranjeros =
-    registrosAntecedentesMetricas.filter(
-      (registro: any) =>
-        [
-          "PP",
-          "PPT",
-          "CE",
-        ].includes(
-          registro.tipoDocumento || ""
-        )
-    ).length;
+    metricasAntecedentesMes.extranjeros;
+
+  const totalRegistrosEvaluados =
+    metricasAntecedentesMes.total;
+
+  const registrosAntecedentesAnioCurso =
+    metricasAntecedentesAnio.total;
 
   const ticketsSolicitanteActivos =
     tickets.filter(
@@ -1197,7 +1317,7 @@ hace3Dias.setDate(
               <strong>
                 <NumeroAnimado
                   valor={
-                    registrosAntecedentesMetricas.length
+                    totalRegistrosEvaluados
                   }
                 />
               </strong>
