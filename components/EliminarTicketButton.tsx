@@ -76,7 +76,7 @@ export default function EliminarTicketButton({
       type="button"
       onClick={eliminarTicket}
       disabled={eliminando}
-      className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700 disabled:bg-gray-400"
+      className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:bg-gray-400"
     >
       {eliminando
         ? "Eliminando..."

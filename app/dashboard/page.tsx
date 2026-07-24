@@ -306,7 +306,7 @@ hace3Dias.setDate(
 
     <h1 className="text-4xl font-bold text-[#0F3D1F]">
 
-      Dashboard Ejecutivo
+      Dashboard
 
     </h1>
 

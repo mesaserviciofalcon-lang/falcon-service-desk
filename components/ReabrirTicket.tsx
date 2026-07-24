@@ -18,6 +18,15 @@ export default function ReabrirTicket({
 
   async function reabrirTicket() {
 
+    const confirmar =
+      window.confirm(
+        "¿Está seguro de reabrir este ticket?"
+      );
+
+    if (!confirmar) {
+      return;
+    }
+
     try {
 
       const response =
@@ -90,7 +99,7 @@ setTimeout(() => {
         reabrirTicket
       }
 
-      className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+      className="mt-4 rounded-md bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700"
     >
 
       Reabrir Ticket

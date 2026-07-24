@@ -70,3 +70,9 @@ export function puedeVerAntecedenteCompleto(
     rolesAntecedentesCompleto.includes(role)
   );
 }
+
+export function puedeImportarHistoricoAntecedentes(
+  role?: string | null
+) {
+  return role === "ADMIN";
+}

@@ -37,7 +37,7 @@ export default function GestionTicket({
   const [
     estado,
     setEstado,
-  ] = useState("EN PROCESO");
+  ] = useState("");
 
   const [
     observaciones,
@@ -66,7 +66,18 @@ export default function GestionTicket({
 
   try {
 
+    if (
+      role !== "SOLICITANTE" &&
+      !estado
+    ) {
+      toast.error(
+        "Debe seleccionar el estado del ticket"
+      );
+      return;
+    }
+
     setLoading(true);
+
 
       // GUARDAR ARCHIVOS
 
@@ -159,7 +170,9 @@ export default function GestionTicket({
 
 setTimeout(() => {
 
-  router.refresh();
+  router.push(
+    "/dashboard"
+  );
 
 }, 1200);
 
@@ -203,7 +216,15 @@ setTimeout(() => {
           }
 
           className="border p-3 rounded-lg"
+
+          required
         >
+
+          <option value="">
+
+            Seleccione estado
+
+          </option>
 
           <option value="EN PROCESO">
 
@@ -214,12 +235,6 @@ setTimeout(() => {
           <option value="COMPLETADO">
 
             COMPLETADO
-
-          </option>
-
-          <option value="REABIERTO">
-
-            REABIERTO
 
           </option>
 
@@ -323,6 +338,8 @@ setTimeout(() => {
         </div>
       )}
 
+      <div className="flex justify-center">
+
       <button
 
         onClick={
@@ -334,8 +351,11 @@ setTimeout(() => {
         className="
           bg-blue-600
           text-white
-          p-3
-          rounded-lg
+          px-4
+          py-2
+          text-sm
+          font-semibold
+          rounded-md
           hover:bg-blue-700
         "
       >
@@ -350,6 +370,8 @@ setTimeout(() => {
         }
 
       </button>
+
+      </div>
 
     </div>
   );

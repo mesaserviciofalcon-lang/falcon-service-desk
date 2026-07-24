@@ -13,7 +13,11 @@ from "next-auth/react";
 
 import UploadButton from "@/components/uploadthing/UploadButton";
 
-import { nombrePlantillaAntecedentes }
+import {
+  encabezadosAntecedentesSolicitud,
+  nombreHojaAntecedentes,
+  nombrePlantillaAntecedentes,
+}
 from "@/lib/antecedentesPlantilla";
 
 export default function SolicitudesPage() {
@@ -684,6 +688,18 @@ setTimeout(() => {
       : undefined
   }
 
+  requiredSheetName={
+    tipo === "ANTECEDENTES"
+      ? nombreHojaAntecedentes
+      : undefined
+  }
+
+  requiredHeaders={
+    tipo === "ANTECEDENTES"
+      ? encabezadosAntecedentesSolicitud
+      : undefined
+  }
+
   onComplete={(
 
     url: string,
@@ -761,9 +777,13 @@ setTimeout(() => {
   disabled={guardando}
 
   className={`
+    self-center
     text-white
-    p-3
-    rounded-lg
+    px-5
+    py-2.5
+    rounded-md
+    text-sm
+    font-semibold
     transition
 
     ${

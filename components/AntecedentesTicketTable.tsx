@@ -73,7 +73,7 @@ function SelectCampo({
       onChange={(event) =>
         onChange(event.target.value)
       }
-      className="border rounded-md p-2 min-w-44"
+      className="w-full rounded-md border p-2 text-sm"
     >
       <option value="">
         Seleccione
@@ -106,6 +106,11 @@ export default function AntecedentesTicketTable({
   const [
     guardandoTodo,
     setGuardandoTodo,
+  ] = useState(false);
+
+  const [
+    tablaExpandida,
+    setTablaExpandida,
   ] = useState(false);
 
   const puedeVerCompleto =
@@ -175,8 +180,10 @@ export default function AntecedentesTicketTable({
       );
 
       toast.success(
-        "Gestion del ticket guardada correctamente"
+        "Datos de la tabla guardados correctamente"
       );
+
+      setTablaExpandida(false);
 
     } catch (error: any) {
       console.error(error);
@@ -214,47 +221,54 @@ export default function AntecedentesTicketTable({
         </a>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full border text-sm">
+      <div className="max-w-full overflow-hidden rounded-xl border bg-white">
+        <div
+          className={
+            tablaExpandida
+              ? "max-h-[82vh] overflow-auto"
+              : "max-h-[42vh] overflow-auto"
+          }
+        >
+        <table className="w-max min-w-[1200px] border-collapse text-sm">
           <thead className="bg-gray-100">
             <tr>
-              <th className="border p-2 text-left">
+              <th className="sticky top-0 z-10 w-32 border bg-gray-100 p-2 text-left">
                 Fecha solicitud
               </th>
-              <th className="border p-2 text-left">
+              <th className="sticky top-0 z-10 w-32 border bg-gray-100 p-2 text-left">
                 Fecha respuesta
               </th>
-              <th className="border p-2 text-left">
+              <th className="sticky top-0 z-10 w-24 border bg-gray-100 p-2 text-left">
                 EAI
               </th>
-              <th className="border p-2 text-left">
+              <th className="sticky top-0 z-10 w-64 border bg-gray-100 p-2 text-left">
                 Nombres y apellidos
               </th>
-              <th className="border p-2 text-left">
+              <th className="sticky top-0 z-10 w-32 border bg-gray-100 p-2 text-left">
                 Tipo documento
               </th>
-              <th className="border p-2 text-left">
+              <th className="sticky top-0 z-10 w-36 border bg-gray-100 p-2 text-left">
                 Identificacion
               </th>
-              <th className="border p-2 text-left">
+              <th className="sticky top-0 z-10 w-40 border bg-gray-100 p-2 text-left">
                 Fecha expedicion
               </th>
-              <th className="border p-2 text-left">
+              <th className="sticky top-0 z-10 w-72 border bg-gray-100 p-2 text-left">
                 Observacion
               </th>
 
               {puedeVerCompleto && (
                 <>
-                  <th className="border p-2 text-left">
+                  <th className="sticky top-0 z-10 w-56 border bg-gray-100 p-2 text-left">
                     Revisado por
                   </th>
-                  <th className="border p-2 text-left">
+                  <th className="sticky top-0 z-10 w-44 border bg-gray-100 p-2 text-left">
                     Motivo
                   </th>
-                  <th className="border p-2 text-left">
+                  <th className="sticky top-0 z-10 w-40 border bg-gray-100 p-2 text-left">
                     Autorizacion
                   </th>
-                  <th className="border p-2 text-left">
+                  <th className="sticky top-0 z-10 w-72 border bg-gray-100 p-2 text-left">
                     Observaciones
                   </th>
                 </>
@@ -275,13 +289,13 @@ export default function AntecedentesTicketTable({
                   fila.observacion
                 )}
               >
-                <td className="border p-2">
+                <td className="w-32 border p-2">
                   {fila.fechaSolicitud || ""}
                 </td>
-                <td className="border p-2">
+                <td className="w-32 border p-2">
                   {fila.fechaRespuesta || ""}
                 </td>
-                <td className="border p-2">
+                <td className="w-24 border p-2">
                   {puedeVerCompleto ? (
                     <SelectCampo
                       value={fila.eai}
@@ -298,10 +312,10 @@ export default function AntecedentesTicketTable({
                     fila.eai || ""
                   )}
                 </td>
-                <td className="border p-2 min-w-56">
+                <td className="w-64 border p-2">
                   {fila.nombresApellidos || ""}
                 </td>
-                <td className="border p-2">
+                <td className="w-32 border p-2">
                   {puedeVerCompleto ? (
                     <SelectCampo
                       value={fila.tipoDocumento}
@@ -320,17 +334,17 @@ export default function AntecedentesTicketTable({
                     fila.tipoDocumento || ""
                   )}
                 </td>
-                <td className="border p-2">
+                <td className="w-36 border p-2">
                   {fila.identificacion}
                 </td>
-                <td className="border p-2">
+                <td className="w-40 border p-2">
                   {
                     fila
                       .fechaExpedicionDocumento ||
                     ""
                   }
                 </td>
-                <td className="border p-2">
+                <td className="w-72 border p-2">
                   {puedeVerCompleto ? (
                     <div className="flex flex-col gap-1">
                     <SelectCampo
@@ -357,7 +371,7 @@ export default function AntecedentesTicketTable({
 
                 {puedeVerCompleto && (
                   <>
-                    <td className="border p-2">
+                    <td className="w-56 border p-2">
                       <div className="flex flex-col gap-1">
                       <SelectCampo
                         value={fila.revisadoPor}
@@ -375,22 +389,7 @@ export default function AntecedentesTicketTable({
                       </span>
                       </div>
                     </td>
-                    <td className="border p-2">
-                      <SelectCampo
-                        value={fila.autorizacion}
-                        options={
-                          autorizacionAntecedenteOpciones
-                        }
-                        onChange={(value) =>
-                          actualizarFila(
-                            fila.id,
-                            "autorizacion",
-                            value
-                          )
-                        }
-                      />
-                    </td>
-                    <td className="border p-2">
+                    <td className="w-44 border p-2">
                       <div className="flex flex-col gap-1">
                       <SelectCampo
                         value={fila.motivo}
@@ -412,7 +411,22 @@ export default function AntecedentesTicketTable({
                       )}
                       </div>
                     </td>
-                    <td className="border p-2">
+                    <td className="w-40 border p-2">
+                      <SelectCampo
+                        value={fila.autorizacion}
+                        options={
+                          autorizacionAntecedenteOpciones
+                        }
+                        onChange={(value) =>
+                          actualizarFila(
+                            fila.id,
+                            "autorizacion",
+                            value
+                          )
+                        }
+                      />
+                    </td>
+                    <td className="w-72 border p-2">
                       <div className="flex flex-col gap-1">
                       <textarea
                         value={
@@ -425,7 +439,7 @@ export default function AntecedentesTicketTable({
                             event.target.value
                           )
                         }
-                        className="min-w-60 rounded-md border p-2"
+                        className="h-20 w-full resize-none rounded-md border p-2 text-sm"
                         placeholder="Observaciones internas"
                       />
                       {requiereMotivo && (
@@ -442,10 +456,24 @@ export default function AntecedentesTicketTable({
             })}
           </tbody>
         </table>
-      </div>
+        </div>
 
       {puedeVerCompleto && (
-        <div className="mt-4 flex justify-start">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-gray-50 p-3">
+          <button
+            type="button"
+            onClick={() =>
+              setTablaExpandida(
+                (actual) => !actual
+              )
+            }
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-100"
+          >
+            {tablaExpandida
+              ? "↑ Contraer tabla"
+              : "↓ Expandir tabla"}
+          </button>
+
           <button
             type="button"
             onClick={guardarTodo}
@@ -453,11 +481,12 @@ export default function AntecedentesTicketTable({
             className="rounded-lg bg-blue-600 px-5 py-3 text-white hover:bg-blue-700 disabled:bg-gray-400"
           >
             {guardandoTodo
-              ? "Guardando gestion..."
-              : "Guardar gestion del ticket"}
+              ? "Guardando datos..."
+              : "Guardar datos tabla"}
           </button>
         </div>
       )}
+      </div>
     </div>
   );
 }

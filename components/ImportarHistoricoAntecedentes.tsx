@@ -9,7 +9,11 @@ from "react-hot-toast";
 import UploadButton
 from "@/components/uploadthing/UploadButton";
 
-import { nombrePlantillaAntecedentes }
+import {
+  encabezadosAntecedentesHistorico,
+  nombreHojaAntecedentes,
+  nombrePlantillaAntecedentes,
+}
 from "@/lib/antecedentesPlantilla";
 
 export default function ImportarHistoricoAntecedentes() {
@@ -86,6 +90,12 @@ export default function ImportarHistoricoAntecedentes() {
         ]}
         requiredFileName={
           nombrePlantillaAntecedentes
+        }
+        requiredSheetName={
+          nombreHojaAntecedentes
+        }
+        requiredHeaders={
+          encabezadosAntecedentesHistorico
         }
         onComplete={importarArchivo}
       />

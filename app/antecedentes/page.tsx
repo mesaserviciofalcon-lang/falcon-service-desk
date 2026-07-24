@@ -8,6 +8,7 @@ import { prisma }
 from "@/lib/prisma";
 
 import {
+  puedeImportarHistoricoAntecedentes,
   puedeVerAntecedenteCompleto,
 } from "@/lib/antecedentesCatalogos";
 
@@ -34,6 +35,11 @@ export default async function AntecedentesPage({
 
   const puedeVerCompleto =
     puedeVerAntecedenteCompleto(
+      session?.user?.role
+    );
+
+  const puedeImportarHistorico =
+    puedeImportarHistoricoAntecedentes(
       session?.user?.role
     );
 
@@ -96,7 +102,7 @@ export default async function AntecedentesPage({
         </button>
       </form>
 
-      {puedeVerCompleto && (
+      {puedeImportarHistorico && (
         <ImportarHistoricoAntecedentes />
       )}
 

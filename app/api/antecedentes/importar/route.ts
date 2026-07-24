@@ -8,7 +8,7 @@ import { prisma }
 from "@/lib/prisma";
 
 import {
-  puedeVerAntecedenteCompleto,
+  puedeImportarHistoricoAntecedentes,
 } from "@/lib/antecedentesCatalogos";
 
 import {
@@ -45,7 +45,7 @@ export async function POST(
     );
 
   if (
-    !puedeVerAntecedenteCompleto(
+    !puedeImportarHistoricoAntecedentes(
       session?.user?.role
     )
   ) {

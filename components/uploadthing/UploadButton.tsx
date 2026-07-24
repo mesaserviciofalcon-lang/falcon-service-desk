@@ -24,6 +24,10 @@ export default function UploadButton({
 
   requiredFileName,
 
+  requiredSheetName,
+
+  requiredHeaders,
+
 }: any) {
 
   return (
@@ -34,7 +38,7 @@ export default function UploadButton({
 
         endpoint="archivoUploader"
 
-        onBeforeUploadBegin={(files) => {
+        onBeforeUploadBegin={async (files) => {
 
           if (requiredFileName) {
             const archivoNombreIncorrecto =
@@ -47,6 +51,145 @@ export default function UploadButton({
             if (archivoNombreIncorrecto) {
               alert(
                 `No fue posible subir este archivo. El archivo debe llamarse "${requiredFileName}" y actualmente se llama "${archivoNombreIncorrecto.name}".`
+              );
+
+              return [];
+            }
+          }
+
+          if (
+            requiredSheetName &&
+            requiredHeaders?.length
+          ) {
+            try {
+              const XLSX =
+                await import("xlsx");
+
+              const archivoExcel =
+                files[0];
+
+              const buffer =
+                await archivoExcel
+                  .arrayBuffer();
+
+              const workbook =
+                XLSX.read(buffer, {
+                  type: "array",
+                  cellDates: true,
+                });
+
+              const sheetName =
+                workbook.SheetNames[0];
+
+              if (
+                sheetName !==
+                requiredSheetName
+              ) {
+                alert(
+                  `No fue posible subir este archivo. El nombre de la hoja debe ser "${requiredSheetName}". Actualmente es "${sheetName || "sin hoja"}".`
+                );
+
+                return [];
+              }
+
+              const sheet =
+                workbook.Sheets[
+                  sheetName
+                ];
+
+              const range =
+                sheet?.["!ref"]
+                  ? XLSX.utils
+                      .decode_range(
+                        sheet["!ref"]
+                      )
+                  : null;
+
+              if (!range) {
+                alert(
+                  "No fue posible subir este archivo. La hoja DATOS no tiene encabezados."
+                );
+
+                return [];
+              }
+
+              const headers: string[] =
+                [];
+
+              for (
+                let columna = range.s.c;
+                columna <= range.e.c;
+                columna++
+              ) {
+                const celda =
+                  sheet[
+                    XLSX.utils
+                      .encode_cell({
+                        r: range.s.r,
+                        c: columna,
+                      })
+                  ];
+
+                headers.push(
+                  celda?.v
+                    ? String(celda.v)
+                        .trim()
+                        .toUpperCase()
+                    : ""
+                );
+              }
+
+              const normalizar = (
+                valor: string
+              ) =>
+                valor
+                  .trim()
+                  .toUpperCase();
+
+              for (
+                let index = 0;
+                index <
+                requiredHeaders.length;
+                index++
+              ) {
+                const esperado =
+                  requiredHeaders[index];
+
+                const actual =
+                  headers[index] || "";
+
+                if (
+                  normalizar(actual) !==
+                  normalizar(esperado)
+                ) {
+                  alert(
+                    `No fue posible subir este archivo. La columna ${XLSX.utils.encode_col(index)} debe ser "${esperado}" y actualmente está como "${actual || "vacía"}".`
+                  );
+
+                  return [];
+                }
+              }
+
+              const extras =
+                headers
+                  .slice(
+                    requiredHeaders.length
+                  )
+                  .filter(Boolean);
+
+              if (extras.length > 0) {
+                alert(
+                  `No fue posible subir este archivo. La columna ${XLSX.utils.encode_col(requiredHeaders.length)} no debe existir. Elimine columnas adicionales.`
+                );
+
+                return [];
+              }
+
+            } catch (error) {
+              console.error(error);
+
+              alert(
+                "No fue posible validar el Excel. Revise que sea un archivo .xlsx o .xls válido."
               );
 
               return [];
@@ -143,10 +286,10 @@ export default function UploadButton({
         appearance={{
 
           button:
-            "ut-ready:bg-black ut-uploading:bg-gray-800 bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 border border-black shadow-sm transition min-w-52 justify-center",
+            "ut-ready:bg-black ut-uploading:bg-gray-800 bg-black text-white px-3 py-2 text-sm rounded-lg hover:bg-gray-800 border border-black shadow-sm transition min-w-36 justify-center",
 
           container:
-            "flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 rounded-xl p-6 bg-white",
+            "flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-lg p-3 bg-white",
 
           allowedContent:
             "text-gray-500 text-sm",
@@ -168,7 +311,7 @@ export default function UploadButton({
 
             if (isUploading) {
 
-              return `Subiendo ${uploadProgress}%`;
+              return `${uploadProgress}%`;
             }
 
             return "Seleccionar archivos";
