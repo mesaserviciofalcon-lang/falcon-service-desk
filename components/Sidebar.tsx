@@ -141,6 +141,25 @@ export default function Sidebar({
 
           </Link>
 
+          {[
+            "ADMIN",
+            "DIRECTOR_SEG",
+            "JEFE_SEG",
+            "SUPERVISOR",
+          ].includes(role) && (
+
+            <Link
+              href="/antecedentes/gestion-masiva"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
+            >
+
+              <ShieldCheck size={20} />
+
+              Gestion masiva
+
+            </Link>
+          )}
+
           {/* ADMIN */}
 
           {role === "ADMIN" && (

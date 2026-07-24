@@ -9,6 +9,7 @@ const OBSERVACION_CONTINUAR =
   "CONTINUAR CON EL PROCESO";
 
 type RegistroAntecedente = {
+  id?: number;
   identificacion: string;
   fechaSolicitud?: string;
   fechaRespuesta?: string;
@@ -101,6 +102,16 @@ function fechaBaseRegistro(
 export async function autocompletarAntecedentes(
   registros: RegistroAntecedente[]
 ) {
+  const idsActuales =
+    registros
+      .map((registro) => registro.id)
+      .filter(
+        (
+          id
+        ): id is number =>
+          typeof id === "number"
+      );
+
   const identificaciones =
     Array.from(
       new Set(
@@ -130,6 +141,13 @@ export async function autocompletarAntecedentes(
       .antecedenteRegistro
       .findMany({
         where: {
+          id:
+            idsActuales.length > 0
+              ? {
+                  notIn:
+                    idsActuales,
+                }
+              : undefined,
           OR:
             identificaciones.map(
               (identificacion) => ({

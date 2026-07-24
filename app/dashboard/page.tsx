@@ -32,6 +32,38 @@ function obtenerFincaTicket(
   );
 }
 
+function obtenerMesTicket(
+  fecha: Date | string
+) {
+  return new Date(fecha)
+    .toISOString()
+    .slice(0, 7);
+}
+
+function formatearMes(
+  mes: string
+) {
+  const [
+    anio,
+    numeroMes,
+  ] = mes.split("-");
+
+  const fecha =
+    new Date(
+      Number(anio),
+      Number(numeroMes) - 1,
+      1
+    );
+
+  return fecha.toLocaleDateString(
+    "es-CO",
+    {
+      month: "long",
+      year: "numeric",
+    }
+  );
+}
+
 export default async function DashboardPage({
 
   searchParams,
@@ -40,6 +72,7 @@ export default async function DashboardPage({
 
   searchParams?: Promise<{
     estado?: string;
+    mes?: string;
   }>;
 }) {
 
@@ -48,6 +81,9 @@ export default async function DashboardPage({
 
   const estadoSeleccionado =
     params?.estado || "";
+
+  const mesSeleccionado =
+    params?.mes || "";
 
   const session =
     await getServerSession(
@@ -78,6 +114,8 @@ export default async function DashboardPage({
         radio: true,
 
         antecedente: true,
+
+        antecedentesRegistros: true,
 
         novedad: true,
       },
@@ -295,10 +333,55 @@ hace3Dias.setDate(
       ? solicitudes
       : tickets;
 
+  const puedeVerMetricasAntecedentes =
+    role === "ADMIN"
+
+    ||
+
+    role === "DIRECTOR_SEG"
+
+    ||
+
+    role === "JEFE_SEG"
+
+    ||
+
+    role === "SUPERVISOR";
+
+  const aplicarFiltroMes =
+    role === "ADMIN" &&
+    mesSeleccionado;
+
+  const ticketsMetricasFiltradas =
+    aplicarFiltroMes
+      ? ticketsMetricas.filter(
+          (ticket: any) =>
+            obtenerMesTicket(
+              ticket.fechaCreacion
+            ) ===
+            mesSeleccionado
+        )
+      : ticketsMetricas;
+
+  const mesesDisponibles =
+    Array.from(
+      new Set(
+        solicitudes.map(
+          (ticket: any) =>
+            obtenerMesTicket(
+              ticket.fechaCreacion
+            )
+        )
+      )
+    ).sort(
+      (a, b) =>
+        b.localeCompare(a)
+    );
+
   // CONTADORES
 
   const pendientes =
-    ticketsMetricas.filter(
+    ticketsMetricasFiltradas.filter(
       (s: any) =>
 
         s.estado ===
@@ -306,7 +389,7 @@ hace3Dias.setDate(
     ).length;
 
   const enProceso =
-    ticketsMetricas.filter(
+    ticketsMetricasFiltradas.filter(
       (s: any) =>
 
         s.estado ===
@@ -314,7 +397,7 @@ hace3Dias.setDate(
     ).length;
 
   const reabiertos =
-    ticketsMetricas.filter(
+    ticketsMetricasFiltradas.filter(
       (s: any) =>
 
         s.estado ===
@@ -322,23 +405,34 @@ hace3Dias.setDate(
     ).length;
 
   const completados =
-    ticketsMetricas.filter(
+    ticketsMetricasFiltradas.filter(
       (s: any) =>
 
         s.estado ===
         "COMPLETADO"
     ).length;
 
+  const ticketsTablaBase =
+    aplicarFiltroMes
+      ? tickets.filter(
+          (ticket: any) =>
+            obtenerMesTicket(
+              ticket.fechaCreacion
+            ) ===
+            mesSeleccionado
+        )
+      : tickets;
+
   const ticketsFiltrados =
     estadoSeleccionado
 
-      ? tickets.filter(
+      ? ticketsTablaBase.filter(
           (s: any) =>
             s.estado ===
             estadoSeleccionado
         )
 
-      : tickets;
+      : ticketsTablaBase;
 
   const tarjetasEstado = [
     {
@@ -371,7 +465,7 @@ hace3Dias.setDate(
     new Date();
 
   const ticketsAbiertos =
-    ticketsMetricas.filter(
+    ticketsMetricasFiltradas.filter(
       (ticket: any) =>
         ticket.estado !==
         "COMPLETADO"
@@ -423,7 +517,7 @@ hace3Dias.setDate(
 
   const tiposSolicitud =
     Object.entries(
-      ticketsMetricas.reduce(
+      ticketsMetricasFiltradas.reduce(
         (
           acumulado: Record<string, number>,
           ticket: any
@@ -460,7 +554,7 @@ hace3Dias.setDate(
 
   const fincasTop =
     Object.entries(
-      ticketsMetricas.reduce(
+      ticketsMetricasFiltradas.reduce(
         (
           acumulado: Record<string, number>,
           ticket: any
@@ -492,6 +586,53 @@ hace3Dias.setDate(
           b.total - a.total
       )
       .slice(0, 5);
+
+  const registrosAntecedentesMetricas =
+    ticketsMetricasFiltradas.flatMap(
+      (ticket: any) =>
+        ticket.antecedentesRegistros ||
+        []
+    );
+
+  const continuarProceso =
+    registrosAntecedentesMetricas.filter(
+      (registro: any) =>
+        registro.observacion ===
+        "CONTINUAR CON EL PROCESO"
+    ).length;
+
+  const noPuedeContinuar =
+    registrosAntecedentesMetricas.filter(
+      (registro: any) =>
+        registro.observacion ===
+        "LA PERSONA NO DEBE SER TENIDA EN CUENTA"
+    ).length;
+
+  const documentoNoCorresponde =
+    registrosAntecedentesMetricas.filter(
+      (registro: any) =>
+        registro.observacion ===
+        "EL NUMERO DE DOCUMENTO NO CORRESPONDE CON EL NOMBRE"
+    ).length;
+
+  const nacionales =
+    registrosAntecedentesMetricas.filter(
+      (registro: any) =>
+        registro.tipoDocumento ===
+        "CC"
+    ).length;
+
+  const extranjeros =
+    registrosAntecedentesMetricas.filter(
+      (registro: any) =>
+        [
+          "PP",
+          "PPT",
+          "CE",
+        ].includes(
+          registro.tipoDocumento || ""
+        )
+    ).length;
 
   const ticketsSolicitanteActivos =
     tickets.filter(
@@ -578,6 +719,78 @@ hace3Dias.setDate(
 
   </div>
 
+      {role === "ADMIN" && (
+
+        <form
+          className="mb-6 flex flex-wrap items-end gap-3 rounded-xl bg-white p-4 shadow-sm"
+        >
+
+          <div>
+
+            <label
+              htmlFor="mes"
+              className="block text-xs font-bold uppercase text-gray-500"
+            >
+              Indicadores mensuales
+            </label>
+
+            <select
+              id="mes"
+              name="mes"
+              defaultValue={
+                mesSeleccionado
+              }
+              className="mt-2 rounded-lg border px-3 py-2 text-sm"
+            >
+
+              <option value="">
+                General
+              </option>
+
+              {mesesDisponibles.map(
+                (mes) => (
+
+                  <option
+                    key={mes}
+                    value={mes}
+                  >
+                    {formatearMes(mes)}
+                  </option>
+                )
+              )}
+
+            </select>
+
+          </div>
+
+          <button
+            type="submit"
+            className="rounded-lg bg-[#0F3D1F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0B2E17]"
+          >
+            Ver indicadores
+          </button>
+
+          {mesSeleccionado && (
+
+            <Link
+              href="/dashboard"
+              className="rounded-lg border px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+            >
+              Ver general
+            </Link>
+          )}
+
+          <span className="text-sm text-gray-500">
+            {mesSeleccionado
+              ? `Mostrando ${formatearMes(
+                  mesSeleccionado
+                )}`
+              : "Mostrando acumulado general"}
+          </span>
+
+        </form>
+      )}
+
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
 
         {tarjetasEstado.map(
@@ -587,16 +800,35 @@ hace3Dias.setDate(
               estadoSeleccionado ===
               tarjeta.estado;
 
+            const queryMes =
+              mesSeleccionado
+                ? `mes=${encodeURIComponent(
+                    mesSeleccionado
+                  )}`
+                : "";
+
+            const hrefQuitarEstado =
+              queryMes
+                ? `/dashboard?${queryMes}`
+                : "/dashboard";
+
+            const hrefAplicarEstado =
+              `/dashboard?estado=${encodeURIComponent(
+                tarjeta.estado
+              )}${
+                queryMes
+                  ? `&${queryMes}`
+                  : ""
+              }`;
+
             return (
 
               <Link
                 key={tarjeta.estado}
                 href={
                   activa
-                    ? "/dashboard"
-                    : `/dashboard?estado=${encodeURIComponent(
-                        tarjeta.estado
-                      )}`
+                    ? hrefQuitarEstado
+                    : hrefAplicarEstado
                 }
                 className={`
                   rounded-lg
@@ -638,6 +870,105 @@ hace3Dias.setDate(
         )}
 
       </div>
+
+      {puedeVerMetricasAntecedentes && (
+
+        <div className="mb-8 grid grid-cols-1 xl:grid-cols-2 gap-4">
+
+          <div className="rounded-xl bg-white p-5 shadow-sm">
+
+            <h2 className="text-sm font-bold uppercase text-gray-500">
+              Conceptos de antecedentes
+            </h2>
+
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+
+              <div className="rounded-lg border bg-green-50 p-4">
+
+                <span className="text-xs font-semibold uppercase text-gray-500">
+                  Continuar el proceso
+                </span>
+
+                <p className="mt-2 text-3xl font-bold text-green-700">
+                  {continuarProceso}
+                </p>
+
+              </div>
+
+              <div className="rounded-lg border bg-yellow-100 p-4">
+
+                <span className="text-xs font-semibold uppercase text-gray-500">
+                  No puede continuar
+                </span>
+
+                <p className="mt-2 text-3xl font-bold text-red-700">
+                  {noPuedeContinuar}
+                </p>
+
+              </div>
+
+              <div className="rounded-lg border bg-emerald-50 p-4">
+
+                <span className="text-xs font-semibold uppercase text-gray-500">
+                  Documento no corresponde
+                </span>
+
+                <p className="mt-2 text-3xl font-bold text-emerald-800">
+                  {documentoNoCorresponde}
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <div className="rounded-xl bg-white p-5 shadow-sm">
+
+            <h2 className="text-sm font-bold uppercase text-gray-500">
+              Nacionales y extranjeros
+            </h2>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+
+              <div className="rounded-lg border bg-blue-50 p-4">
+
+                <span className="text-xs font-semibold uppercase text-gray-500">
+                  Nacionales CC
+                </span>
+
+                <p className="mt-2 text-3xl font-bold text-blue-700">
+                  {nacionales}
+                </p>
+
+              </div>
+
+              <div className="rounded-lg border bg-slate-50 p-4">
+
+                <span className="text-xs font-semibold uppercase text-gray-500">
+                  Extranjeros PP, PPT y CE
+                </span>
+
+                <p className="mt-2 text-3xl font-bold text-slate-800">
+                  {extranjeros}
+                </p>
+
+              </div>
+
+            </div>
+
+            <p className="mt-3 text-xs text-gray-500">
+              Total registros evaluados:
+              {" "}
+              <strong>
+                {registrosAntecedentesMetricas.length}
+              </strong>
+            </p>
+
+          </div>
+
+        </div>
+      )}
 
       {role === "SOLICITANTE" && (
 
@@ -1003,7 +1334,13 @@ hace3Dias.setDate(
           {estadoSeleccionado && (
 
             <Link
-              href="/dashboard"
+              href={
+                mesSeleccionado
+                  ? `/dashboard?mes=${encodeURIComponent(
+                      mesSeleccionado
+                    )}`
+                  : "/dashboard"
+              }
               className="rounded-md border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
             >
 

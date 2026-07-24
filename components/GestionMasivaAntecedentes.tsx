@@ -1,0 +1,689 @@
+"use client";
+
+import { useMemo, useState }
+from "react";
+
+import Link
+from "next/link";
+
+import toast
+from "react-hot-toast";
+
+import {
+  autorizacionAntecedenteOpciones,
+  eaiOpciones,
+  motivoAntecedenteOpciones,
+  observacionAntecedenteOpciones,
+  revisadoPorOpciones,
+  tipoDocumentoOpciones,
+} from "@/lib/antecedentesCatalogos";
+
+import {
+  OBSERVACION_DOCUMENTO_NO_CORRESPONDE,
+  OBSERVACION_NO_TENER_EN_CUENTA,
+  validarRegistroAntecedente,
+} from "@/lib/validacionAntecedentesGestion";
+
+type RegistroMasivo = {
+  id: number;
+  solicitudId: number;
+  ticketEstado: string;
+  finca: string;
+  solicitante: string;
+  fechaSolicitud?: string | null;
+  fechaRespuesta?: string | null;
+  eai?: string | null;
+  nombresApellidos?: string | null;
+  tipoDocumento?: string | null;
+  identificacion: string;
+  fechaExpedicionDocumento?: string | null;
+  observacion?: string | null;
+  revisadoPor?: string | null;
+  motivo?: string | null;
+  autorizacion?: string | null;
+  observaciones?: string | null;
+};
+
+type TicketMasivo = {
+  id: number;
+  finca: string;
+  solicitante: string;
+  estado: string;
+  totalRegistros: number;
+};
+
+function claseFilaPorObservacion(
+  observacion?: string | null
+) {
+  if (
+    observacion ===
+    OBSERVACION_NO_TENER_EN_CUENTA
+  ) {
+    return "align-top bg-yellow-300 text-red-800";
+  }
+
+  if (
+    observacion ===
+    OBSERVACION_DOCUMENTO_NO_CORRESPONDE
+  ) {
+    return "align-top bg-green-300 text-black";
+  }
+
+  return "align-top";
+}
+
+function formatearFechaTabla(
+  valor?: string | null
+) {
+  if (!valor) {
+    return "";
+  }
+
+  const texto =
+    valor.trim();
+
+  const fecha =
+    new Date(texto);
+
+  if (
+    !Number.isNaN(
+      fecha.getTime()
+    )
+  ) {
+    return fecha.toLocaleDateString(
+      "es-CO",
+      {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }
+    );
+  }
+
+  const partes =
+    texto.match(
+      /^(\d{4})-(\d{1,2})-(\d{1,2})$/
+    );
+
+  if (partes) {
+    return `${partes[3].padStart(2, "0")}/${partes[2].padStart(2, "0")}/${partes[1]}`;
+  }
+
+  return texto;
+}
+
+function SelectCampo({
+  value,
+  options,
+  onChange,
+}: {
+  value?: string | null;
+  options: string[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <select
+      value={value || ""}
+      onChange={(event) =>
+        onChange(event.target.value)
+      }
+      className="w-full rounded-md border p-2 text-sm"
+    >
+      <option value="">
+        Seleccione
+      </option>
+
+      {options.map((option) => (
+        <option
+          key={option}
+          value={option}
+        >
+          {option}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+export default function GestionMasivaAntecedentes({
+  tickets,
+  registros,
+}: {
+  tickets: TicketMasivo[];
+  registros: RegistroMasivo[];
+}) {
+  const [ticketsSeleccionados, setTicketsSeleccionados] =
+    useState<number[]>([]);
+
+  const [filas, setFilas] =
+    useState(registros);
+
+  const [guardando, setGuardando] =
+    useState(false);
+
+  const [tablaExpandida, setTablaExpandida] =
+    useState(false);
+
+  const filasVisibles =
+    useMemo(
+      () =>
+        filas.filter((fila) =>
+          ticketsSeleccionados.includes(
+            fila.solicitudId
+          )
+        ),
+      [
+        filas,
+        ticketsSeleccionados,
+      ]
+    );
+
+  function alternarTicket(
+    ticketId: number
+  ) {
+    setTicketsSeleccionados(
+      (actuales) =>
+        actuales.includes(ticketId)
+          ? actuales.filter(
+              (id) => id !== ticketId
+            )
+          : [
+              ...actuales,
+              ticketId,
+            ]
+    );
+  }
+
+  function seleccionarTodos() {
+    setTicketsSeleccionados(
+      tickets.map((ticket) => ticket.id)
+    );
+  }
+
+  function limpiarSeleccion() {
+    setTicketsSeleccionados([]);
+  }
+
+  function actualizarFila(
+    id: number,
+    campo: keyof RegistroMasivo,
+    valor: string
+  ) {
+    setFilas((actuales) =>
+      actuales.map((fila) =>
+        fila.id === id
+          ? {
+              ...fila,
+              [campo]: valor,
+            }
+          : fila
+      )
+    );
+  }
+
+  async function guardarGestionMasiva() {
+    try {
+      if (filasVisibles.length === 0) {
+        toast.error(
+          "Debe seleccionar al menos un ticket"
+        );
+        return;
+      }
+
+      const errorValidacion =
+        filasVisibles
+          .map(validarRegistroAntecedente)
+          .find(Boolean);
+
+      if (errorValidacion) {
+        toast.error(errorValidacion);
+        return;
+      }
+
+      setGuardando(true);
+
+      const response =
+        await fetch(
+          "/api/antecedentes/guardar-masivo",
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              registros:
+                filasVisibles,
+            }),
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          "No se pudo guardar la gestion masiva"
+        );
+      }
+
+      setFilas((actuales) =>
+        actuales.map((fila) =>
+          ticketsSeleccionados.includes(
+            fila.solicitudId
+          )
+            ? {
+                ...fila,
+                fechaRespuesta:
+                  data.fechaRespuesta ||
+                  fila.fechaRespuesta,
+              }
+            : fila
+        )
+      );
+
+      toast.success(
+        `Gestion masiva guardada: ${data.actualizados} registros`
+      );
+
+      setTablaExpandida(false);
+
+    } catch (error: any) {
+      console.error(error);
+
+      toast.error(
+        error.message ||
+        "Error guardando gestion masiva"
+      );
+
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="rounded-xl bg-white p-5 shadow-md">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-bold">
+              Tickets disponibles
+            </h2>
+            <p className="text-sm text-gray-500">
+              Seleccione uno o varios tickets para consolidar la gestion.
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={seleccionarTodos}
+              className="rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-gray-100"
+            >
+              Seleccionar todos
+            </button>
+
+            <button
+              type="button"
+              onClick={limpiarSeleccion}
+              className="rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-gray-100"
+            >
+              Limpiar
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {tickets.map((ticket) => {
+            const seleccionado =
+              ticketsSeleccionados.includes(
+                ticket.id
+              );
+
+            return (
+              <label
+                key={ticket.id}
+                className={`
+                  flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition
+                  ${
+                    seleccionado
+                      ? "border-[#0F7A3B] bg-green-50"
+                      : "bg-white hover:bg-gray-50"
+                  }
+                `}
+              >
+                <input
+                  type="checkbox"
+                  checked={seleccionado}
+                  onChange={() =>
+                    alternarTicket(ticket.id)
+                  }
+                  className="mt-1 h-4 w-4"
+                />
+
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/tickets/${ticket.id}`}
+                      className="font-bold text-blue-700 hover:underline"
+                    >
+                      #{ticket.id}
+                    </Link>
+
+                    <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold">
+                      {ticket.estado}
+                    </span>
+                  </div>
+
+                  <p className="mt-1 truncate text-sm font-semibold text-gray-800">
+                    {ticket.finca}
+                  </p>
+
+                  <p className="text-xs text-gray-500">
+                    {ticket.totalRegistros}
+                    {" "}
+                    registros
+                    {" - "}
+                    {ticket.solicitante}
+                  </p>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-white p-5 shadow-md">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-bold">
+              Tabla consolidada
+            </h2>
+            <p className="text-sm text-gray-500">
+              Registros seleccionados:
+              {" "}
+              <strong>
+                {filasVisibles.length}
+              </strong>
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={guardarGestionMasiva}
+            disabled={
+              guardando ||
+              filasVisibles.length === 0
+            }
+            className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-gray-400"
+          >
+            {guardando
+              ? "Guardando..."
+              : "Guardar gestion masiva"}
+          </button>
+        </div>
+
+        {filasVisibles.length === 0 ? (
+          <div className="rounded-lg border border-dashed p-6 text-center text-sm text-gray-500">
+            Seleccione uno o varios tickets para ver la tabla consolidada.
+          </div>
+        ) : (
+          <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border bg-white">
+            <div
+              className={
+                tablaExpandida
+                  ? "max-h-[82vh] w-full max-w-full overflow-auto"
+                  : "max-h-[50vh] w-full max-w-full overflow-auto"
+              }
+            >
+              <div className="w-[2100px] max-w-none">
+                <table className="w-full table-fixed border-collapse text-sm">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="sticky top-0 z-10 w-24 border bg-gray-100 p-2 text-left">
+                        Ticket
+                      </th>
+                      <th className="sticky top-0 z-10 w-28 border bg-gray-100 p-2 text-left">
+                        Finca
+                      </th>
+                      <th className="sticky top-0 z-10 w-32 border bg-gray-100 p-2 text-left">
+                        Fecha solicitud
+                      </th>
+                      <th className="sticky top-0 z-10 w-32 border bg-gray-100 p-2 text-left">
+                        Fecha respuesta
+                      </th>
+                      <th className="sticky top-0 z-10 w-24 border bg-gray-100 p-2 text-left">
+                        EAI
+                      </th>
+                      <th className="sticky top-0 z-10 w-64 border bg-gray-100 p-2 text-left">
+                        Nombres y apellidos
+                      </th>
+                      <th className="sticky top-0 z-10 w-32 border bg-gray-100 p-2 text-left">
+                        Tipo documento
+                      </th>
+                      <th className="sticky top-0 z-10 w-36 border bg-gray-100 p-2 text-left">
+                        Identificacion
+                      </th>
+                      <th className="sticky top-0 z-10 w-40 border bg-gray-100 p-2 text-left">
+                        Fecha expedicion
+                      </th>
+                      <th className="sticky top-0 z-10 w-72 border bg-gray-100 p-2 text-left">
+                        Observacion
+                      </th>
+                      <th className="sticky top-0 z-10 w-56 border bg-gray-100 p-2 text-left">
+                        Revisado por
+                      </th>
+                      <th className="sticky top-0 z-10 w-44 border bg-gray-100 p-2 text-left">
+                        Motivo
+                      </th>
+                      <th className="sticky top-0 z-10 w-40 border bg-gray-100 p-2 text-left">
+                        Autorizacion
+                      </th>
+                      <th className="sticky top-0 z-10 w-72 border bg-gray-100 p-2 text-left">
+                        Observaciones
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {filasVisibles.map((fila) => {
+                      const requiereMotivo =
+                        fila.observacion ===
+                        OBSERVACION_NO_TENER_EN_CUENTA;
+
+                      return (
+                        <tr
+                          key={fila.id}
+                          className={claseFilaPorObservacion(
+                            fila.observacion
+                          )}
+                        >
+                          <td className="w-24 border p-2">
+                            <Link
+                              href={`/tickets/${fila.solicitudId}`}
+                              className="font-bold text-blue-700 hover:underline"
+                            >
+                              #{fila.solicitudId}
+                            </Link>
+                          </td>
+                          <td className="w-28 border p-2">
+                            {fila.finca}
+                          </td>
+                          <td className="w-32 border p-2">
+                            {formatearFechaTabla(
+                              fila.fechaSolicitud
+                            )}
+                          </td>
+                          <td className="w-32 border p-2">
+                            {formatearFechaTabla(
+                              fila.fechaRespuesta
+                            )}
+                          </td>
+                          <td className="w-24 border p-2">
+                            <SelectCampo
+                              value={fila.eai}
+                              options={eaiOpciones}
+                              onChange={(value) =>
+                                actualizarFila(
+                                  fila.id,
+                                  "eai",
+                                  value
+                                )
+                              }
+                            />
+                          </td>
+                          <td className="w-64 border p-2">
+                            {fila.nombresApellidos || ""}
+                          </td>
+                          <td className="w-32 border p-2">
+                            <SelectCampo
+                              value={fila.tipoDocumento}
+                              options={tipoDocumentoOpciones}
+                              onChange={(value) =>
+                                actualizarFila(
+                                  fila.id,
+                                  "tipoDocumento",
+                                  value
+                                )
+                              }
+                            />
+                          </td>
+                          <td className="w-36 border p-2">
+                            {fila.identificacion}
+                          </td>
+                          <td className="w-40 border p-2">
+                            {formatearFechaTabla(
+                              fila.fechaExpedicionDocumento
+                            )}
+                          </td>
+                          <td className="w-72 border p-2">
+                            <div className="flex flex-col gap-1">
+                              <SelectCampo
+                                value={fila.observacion}
+                                options={observacionAntecedenteOpciones}
+                                onChange={(value) =>
+                                  actualizarFila(
+                                    fila.id,
+                                    "observacion",
+                                    value
+                                  )
+                                }
+                              />
+                              <span className="text-xs font-semibold">
+                                Obligatorio
+                              </span>
+                            </div>
+                          </td>
+                          <td className="w-56 border p-2">
+                            <div className="flex flex-col gap-1">
+                              <SelectCampo
+                                value={fila.revisadoPor}
+                                options={revisadoPorOpciones}
+                                onChange={(value) =>
+                                  actualizarFila(
+                                    fila.id,
+                                    "revisadoPor",
+                                    value
+                                  )
+                                }
+                              />
+                              <span className="text-xs font-semibold">
+                                Obligatorio
+                              </span>
+                            </div>
+                          </td>
+                          <td className="w-44 border p-2">
+                            <div className="flex flex-col gap-1">
+                              <SelectCampo
+                                value={fila.motivo}
+                                options={motivoAntecedenteOpciones}
+                                onChange={(value) =>
+                                  actualizarFila(
+                                    fila.id,
+                                    "motivo",
+                                    value
+                                  )
+                                }
+                              />
+                              {requiereMotivo && (
+                                <span className="text-xs font-semibold">
+                                  Obligatorio
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="w-40 border p-2">
+                            <SelectCampo
+                              value={fila.autorizacion}
+                              options={autorizacionAntecedenteOpciones}
+                              onChange={(value) =>
+                                actualizarFila(
+                                  fila.id,
+                                  "autorizacion",
+                                  value
+                                )
+                              }
+                            />
+                          </td>
+                          <td className="w-72 border p-2">
+                            <div className="flex flex-col gap-1">
+                              <textarea
+                                value={fila.observaciones || ""}
+                                onChange={(event) =>
+                                  actualizarFila(
+                                    fila.id,
+                                    "observaciones",
+                                    event.target.value
+                                  )
+                                }
+                                className="h-20 w-full resize-none rounded-md border p-2 text-sm"
+                                placeholder="Observaciones internas"
+                              />
+                              {requiereMotivo && (
+                                <span className="text-xs font-semibold">
+                                  Obligatorio
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-gray-50 p-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setTablaExpandida(
+                    (actual) => !actual
+                  )
+                }
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-100"
+              >
+                {tablaExpandida
+                  ? "Contraer tabla"
+                  : "Expandir tabla"}
+              </button>
+
+              <button
+                type="button"
+                onClick={guardarGestionMasiva}
+                disabled={guardando}
+                className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-gray-400"
+              >
+                {guardando
+                  ? "Guardando..."
+                  : "Guardar gestion masiva"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
