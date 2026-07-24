@@ -76,6 +76,52 @@ function obtenerValor(
   );
 }
 
+function normalizarDocumento(
+  valor: string
+) {
+  return valor
+    .replace(/\D/g, "")
+    .trim();
+}
+
+function validarIdentificacionesDuplicadas(
+  filas: Record<string, unknown>[]
+) {
+  const vistos =
+    new Map<string, number>();
+
+  filas.forEach((fila, index) => {
+    const documento =
+      normalizarDocumento(
+        obtenerValor(
+          fila,
+          "IDENTIFICACION"
+        )
+      );
+
+    if (!documento) {
+      return;
+    }
+
+    const numeroFila =
+      index + 2;
+
+    const filaOriginal =
+      vistos.get(documento);
+
+    if (filaOriginal) {
+      throw new Error(
+        `No fue posible cargar este archivo. La fila ${numeroFila} tiene el número de documento ${documento} duplicado. También aparece en la fila ${filaOriginal}. Debe eliminar el registro repetido.`
+      );
+    }
+
+    vistos.set(
+      documento,
+      numeroFila
+    );
+  });
+}
+
 function obtenerEncabezados(
   sheet: XLSX.WorkSheet
 ) {
@@ -237,6 +283,10 @@ async function leerFilasDesdeUrl(
     >(sheet, {
       defval: "",
     });
+
+  validarIdentificacionesDuplicadas(
+    filas
+  );
 
   return filas;
 }

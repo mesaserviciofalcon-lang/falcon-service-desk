@@ -58,6 +58,46 @@ function claseFilaPorObservacion(
   return "align-top";
 }
 
+function formatearFechaTabla(
+  valor?: string | null
+) {
+  if (!valor) {
+    return "";
+  }
+
+  const texto =
+    valor.trim();
+
+  const fecha =
+    new Date(texto);
+
+  if (
+    !Number.isNaN(
+      fecha.getTime()
+    )
+  ) {
+    return fecha.toLocaleDateString(
+      "es-CO",
+      {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }
+    );
+  }
+
+  const partes =
+    texto.match(
+      /^(\d{4})-(\d{1,2})-(\d{1,2})$/
+    );
+
+  if (partes) {
+    return `${partes[3].padStart(2, "0")}/${partes[2].padStart(2, "0")}/${partes[1]}`;
+  }
+
+  return texto;
+}
+
 function SelectCampo({
   value,
   options,
@@ -291,10 +331,14 @@ export default function AntecedentesTicketTable({
                 )}
               >
                 <td className="w-32 border p-2">
-                  {fila.fechaSolicitud || ""}
+                  {formatearFechaTabla(
+                    fila.fechaSolicitud
+                  )}
                 </td>
                 <td className="w-32 border p-2">
-                  {fila.fechaRespuesta || ""}
+                  {formatearFechaTabla(
+                    fila.fechaRespuesta
+                  )}
                 </td>
                 <td className="w-24 border p-2">
                   {puedeVerCompleto ? (
@@ -340,9 +384,10 @@ export default function AntecedentesTicketTable({
                 </td>
                 <td className="w-40 border p-2">
                   {
-                    fila
-                      .fechaExpedicionDocumento ||
-                    ""
+                    formatearFechaTabla(
+                      fila
+                        .fechaExpedicionDocumento
+                    )
                   }
                 </td>
                 <td className="w-72 border p-2">

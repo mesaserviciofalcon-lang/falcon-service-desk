@@ -185,6 +185,72 @@ export default function UploadButton({
                 return [];
               }
 
+              const indiceIdentificacion =
+                requiredHeaders.findIndex(
+                  (header: string) =>
+                    header
+                      .normalize("NFD")
+                      .replace(
+                        /[\u0300-\u036f]/g,
+                        ""
+                      )
+                      .trim()
+                      .toUpperCase() ===
+                    "IDENTIFICACION"
+                );
+
+              if (
+                indiceIdentificacion >= 0
+              ) {
+                const vistos =
+                  new Map<string, number>();
+
+                for (
+                  let fila = range.s.r + 1;
+                  fila <= range.e.r;
+                  fila++
+                ) {
+                  const celda =
+                    sheet[
+                      XLSX.utils
+                        .encode_cell({
+                          r: fila,
+                          c: indiceIdentificacion,
+                        })
+                    ];
+
+                  const documento =
+                    celda?.v
+                      ? String(celda.v)
+                          .replace(/\D/g, "")
+                          .trim()
+                      : "";
+
+                  if (!documento) {
+                    continue;
+                  }
+
+                  const numeroFila =
+                    fila + 1;
+
+                  const filaOriginal =
+                    vistos.get(documento);
+
+                  if (filaOriginal) {
+                    alert(
+                      `No fue posible subir este archivo. La fila ${numeroFila} tiene el número de documento ${documento} duplicado. También aparece en la fila ${filaOriginal}. Debe eliminar el registro repetido.`
+                    );
+
+                    return [];
+                  }
+
+                  vistos.set(
+                    documento,
+                    numeroFila
+                  );
+                }
+              }
+
             } catch (error) {
               console.error(error);
 
