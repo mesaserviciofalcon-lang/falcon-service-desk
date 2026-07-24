@@ -40,6 +40,10 @@ export default function TicketCard({
     !isSolicitante &&
     Boolean(role);
 
+  const puedeVerTablaAntecedentes =
+    !isSolicitante ||
+    isCompletado;
+
   return (
 
     <div
@@ -405,7 +409,8 @@ export default function TicketCard({
       {/* ANTECEDENTES */}
 
       {solicitud.tipo ===
-        "ANTECEDENTES" && (
+        "ANTECEDENTES" &&
+        puedeVerTablaAntecedentes && (
 
         <div className="mt-4 border-t pt-4">
 
