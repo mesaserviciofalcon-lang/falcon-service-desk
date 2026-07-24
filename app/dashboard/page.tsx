@@ -32,7 +32,22 @@ function obtenerFincaTicket(
   );
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+
+  searchParams,
+
+}: {
+
+  searchParams?: Promise<{
+    estado?: string;
+  }>;
+}) {
+
+  const params =
+    await searchParams;
+
+  const estadoSeleccionado =
+    params?.estado || "";
 
   const session =
     await getServerSession(
@@ -264,10 +279,26 @@ hace3Dias.setDate(
     );
 }
 
+  const rolesVistaEjecutivaCompleta =
+    role === "ADMIN"
+
+    ||
+
+    role === "DIRECTOR_SEG"
+
+    ||
+
+    role === "JEFE_SEG";
+
+  const ticketsMetricas =
+    rolesVistaEjecutivaCompleta
+      ? solicitudes
+      : tickets;
+
   // CONTADORES
 
   const pendientes =
-    tickets.filter(
+    ticketsMetricas.filter(
       (s: any) =>
 
         s.estado ===
@@ -275,7 +306,7 @@ hace3Dias.setDate(
     ).length;
 
   const enProceso =
-    tickets.filter(
+    ticketsMetricas.filter(
       (s: any) =>
 
         s.estado ===
@@ -283,7 +314,7 @@ hace3Dias.setDate(
     ).length;
 
   const reabiertos =
-    tickets.filter(
+    ticketsMetricas.filter(
       (s: any) =>
 
         s.estado ===
@@ -291,12 +322,241 @@ hace3Dias.setDate(
     ).length;
 
   const completados =
-    tickets.filter(
+    ticketsMetricas.filter(
       (s: any) =>
 
         s.estado ===
         "COMPLETADO"
     ).length;
+
+  const ticketsFiltrados =
+    estadoSeleccionado
+
+      ? tickets.filter(
+          (s: any) =>
+            s.estado ===
+            estadoSeleccionado
+        )
+
+      : tickets;
+
+  const tarjetasEstado = [
+    {
+      titulo: "Pendientes",
+      estado: "Pendiente",
+      total: pendientes,
+      color: "border-yellow-500 text-yellow-700 bg-yellow-50",
+    },
+    {
+      titulo: "En proceso",
+      estado: "EN PROCESO",
+      total: enProceso,
+      color: "border-blue-500 text-blue-700 bg-blue-50",
+    },
+    {
+      titulo: "Reabiertos",
+      estado: "REABIERTO",
+      total: reabiertos,
+      color: "border-red-500 text-red-700 bg-red-50",
+    },
+    {
+      titulo: "Completados",
+      estado: "COMPLETADO",
+      total: completados,
+      color: "border-green-500 text-green-700 bg-green-50",
+    },
+  ];
+
+  const ahora =
+    new Date();
+
+  const ticketsAbiertos =
+    ticketsMetricas.filter(
+      (ticket: any) =>
+        ticket.estado !==
+        "COMPLETADO"
+    );
+
+  const ticketsSinGestionMayor48h =
+    ticketsAbiertos.filter(
+      (ticket: any) =>
+        ahora.getTime() -
+          new Date(
+            ticket.fechaCreacion
+          ).getTime() >
+        1000 * 60 * 60 * 48
+    );
+
+  const ticketMasAntiguo =
+    ticketsAbiertos
+      .slice()
+      .sort(
+        (a: any, b: any) =>
+          new Date(
+            a.fechaCreacion
+          ).getTime() -
+          new Date(
+            b.fechaCreacion
+          ).getTime()
+      )[0];
+
+  const diasTicketMasAntiguo =
+    ticketMasAntiguo
+      ? Math.max(
+          0,
+          Math.floor(
+            (
+              ahora.getTime() -
+              new Date(
+                ticketMasAntiguo.fechaCreacion
+              ).getTime()
+            ) /
+              (
+                1000 *
+                60 *
+                60 *
+                24
+              )
+          )
+        )
+      : 0;
+
+  const tiposSolicitud =
+    Object.entries(
+      ticketsMetricas.reduce(
+        (
+          acumulado: Record<string, number>,
+          ticket: any
+        ) => {
+          acumulado[ticket.tipo] =
+            (
+              acumulado[ticket.tipo] ||
+              0
+            ) + 1;
+
+          return acumulado;
+        },
+        {}
+      )
+    )
+      .map(
+        ([tipo, total]) => ({
+          tipo,
+          total,
+        })
+      )
+      .sort(
+        (a, b) =>
+          b.total - a.total
+      );
+
+  const mayorTipo =
+    Math.max(
+      ...tiposSolicitud.map(
+        (item) => item.total
+      ),
+      1
+    );
+
+  const fincasTop =
+    Object.entries(
+      ticketsMetricas.reduce(
+        (
+          acumulado: Record<string, number>,
+          ticket: any
+        ) => {
+          const finca =
+            obtenerFincaTicket(
+              ticket
+            );
+
+          acumulado[finca] =
+            (
+              acumulado[finca] ||
+              0
+            ) + 1;
+
+          return acumulado;
+        },
+        {}
+      )
+    )
+      .map(
+        ([finca, total]) => ({
+          finca,
+          total,
+        })
+      )
+      .sort(
+        (a, b) =>
+          b.total - a.total
+      )
+      .slice(0, 5);
+
+  const ticketsSolicitanteActivos =
+    tickets.filter(
+      (ticket: any) =>
+        ticket.estado !==
+        "COMPLETADO"
+    );
+
+  const ticketsSolicitanteCompletados =
+    tickets.filter(
+      (ticket: any) =>
+        ticket.estado ===
+        "COMPLETADO"
+    );
+
+  const ticketsSolicitanteConCierre =
+    ticketsSolicitanteCompletados.filter(
+      (ticket: any) =>
+        ticket.fechaCierre
+    );
+
+  const promedioRespuestaSolicitante =
+    ticketsSolicitanteConCierre.length > 0
+      ? Math.round(
+          ticketsSolicitanteConCierre.reduce(
+            (
+              total: number,
+              ticket: any
+            ) =>
+              total +
+              (
+                new Date(
+                  ticket.fechaCierre
+                ).getTime() -
+                new Date(
+                  ticket.fechaCreacion
+                ).getTime()
+              ) /
+                (
+                  1000 *
+                  60 *
+                  60 *
+                  24
+                ),
+            0
+          ) /
+            ticketsSolicitanteConCierre.length
+        )
+      : 0;
+
+  const ultimasRespuestasSolicitante =
+    ticketsSolicitanteCompletados
+      .slice()
+      .sort(
+        (a: any, b: any) =>
+          new Date(
+            b.fechaCierre ||
+              b.fechaCreacion
+          ).getTime() -
+          new Date(
+            a.fechaCierre ||
+              a.fechaCreacion
+          ).getTime()
+      )
+      .slice(0, 4);
 
   return (
 
@@ -318,93 +578,441 @@ hace3Dias.setDate(
 
   </div>
 
-      {/* KPI */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
 
-<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
+        {tarjetasEstado.map(
+          (tarjeta) => {
 
-  {/* PENDIENTES */}
+            const activa =
+              estadoSeleccionado ===
+              tarjeta.estado;
 
-  <div className="bg-white rounded-2xl shadow-lg p-6 border-l-8 border-yellow-500">
+            return (
 
-    <h2 className="text-gray-500 text-sm">
+              <Link
+                key={tarjeta.estado}
+                href={
+                  activa
+                    ? "/dashboard"
+                    : `/dashboard?estado=${encodeURIComponent(
+                        tarjeta.estado
+                      )}`
+                }
+                className={`
+                  rounded-lg
+                  border-l-4
+                  bg-white
+                  p-4
+                  shadow-sm
+                  transition
+                  hover:-translate-y-0.5
+                  hover:shadow-md
+                  ${tarjeta.color}
+                  ${
+                    activa
+                      ? "ring-2 ring-[#0F3D1F]/20"
+                      : ""
+                  }
+                `}
+              >
 
-      PENDIENTES
+                <span className="text-xs font-semibold uppercase tracking-normal text-gray-500">
+                  {tarjeta.titulo}
+                </span>
 
-    </h2>
+                <div className="mt-2 flex items-end justify-between gap-3">
 
-    <p className="text-5xl font-bold mt-4 text-yellow-600">
+                  <strong className="text-3xl leading-none">
+                    {tarjeta.total}
+                  </strong>
 
-      {pendientes}
+                  <span className="text-xs font-medium text-gray-500">
+                    Ver
+                  </span>
 
-    </p>
+                </div>
 
-  </div>
+              </Link>
+            );
+          }
+        )}
 
-  {/* EN PROCESO */}
+      </div>
 
-  <div className="bg-white rounded-2xl shadow-lg p-6 border-l-8 border-blue-500">
+      {role === "SOLICITANTE" && (
 
-    <h2 className="text-gray-500 text-sm">
+        <div className="mb-8 grid grid-cols-1 xl:grid-cols-3 gap-4">
 
-      EN PROCESO
+          <div className="rounded-xl bg-white p-5 shadow-sm">
 
-    </h2>
+            <h2 className="text-sm font-bold uppercase text-gray-500">
+              Mi gestión
+            </h2>
 
-    <p className="text-5xl font-bold mt-4 text-blue-600">
+            <div className="mt-4 grid grid-cols-2 gap-3">
 
-      {enProceso}
+              <div className="rounded-lg border bg-green-50 p-3">
 
-    </p>
+                <span className="text-xs text-gray-500">
+                  Activas
+                </span>
 
-  </div>
+                <p className="mt-1 text-2xl font-bold text-[#0F3D1F]">
+                  {ticketsSolicitanteActivos.length}
+                </p>
 
-  {/* REABIERTOS */}
+              </div>
 
-  <div className="bg-white rounded-2xl shadow-lg p-6 border-l-8 border-red-500">
+              <div className="rounded-lg border bg-blue-50 p-3">
 
-    <h2 className="text-gray-500 text-sm">
+                <span className="text-xs text-gray-500">
+                  Respondidas
+                </span>
 
-      REABIERTOS
+                <p className="mt-1 text-2xl font-bold text-blue-700">
+                  {ticketsSolicitanteCompletados.length}
+                </p>
 
-    </h2>
+              </div>
 
-    <p className="text-5xl font-bold mt-4 text-red-600">
+            </div>
 
-      {reabiertos}
+            <div className="mt-4 rounded-lg border p-3">
 
-    </p>
+              <span className="text-xs text-gray-500">
+                Tiempo promedio de respuesta
+              </span>
 
-  </div>
+              <p className="mt-2 text-2xl font-bold text-gray-800">
+                {promedioRespuestaSolicitante}
+                {" "}
+                días
+              </p>
 
-  {/* COMPLETADOS */}
+            </div>
 
-  <div className="bg-white rounded-2xl shadow-lg p-6 border-l-8 border-[#2FAE4A]">
+          </div>
 
-    <h2 className="text-gray-500 text-sm">
+          <div className="rounded-xl bg-white p-5 shadow-sm">
 
-      COMPLETADOS
+            <h2 className="text-sm font-bold uppercase text-gray-500">
+              Mis solicitudes por tipo
+            </h2>
 
-    </h2>
+            <div className="mt-4 flex flex-col gap-3">
 
-    <p className="text-5xl font-bold mt-4 text-[#2FAE4A]">
+              {tiposSolicitud.slice(0, 5).map(
+                (item) => (
 
-      {completados}
+                  <div key={item.tipo}>
 
-    </p>
+                    <div className="mb-1 flex justify-between gap-3 text-sm">
 
-  </div>
+                      <span className="font-medium text-gray-700">
+                        {item.tipo}
+                      </span>
 
-</div>
+                      <span className="font-bold text-gray-800">
+                        {item.total}
+                      </span>
+
+                    </div>
+
+                    <div className="h-2 rounded-full bg-gray-100">
+
+                      <div
+                        className="h-2 rounded-full bg-[#0F7A3B]"
+                        style={{
+                          width: `${Math.max(
+                            8,
+                            (
+                              item.total /
+                              mayorTipo
+                            ) *
+                              100
+                          )}%`,
+                        }}
+                      />
+
+                    </div>
+
+                  </div>
+                )
+              )}
+
+              {tiposSolicitud.length === 0 && (
+
+                <p className="text-sm text-gray-500">
+                  Aún no tienes solicitudes registradas.
+                </p>
+              )}
+
+            </div>
+
+          </div>
+
+          <div className="rounded-xl bg-white p-5 shadow-sm">
+
+            <h2 className="text-sm font-bold uppercase text-gray-500">
+              Últimas respuestas
+            </h2>
+
+            <div className="mt-4 flex flex-col gap-3">
+
+              {ultimasRespuestasSolicitante.map(
+                (ticket: any) => (
+
+                  <Link
+                    key={ticket.id}
+                    href={`/tickets/${ticket.id}`}
+                    className="rounded-lg border px-3 py-2 transition hover:bg-green-50"
+                  >
+
+                    <div className="flex items-center justify-between gap-3">
+
+                      <span className="font-bold text-blue-700">
+                        #{ticket.id}
+                      </span>
+
+                      <span className="text-xs font-semibold text-green-700">
+                        Completado
+                      </span>
+
+                    </div>
+
+                    <p className="mt-1 truncate text-sm text-gray-700">
+                      {ticket.tipo}
+                    </p>
+
+                  </Link>
+                )
+              )}
+
+              {ultimasRespuestasSolicitante.length === 0 && (
+
+                <p className="text-sm text-gray-500">
+                  Todavía no tienes respuestas recientes.
+                </p>
+              )}
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+      {role !== "SOLICITANTE" && (
+
+      <div className="mb-8 grid grid-cols-1 xl:grid-cols-3 gap-4">
+
+        <div className="rounded-xl bg-white p-5 shadow-sm">
+
+          <h2 className="text-sm font-bold uppercase text-gray-500">
+            Atención prioritaria
+          </h2>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+
+            <div className="rounded-lg border bg-gray-50 p-3">
+
+              <span className="text-xs text-gray-500">
+                Abiertos
+              </span>
+
+              <p className="mt-1 text-2xl font-bold text-[#0F3D1F]">
+                {ticketsAbiertos.length}
+              </p>
+
+            </div>
+
+            <div className="rounded-lg border bg-amber-50 p-3">
+
+              <span className="text-xs text-gray-500">
+                Más de 48h
+              </span>
+
+              <p className="mt-1 text-2xl font-bold text-amber-700">
+                {ticketsSinGestionMayor48h.length}
+              </p>
+
+            </div>
+
+          </div>
+
+          <div className="mt-4 rounded-lg border p-3">
+
+            <span className="text-xs text-gray-500">
+              Ticket abierto más antiguo
+            </span>
+
+            {ticketMasAntiguo ? (
+
+              <div className="mt-2 flex items-center justify-between gap-3">
+
+                <Link
+                  href={`/tickets/${ticketMasAntiguo.id}`}
+                  className="font-bold text-blue-700 hover:underline"
+                >
+                  #{ticketMasAntiguo.id}
+                </Link>
+
+                <span className="text-sm font-semibold text-gray-700">
+                  {diasTicketMasAntiguo}
+                  {" "}
+                  días
+                </span>
+
+              </div>
+            ) : (
+
+              <p className="mt-2 text-sm text-gray-500">
+                Sin tickets abiertos
+              </p>
+            )}
+
+          </div>
+
+        </div>
+
+        <div className="rounded-xl bg-white p-5 shadow-sm">
+
+          <h2 className="text-sm font-bold uppercase text-gray-500">
+            Solicitudes por tipo
+          </h2>
+
+          <div className="mt-4 flex flex-col gap-3">
+
+            {tiposSolicitud.slice(0, 5).map(
+              (item) => (
+
+                <div key={item.tipo}>
+
+                  <div className="mb-1 flex justify-between gap-3 text-sm">
+
+                    <span className="font-medium text-gray-700">
+                      {item.tipo}
+                    </span>
+
+                    <span className="font-bold text-gray-800">
+                      {item.total}
+                    </span>
+
+                  </div>
+
+                  <div className="h-2 rounded-full bg-gray-100">
+
+                    <div
+                      className="h-2 rounded-full bg-[#0F7A3B]"
+                      style={{
+                        width: `${Math.max(
+                          8,
+                          (
+                            item.total /
+                            mayorTipo
+                          ) *
+                            100
+                        )}%`,
+                      }}
+                    />
+
+                  </div>
+
+                </div>
+              )
+            )}
+
+          </div>
+
+        </div>
+
+        <div className="rounded-xl bg-white p-5 shadow-sm">
+
+          <h2 className="text-sm font-bold uppercase text-gray-500">
+            Fincas con más solicitudes
+          </h2>
+
+          <div className="mt-4 flex flex-col gap-3">
+
+            {fincasTop.map(
+              (item, index) => (
+
+                <div
+                  key={item.finca}
+                  className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                >
+
+                  <div className="min-w-0">
+
+                    <span className="text-xs font-semibold text-gray-400">
+                      #{index + 1}
+                    </span>
+
+                    <p className="truncate font-medium text-gray-800">
+                      {item.finca}
+                    </p>
+
+                  </div>
+
+                  <strong className="rounded-md bg-gray-100 px-2 py-1 text-sm">
+                    {item.total}
+                  </strong>
+
+                </div>
+              )
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+
+      )}
 
       {/* ULTIMOS TICKETS */}
 
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-md p-5">
 
-        <h2 className="text-2xl font-bold mb-6">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
 
-          Últimos Tickets
+          <div>
 
-        </h2>
+            <h2 className="text-xl font-bold">
+
+              {estadoSeleccionado
+                ? `Tickets ${estadoSeleccionado.toLowerCase()}`
+                : "Últimos Tickets"}
+
+            </h2>
+
+            <p className="text-sm text-gray-500">
+
+              Mostrando
+              {" "}
+              <strong>
+                {ticketsFiltrados.length}
+              </strong>
+              {" "}
+              registros
+
+            </p>
+
+          </div>
+
+          {estadoSeleccionado && (
+
+            <Link
+              href="/dashboard"
+              className="rounded-md border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+            >
+
+              Quitar filtro
+
+            </Link>
+          )}
+
+        </div>
 
         <div className="overflow-x-auto">
 
@@ -444,7 +1052,7 @@ hace3Dias.setDate(
 
             <tbody>
 
-              {tickets
+              {ticketsFiltrados
                 .slice(0, 10)
                 .map((ticket: any) => (
 
