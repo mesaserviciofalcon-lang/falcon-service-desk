@@ -74,7 +74,7 @@ export default async function AntecedentesPage({
       : [];
 
   return (
-    <div className="p-8 bg-[#F4F6F8] min-h-screen">
+    <div className="p-8 bg-[#E8EEF2] min-h-screen">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-[#0F3D1F]">
           Consulta de antecedentes
@@ -85,7 +85,7 @@ export default async function AntecedentesPage({
       </div>
 
       <form
-        className="mb-6 flex flex-col gap-3 rounded-xl bg-white p-5 shadow-md md:flex-row"
+        className="mb-6 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-md md:flex-row"
       >
         <input
           name="identificacion"
@@ -106,7 +106,7 @@ export default async function AntecedentesPage({
         <ImportarHistoricoAntecedentes />
       )}
 
-      <div className="rounded-xl bg-white p-5 shadow-md">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-bold">
             Resultados

@@ -112,7 +112,7 @@ export default async function TicketDetalle({
 
   return (
 
-    <div className="p-8 bg-[#F4F6F8] min-h-screen">
+    <div className="p-8 bg-[#E8EEF2] min-h-screen">
 
       <div className="mb-6">
 

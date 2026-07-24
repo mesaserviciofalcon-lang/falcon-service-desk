@@ -44,7 +44,7 @@ export default async function UsuariosPage() {
     });
 
   return (
-    <div className="p-8 bg-[#F4F6F8] min-h-screen">
+    <div className="p-8 bg-[#E8EEF2] min-h-screen">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-[#0F3D1F]">
           Gestion de usuarios

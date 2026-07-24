@@ -165,7 +165,7 @@ export default async function GestionMasivaAntecedentesPage() {
     );
 
   return (
-    <div className="min-h-screen bg-[#F4F6F8] p-8">
+    <div className="min-h-screen bg-[#E8EEF2] p-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-[#0F3D1F]">
           Gestion masiva de antecedentes

@@ -283,7 +283,7 @@ export default function GestionUsuarios({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="rounded-xl bg-white p-5 shadow-md">
+      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
         <h2 className="mb-4 text-xl font-bold">
           Crear usuario
         </h2>
@@ -381,7 +381,7 @@ export default function GestionUsuarios({
         </div>
       </section>
 
-      <section className="rounded-xl bg-white p-5 shadow-md">
+      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
         <h2 className="mb-4 text-xl font-bold">
           Usuarios
         </h2>

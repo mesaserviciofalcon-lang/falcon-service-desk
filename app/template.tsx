@@ -59,7 +59,7 @@ export default function Template({
 
   return (
 
-    <main className="flex bg-gray-100 min-h-screen">
+    <main className="flex bg-[#E8EEF2] min-h-screen">
 
       <Sidebar
 

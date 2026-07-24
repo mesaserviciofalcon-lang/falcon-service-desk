@@ -73,7 +73,7 @@ export default function ImportarHistoricoAntecedentes() {
   }
 
   return (
-    <div className="mb-6 rounded-xl bg-white p-5 shadow-md">
+    <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-md">
       <div className="mb-3">
         <h2 className="text-xl font-bold">
           Cargar base historica

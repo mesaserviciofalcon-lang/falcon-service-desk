@@ -178,6 +178,16 @@ export default function GestionMasivaAntecedentes({
       ]
     );
 
+  const filasPendientesTusDatos =
+    useMemo(
+      () =>
+        filasVisibles.filter(
+          (fila) =>
+            !fila.observacion?.trim()
+        ),
+      [filasVisibles]
+    );
+
   function alternarTicket(
     ticketId: number
   ) {
@@ -218,6 +228,93 @@ export default function GestionMasivaAntecedentes({
             }
           : fila
       )
+    );
+  }
+
+  async function descargarExcelTusDatos() {
+    if (filasVisibles.length === 0) {
+      toast.error(
+        "Debe seleccionar al menos un ticket"
+      );
+      return;
+    }
+
+    if (
+      filasPendientesTusDatos.length === 0
+    ) {
+      toast.error(
+        "No hay personas pendientes por consultar en TusDatos"
+      );
+      return;
+    }
+
+    const incompleta =
+      filasPendientesTusDatos.find(
+        (fila) =>
+          !fila.identificacion?.trim() ||
+          !fila.tipoDocumento?.trim() ||
+          !fila
+            .fechaExpedicionDocumento
+            ?.trim()
+      );
+
+    if (incompleta) {
+      toast.error(
+        `La identificacion ${incompleta.identificacion || "sin numero"} tiene datos incompletos para TusDatos`
+      );
+      return;
+    }
+
+    const XLSX =
+      await import("xlsx");
+
+    const worksheet =
+      XLSX.utils.aoa_to_sheet([
+        [
+          "Documento",
+          "Tipo de Documento",
+          "Fecha de Expedición del Documento (opcional)",
+        ],
+        ...filasPendientesTusDatos.map(
+          (fila) => [
+            fila.identificacion,
+            fila.tipoDocumento || "",
+            formatearFechaTabla(
+              fila
+                .fechaExpedicionDocumento
+            ),
+          ]
+        ),
+      ]);
+
+    worksheet["!cols"] = [
+      {
+        wch: 22,
+      },
+      {
+        wch: 22,
+      },
+      {
+        wch: 42,
+      },
+    ];
+
+    const workbook =
+      XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "CC, CE, NIT, PPT, NOMBRE"
+    );
+
+    XLSX.writeFile(
+      workbook,
+      `TusDatos_antecedentes_${new Date().toISOString().slice(0, 10)}.xlsx`
+    );
+
+    toast.success(
+      `Excel TusDatos generado con ${filasPendientesTusDatos.length} registros`
     );
   }
 
@@ -304,7 +401,7 @@ export default function GestionMasivaAntecedentes({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="rounded-xl bg-white p-5 shadow-md">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold">
@@ -394,7 +491,7 @@ export default function GestionMasivaAntecedentes({
         </div>
       </div>
 
-      <div className="rounded-xl bg-white p-5 shadow-md">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold">
@@ -406,21 +503,24 @@ export default function GestionMasivaAntecedentes({
               <strong>
                 {filasVisibles.length}
               </strong>
+              {" "}
+              | Pendientes TusDatos:
+              {" "}
+              <strong>
+                {filasPendientesTusDatos.length}
+              </strong>
             </p>
           </div>
 
           <button
             type="button"
-            onClick={guardarGestionMasiva}
+            onClick={descargarExcelTusDatos}
             disabled={
-              guardando ||
-              filasVisibles.length === 0
+              filasPendientesTusDatos.length === 0
             }
-            className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-gray-400"
+            className="rounded-lg bg-black px-5 py-3 text-sm font-semibold text-white hover:bg-gray-800 disabled:bg-gray-400"
           >
-            {guardando
-              ? "Guardando..."
-              : "Guardar gestion masiva"}
+            Descargar Excel TusDatos
           </button>
         </div>
 

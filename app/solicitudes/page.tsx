@@ -310,7 +310,7 @@ setTimeout(() => {
           crearSolicitud
         }
 
-        className="bg-white p-6 rounded-xl shadow-md flex flex-col gap-4"
+        className="bg-white p-6 rounded-xl border border-slate-200 shadow-md flex flex-col gap-4"
       >
 
         {/* DATOS USUARIO */}

@@ -916,7 +916,7 @@ hace3Dias.setDate(
 
   return (
 
-    <div className="p-8 bg-[#F4F6F8] min-h-screen">
+    <div className="p-8 bg-[#E8EEF2] min-h-screen">
 
   <div className="mb-10">
 
@@ -937,7 +937,7 @@ hace3Dias.setDate(
       {role === "ADMIN" && (
 
         <form
-          className="mb-6 flex flex-wrap items-end gap-3 rounded-xl bg-white p-4 shadow-sm"
+          className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-md"
         >
 
           <div>
@@ -1095,7 +1095,7 @@ hace3Dias.setDate(
 
         <div className="mb-8 grid grid-cols-1 xl:grid-cols-2 gap-4">
 
-          <div className="rounded-xl bg-white p-5 shadow-sm xl:col-span-2">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md xl:col-span-2">
 
             <h2 className="text-sm font-bold uppercase text-gray-500">
               Conceptos de antecedentes
@@ -1149,7 +1149,7 @@ hace3Dias.setDate(
 
           </div>
 
-          <div className="rounded-xl bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
 
             <h2 className="text-sm font-bold uppercase text-gray-500">
               Nacionales y extranjeros
@@ -1205,7 +1205,7 @@ hace3Dias.setDate(
 
           </div>
 
-          <div className="rounded-xl bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
 
             <h2 className="text-sm font-bold uppercase text-gray-500">
               Histórico año en curso
@@ -1240,7 +1240,7 @@ hace3Dias.setDate(
 
         <div className="mb-8 grid grid-cols-1 xl:grid-cols-3 gap-4">
 
-          <div className="rounded-xl bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
 
             <h2 className="text-sm font-bold uppercase text-gray-500">
               Mi gestión
@@ -1290,7 +1290,7 @@ hace3Dias.setDate(
 
           </div>
 
-          <div className="rounded-xl bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
 
             <h2 className="text-sm font-bold uppercase text-gray-500">
               Mis solicitudes por tipo
@@ -1348,7 +1348,7 @@ hace3Dias.setDate(
 
           </div>
 
-          <div className="rounded-xl bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
 
             <h2 className="text-sm font-bold uppercase text-gray-500">
               Últimas respuestas
@@ -1403,7 +1403,7 @@ hace3Dias.setDate(
 
       <div className="mb-8 grid grid-cols-1 xl:grid-cols-3 gap-4">
 
-        <div className="rounded-xl bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
 
           <h2 className="text-sm font-bold uppercase text-gray-500">
             Atención prioritaria
@@ -1472,7 +1472,7 @@ hace3Dias.setDate(
 
         </div>
 
-        <div className="rounded-xl bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
 
           <h2 className="text-sm font-bold uppercase text-gray-500">
             Solicitudes por tipo
@@ -1523,7 +1523,7 @@ hace3Dias.setDate(
 
         </div>
 
-        <div className="rounded-xl bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
 
           <h2 className="text-sm font-bold uppercase text-gray-500">
             Fincas con más solicitudes
@@ -1569,7 +1569,7 @@ hace3Dias.setDate(
 
       {/* ULTIMOS TICKETS */}
 
-      <div className="bg-white rounded-xl shadow-md p-5">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
 
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
 

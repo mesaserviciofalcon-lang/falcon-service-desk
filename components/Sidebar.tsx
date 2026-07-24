@@ -23,6 +23,8 @@ import {
 
   Users,
 
+  TableProperties,
+
 } from "lucide-react";
 
 export default function Sidebar({
@@ -153,7 +155,7 @@ export default function Sidebar({
               className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
             >
 
-              <ShieldCheck size={20} />
+              <TableProperties size={20} />
 
               Gestion masiva
 
