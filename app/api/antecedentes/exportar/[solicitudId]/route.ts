@@ -114,6 +114,23 @@ export async function GET(
           const base = {
             "FECHA DE SOLICITUD":
               registro.fechaSolicitud || "",
+            "NOMBRES Y APELLIDOS":
+              registro.nombresApellidos || "",
+            "TIPO DE DOCUMENTO":
+              registro.tipoDocumento || "",
+            IDENTIFICACION:
+              registro.identificacion || "",
+            OBSERVACION:
+              registro.observacion || "",
+          };
+
+          if (!puedeVerCompleto) {
+            return base;
+          }
+
+          return {
+            "FECHA DE SOLICITUD":
+              registro.fechaSolicitud || "",
             "FECHA RESPUESTA":
               registro.fechaRespuesta || "",
             EAI:
@@ -128,14 +145,6 @@ export async function GET(
               registro.fechaExpedicionDocumento || "",
             OBSERVACION:
               registro.observacion || "",
-          };
-
-          if (!puedeVerCompleto) {
-            return base;
-          }
-
-          return {
-            ...base,
             "REVISADO POR":
               registro.revisadoPor || "",
             MOTIVO:

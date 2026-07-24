@@ -269,19 +269,29 @@ export default function AntecedentesTicketTable({
               : "max-h-[42vh] w-full max-w-full overflow-auto"
           }
         >
-        <div className="w-[1800px] max-w-none">
+        <div
+          className={
+            puedeVerCompleto
+              ? "w-[1800px] max-w-none"
+              : "w-[950px] max-w-none"
+          }
+        >
         <table className="w-full table-fixed border-collapse text-sm">
           <thead className="bg-gray-100">
             <tr>
               <th className="sticky top-0 z-10 w-32 border bg-gray-100 p-2 text-left">
                 Fecha solicitud
               </th>
-              <th className="sticky top-0 z-10 w-32 border bg-gray-100 p-2 text-left">
-                Fecha respuesta
-              </th>
-              <th className="sticky top-0 z-10 w-24 border bg-gray-100 p-2 text-left">
-                EAI
-              </th>
+              {puedeVerCompleto && (
+                <>
+                  <th className="sticky top-0 z-10 w-32 border bg-gray-100 p-2 text-left">
+                    Fecha respuesta
+                  </th>
+                  <th className="sticky top-0 z-10 w-24 border bg-gray-100 p-2 text-left">
+                    EAI
+                  </th>
+                </>
+              )}
               <th className="sticky top-0 z-10 w-64 border bg-gray-100 p-2 text-left">
                 Nombres y apellidos
               </th>
@@ -291,9 +301,11 @@ export default function AntecedentesTicketTable({
               <th className="sticky top-0 z-10 w-36 border bg-gray-100 p-2 text-left">
                 Identificacion
               </th>
-              <th className="sticky top-0 z-10 w-40 border bg-gray-100 p-2 text-left">
-                Fecha expedicion
-              </th>
+              {puedeVerCompleto && (
+                <th className="sticky top-0 z-10 w-40 border bg-gray-100 p-2 text-left">
+                  Fecha expedicion
+                </th>
+              )}
               <th className="sticky top-0 z-10 w-72 border bg-gray-100 p-2 text-left">
                 Observacion
               </th>
@@ -335,28 +347,28 @@ export default function AntecedentesTicketTable({
                     fila.fechaSolicitud
                   )}
                 </td>
-                <td className="w-32 border p-2">
-                  {formatearFechaTabla(
-                    fila.fechaRespuesta
-                  )}
-                </td>
-                <td className="w-24 border p-2">
-                  {puedeVerCompleto ? (
-                    <SelectCampo
-                      value={fila.eai}
-                      options={eaiOpciones}
-                      onChange={(value) =>
-                        actualizarFila(
-                          fila.id,
-                          "eai",
-                          value
-                        )
-                      }
-                    />
-                  ) : (
-                    fila.eai || ""
-                  )}
-                </td>
+                {puedeVerCompleto && (
+                  <>
+                    <td className="w-32 border p-2">
+                      {formatearFechaTabla(
+                        fila.fechaRespuesta
+                      )}
+                    </td>
+                    <td className="w-24 border p-2">
+                      <SelectCampo
+                        value={fila.eai}
+                        options={eaiOpciones}
+                        onChange={(value) =>
+                          actualizarFila(
+                            fila.id,
+                            "eai",
+                            value
+                          )
+                        }
+                      />
+                    </td>
+                  </>
+                )}
                 <td className="w-64 border p-2">
                   {fila.nombresApellidos || ""}
                 </td>
@@ -382,14 +394,14 @@ export default function AntecedentesTicketTable({
                 <td className="w-36 border p-2">
                   {fila.identificacion}
                 </td>
-                <td className="w-40 border p-2">
-                  {
-                    formatearFechaTabla(
+                {puedeVerCompleto && (
+                  <td className="w-40 border p-2">
+                    {formatearFechaTabla(
                       fila
                         .fechaExpedicionDocumento
-                    )
-                  }
-                </td>
+                    )}
+                  </td>
+                )}
                 <td className="w-72 border p-2">
                   {puedeVerCompleto ? (
                     <div className="flex flex-col gap-1">
