@@ -12,10 +12,11 @@ import {
 } from "next/navigation";
 
 import {
+  Suspense,
   useState,
 } from "react";
 
-export default function LoginPage() {
+function LoginContent() {
 
   const router =
     useRouter();
@@ -295,5 +296,17 @@ const redirectTo =
       </div>
 
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F4F6F8]" />
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

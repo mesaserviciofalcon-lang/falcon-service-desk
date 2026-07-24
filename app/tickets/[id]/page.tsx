@@ -4,6 +4,9 @@ from "@/lib/prisma";
 import { getServerSession }
 from "next-auth";
 
+import Link
+from "next/link";
+
 import { authOptions }
 from "@/lib/auth";
 
@@ -116,7 +119,7 @@ export default async function TicketDetalle({
 
       <div className="mb-6">
 
-        <a
+        <Link
 
           href="/tickets"
 
@@ -128,7 +131,7 @@ export default async function TicketDetalle({
 
           ← Volver
 
-        </a>
+        </Link>
 
       </div>
 

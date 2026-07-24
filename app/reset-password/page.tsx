@@ -8,11 +8,13 @@ import {
 
 import {
 
+  Suspense,
+
   useState,
 
 } from "react";
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
 
   const searchParams =
     useSearchParams();
@@ -197,5 +199,17 @@ export default function ResetPasswordPage() {
       </form>
 
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#E8EEF2]" />
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

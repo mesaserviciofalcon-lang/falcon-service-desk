@@ -148,15 +148,9 @@ export async function autocompletarAntecedentes(
                     idsActuales,
                 }
               : undefined,
-          OR:
-            identificaciones.map(
-              (identificacion) => ({
-                identificacion: {
-                  contains:
-                    identificacion,
-                },
-              })
-            ),
+          identificacion: {
+            in: identificaciones,
+          },
         },
         orderBy: {
           createdAt: "desc",

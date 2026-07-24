@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/prisma";
 
+import { getServerSession }
+from "next-auth";
+
+import { authOptions }
+from "@/lib/auth";
+
 import { enviarCorreo }
 from "@/lib/email";
 
@@ -23,14 +29,56 @@ from "@/lib/solicitudesHistoricas";
 import { autocompletarAntecedentes }
 from "@/lib/autocompletarAntecedentes";
 
+import { solicitantePuedeVerSolicitud }
+from "@/lib/visibilidadSolicitudes";
+
+const rolesVistaTotal = [
+  "ADMIN",
+  "DIRECTOR_SEG",
+  "JEFE_SEG",
+  "SUPERVISOR",
+  "VISITA",
+  "TECNICO",
+];
+
 export async function POST(
   request: Request
 ) {
 
   try {
+    const session =
+      await getServerSession(
+        authOptions
+      );
+
+    if (!session?.user?.email) {
+      return Response.json(
+        {
+          error:
+            "Debe iniciar sesion para crear solicitudes",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
 
     const body =
       await request.json();
+
+    const solicitanteSolicitud =
+      session.user.name ||
+      body.solicitante ||
+      "Usuario";
+
+    const correoSolicitanteSolicitud =
+      session.user.email ||
+      body.correoSolicitante;
+
+    const fincaSolicitud =
+      session.user.fincaEAI ||
+      body.fincaEAI ||
+      "";
 
     const archivoAntecedentesExcel =
       body.tipo === "ANTECEDENTES"
@@ -128,10 +176,10 @@ export async function POST(
             body.tipo,
 
           solicitante:
-            body.solicitante,
+            solicitanteSolicitud,
 
           correoSolicitante:
-            body.correoSolicitante,
+            correoSolicitanteSolicitud,
 
           asignadoA,
           archivos: {
@@ -172,7 +220,7 @@ export async function POST(
               solicitud.id,
 
             fincaEAI:
-              body.fincaEAI,
+              fincaSolicitud,
 
             camaraAfectada:
               body.camaraAfectada,
@@ -224,7 +272,7 @@ export async function POST(
               body.cargo,
 
             fincaEAI:
-              body.fincaEAI,
+              fincaSolicitud,
 
             motivoVisita:
               body.motivoVisita,
@@ -258,7 +306,7 @@ export async function POST(
               body.tipoFalla,
 
             fincaEAI:
-              body.fincaEAI,
+              fincaSolicitud,
 
             descripcion:
               body.descripcion,
@@ -283,7 +331,7 @@ export async function POST(
               solicitud.id,
 
             fincaEAI:
-              body.fincaEAI,
+              fincaSolicitud,
 
             observaciones:
               body.descripcion,
@@ -358,7 +406,7 @@ export async function POST(
               solicitud.id,
 
             fincaEAI:
-              body.fincaEAI,
+              fincaSolicitud,
 
             contexto:
               body.descripcion,
@@ -384,14 +432,14 @@ const responsableNombre =
     .replace(/\b\w/g, (l) => l.toUpperCase());
 // ENVIAR CORREO
 
-if (body.correoSolicitante) {
+if (correoSolicitanteSolicitud) {
 
   try {
 
     await enviarCorreo({
 
       to:
-        body.correoSolicitante,
+        correoSolicitanteSolicitud,
 
       subject:
         `Ticket #${solicitud.id} creado`,
@@ -447,7 +495,7 @@ if (
     body.tipo,
 
   solicitante:
-    body.solicitante,
+    solicitanteSolicitud,
 }),
     });
 
@@ -485,9 +533,26 @@ if (
 export async function GET() {
 
   try {
+    const session =
+      await getServerSession(
+        authOptions
+      );
+
+    if (!session?.user?.email) {
+      return Response.json(
+        {
+          error:
+            "Debe iniciar sesion para consultar solicitudes",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
 
     const solicitudes =
-      await prisma.solicitud.findMany({
+      ocultarSolicitudesHistoricas(
+        await prisma.solicitud.findMany({
 
         include: {
 
@@ -498,8 +563,6 @@ export async function GET() {
           radio: true,
 
           antecedente: true,
-
-          antecedentesRegistros: true,
 
           novedad: true,
 
@@ -515,15 +578,31 @@ export async function GET() {
 
         orderBy: {
 
-          fechaCreacion:
-            "desc",
+        fechaCreacion:
+          "desc",
         },
-      });
+      })
+      );
+
+    const tieneVistaTotal =
+      rolesVistaTotal.includes(
+        session.user.role || ""
+      );
+
+    const solicitudesVisibles =
+      tieneVistaTotal
+        ? solicitudes
+        : solicitudes.filter(
+            (solicitud) =>
+              solicitantePuedeVerSolicitud(
+                solicitud,
+                session.user.email,
+                session.user.fincaEAI
+              )
+          );
 
     return Response.json(
-      ocultarSolicitudesHistoricas(
-        solicitudes
-      )
+      solicitudesVisibles
     );
 
   } catch (error) {

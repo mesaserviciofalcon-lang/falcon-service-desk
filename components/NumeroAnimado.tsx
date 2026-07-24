@@ -51,8 +51,6 @@ export default function NumeroAnimado({
       }
     }
 
-    setActual(0);
-
     const frame =
       requestAnimationFrame(
         animar

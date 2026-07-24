@@ -21,6 +21,8 @@ export default function TicketCard({
 
   session,
 
+  mostrarTablaAntecedentes = true,
+
 }: any) {
 
   const isSolicitante =
@@ -41,8 +43,11 @@ export default function TicketCard({
     Boolean(role);
 
   const puedeVerTablaAntecedentes =
-    !isSolicitante ||
-    isCompletado;
+    mostrarTablaAntecedentes &&
+    (
+      !isSolicitante ||
+      isCompletado
+    );
 
   return (
 

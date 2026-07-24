@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/prisma";
 
+import { getServerSession }
+from "next-auth";
+
+import { authOptions }
+from "@/lib/auth";
+
 import * as XLSX
 from "xlsx";
 
@@ -14,6 +20,25 @@ export async function GET(
 ) {
 
   try {
+    const session =
+      await getServerSession(
+        authOptions
+      );
+
+    if (
+      session?.user?.role !==
+      "ADMIN"
+    ) {
+      return Response.json(
+        {
+          error:
+            "No tiene permiso para exportar reportes",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
 
     const {
       searchParams,
@@ -59,12 +84,16 @@ export async function GET(
 
           antecedente: true,
 
-          antecedentesRegistros: {
-
-            orderBy: {
-              id: "asc",
-            },
-          },
+          ...(tipo ===
+          "ANTECEDENTES"
+            ? {
+                antecedentesRegistros: {
+                  orderBy: {
+                    id: "asc" as const,
+                  },
+                },
+              }
+            : {}),
 
           novedad: true,
 

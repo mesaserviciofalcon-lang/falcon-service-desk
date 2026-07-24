@@ -6,10 +6,6 @@ from "@/providers/SessionProvider";
 import { Toaster }
 from "react-hot-toast";
 
-import {
-  headers,
-} from "next/headers";
-
 export const metadata = {
   title: "Mesa de Servicios Falcon",
 
@@ -30,21 +26,6 @@ export default async function RootLayout({
   children: React.ReactNode;
 
 }) {
-
-  const headersList =
-    await headers();
-
-  const pathname =
-
-    headersList.get(
-      "x-pathname"
-    ) || "";
-
-  const isLogin =
-
-    pathname.includes(
-      "/login"
-    );
 
   return (
 

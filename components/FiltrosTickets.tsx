@@ -315,6 +315,8 @@ export default function FiltrosTickets({
 
               session={session}
 
+              mostrarTablaAntecedentes={false}
+
             />
           )
         )}

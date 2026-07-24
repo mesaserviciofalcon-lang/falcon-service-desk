@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/prisma";
 
+import { getServerSession }
+from "next-auth";
+
+import { authOptions }
+from "@/lib/auth";
+
 import * as XLSX
 from "xlsx";
 
@@ -9,6 +15,25 @@ from "@/lib/fecha";
 export async function GET() {
 
   try {
+    const session =
+      await getServerSession(
+        authOptions
+      );
+
+    if (
+      session?.user?.role !== "ADMIN" &&
+      session?.user?.role !== "VISITA"
+    ) {
+      return Response.json(
+        {
+          error:
+            "No tiene permiso para exportar visitas",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
 
     const visitas =
       await prisma.solicitud.findMany({

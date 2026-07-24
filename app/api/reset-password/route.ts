@@ -4,6 +4,10 @@ import {
 
 } from "next/server";
 
+import {
+  createHash,
+} from "crypto";
+
 import bcrypt
 from "bcryptjs";
 
@@ -59,12 +63,18 @@ export async function POST(
 
     // BUSCAR TOKEN
 
+    const tokenHash =
+      createHash("sha256")
+        .update(String(token || ""))
+        .digest("hex");
+
     const resetToken =
       await prisma.passwordResetToken.findUnique({
 
         where: {
 
-          token,
+          token:
+            tokenHash,
         },
       });
 
@@ -141,7 +151,8 @@ export async function POST(
 
       where: {
 
-        token,
+        token:
+          tokenHash,
       },
     });
 

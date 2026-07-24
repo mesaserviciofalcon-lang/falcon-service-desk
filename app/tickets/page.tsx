@@ -30,13 +30,6 @@ async function obtenerSolicitudes() {
 
       antecedente: true,
 
-      antecedentesRegistros: {
-
-        orderBy: {
-          id: "asc",
-        },
-      },
-
       novedad: true,
 
       gestiones: {

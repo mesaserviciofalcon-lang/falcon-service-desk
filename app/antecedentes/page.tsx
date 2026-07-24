@@ -31,7 +31,9 @@ export default async function AntecedentesPage({
     await searchParams;
 
   const identificacion =
-    params.identificacion?.trim() || "";
+    (params.identificacion || "")
+      .replace(/\D/g, "")
+      .trim();
 
   const puedeVerCompleto =
     puedeVerAntecedenteCompleto(
@@ -44,14 +46,11 @@ export default async function AntecedentesPage({
     );
 
   const registros =
-    identificacion
+    identificacion.length >= 5
       ? await prisma.antecedenteRegistro.findMany({
 
           where: {
-            identificacion: {
-              contains: identificacion,
-              mode: "insensitive",
-            },
+            identificacion,
             eai:
               puedeVerCompleto
                 ? undefined
@@ -70,6 +69,8 @@ export default async function AntecedentesPage({
           orderBy: {
             createdAt: "desc",
           },
+
+          take: 100,
         })
       : [];
 
@@ -126,6 +127,14 @@ export default async function AntecedentesPage({
         )}
 
         {identificacion &&
+          identificacion.length < 5 && (
+          <p className="text-gray-500">
+            Ingrese al menos 5 digitos para consultar.
+          </p>
+        )}
+
+        {identificacion &&
+          identificacion.length >= 5 &&
           registros.length === 0 && (
           <p className="text-gray-500">
             No se encontraron registros.

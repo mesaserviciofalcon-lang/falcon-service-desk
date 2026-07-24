@@ -13,11 +13,23 @@ from "@/lib/email";
 import { correosResponsables }
 from "@/lib/correos";
 
+import { solicitantePuedeVerSolicitud }
+from "@/lib/visibilidadSolicitudes";
+
 import {
 
   ticketActualizadoTemplate,
 
 } from "@/lib/templatesEmail";
+
+const rolesGestores = [
+  "ADMIN",
+  "DIRECTOR_SEG",
+  "JEFE_SEG",
+  "SUPERVISOR",
+  "VISITA",
+  "TECNICO",
+];
 
 export async function PATCH(
 
@@ -32,6 +44,22 @@ export async function PATCH(
 ) {
 
   try {
+    const session =
+      await getServerSession(
+        authOptions
+      );
+
+    if (!session?.user?.email) {
+      return Response.json(
+        {
+          error:
+            "Debe iniciar sesion para actualizar tickets",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
 
     const body =
       await request.json();
@@ -41,6 +69,76 @@ export async function PATCH(
 
     const id =
       Number(params.id);
+
+    const solicitudActual =
+      await prisma.solicitud.findUnique({
+        where: {
+          id,
+        },
+        include: {
+          antecedente: true,
+        },
+      });
+
+    if (!solicitudActual) {
+      return Response.json(
+        {
+          error:
+            "Ticket no encontrado",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    const estadoSolicitado =
+      String(body.estado || "");
+
+    const esGestor =
+      rolesGestores.includes(
+        session.user.role || ""
+      );
+
+    const esReaperturaValida =
+      estadoSolicitado === "REABIERTO" &&
+      solicitudActual.estado ===
+        "COMPLETADO" &&
+      solicitantePuedeVerSolicitud(
+        solicitudActual,
+        session.user.email,
+        session.user.fincaEAI
+      );
+
+    const esGestionValida =
+      esGestor &&
+      [
+        "EN PROCESO",
+        "COMPLETADO",
+        "REABIERTO",
+      ].includes(
+        estadoSolicitado
+      );
+
+    if (
+      !esGestionValida &&
+      !esReaperturaValida
+    ) {
+      return Response.json(
+        {
+          error:
+            "No tiene permiso para cambiar este estado",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    const gestionadoPor =
+      session.user.name ||
+      body.gestionadoPor ||
+      "SISTEMA";
 
     // ACTUALIZAR TICKET
 
@@ -54,20 +152,20 @@ export async function PATCH(
         data: {
 
           estado:
-            body.estado,
+            estadoSolicitado,
 
           observacionesTecnico:
             body.observacionesTecnico || "",
 
           gestionadoPor:
-            body.gestionadoPor || "SISTEMA",
+            gestionadoPor,
 
           fechaGestion:
             new Date(),
 
           fechaCierre:
 
-            body.estado ===
+            estadoSolicitado ===
             "COMPLETADO"
 
               ? new Date()
@@ -86,10 +184,10 @@ export async function PATCH(
           id,
 
         usuario:
-          body.gestionadoPor || "SISTEMA",
+          gestionadoPor,
 
         estado:
-          body.estado,
+          estadoSolicitado,
 
         observacion:
           body.observacionesTecnico || "",
@@ -117,10 +215,10 @@ if (
     solicitud.id,
 
   estado:
-    body.estado,
+    estadoSolicitado,
 
   gestionadoPor:
-    body.gestionadoPor || "Sistema",
+    gestionadoPor,
 
   observacion:
     body.observacionesTecnico || "Sin observación",
@@ -141,7 +239,7 @@ if (
 // NOTIFICAR RESPONSABLES
 
 if (
-  body.estado ===
+  estadoSolicitado ===
   "REABIERTO"
 ) {
 
@@ -175,7 +273,7 @@ if (
     "REABIERTO",
 
   gestionadoPor:
-    body.gestionadoPor || "Solicitante",
+    gestionadoPor,
 
   observacion:
     body.observacionesTecnico || "Sin observación",

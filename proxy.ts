@@ -12,5 +12,11 @@ export const config = {
     "/tickets/:path*",
 
     "/solicitudes/:path*",
+
+    "/antecedentes/:path*",
+
+    "/usuarios/:path*",
+
+    "/cambiar-password/:path*",
   ],
 };

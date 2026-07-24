@@ -18,9 +18,11 @@ import {
 
 import {
 
-  v4 as uuidv4,
+  createHash,
 
-} from "uuid";
+  randomBytes,
+
+} from "crypto";
 
 import { getAppUrl }
 from "@/lib/appUrl";
@@ -60,7 +62,13 @@ export async function POST(
     // GENERAR TOKEN
 
     const token =
-      uuidv4();
+      randomBytes(32)
+        .toString("hex");
+
+    const tokenHash =
+      createHash("sha256")
+        .update(token)
+        .digest("hex");
 
     // EXPIRACIÓN 1 HORA
 
@@ -72,13 +80,20 @@ export async function POST(
 
     // GUARDAR TOKEN
 
+    await prisma.passwordResetToken.deleteMany({
+      where: {
+        email,
+      },
+    });
+
     await prisma.passwordResetToken.create({
 
       data: {
 
         email,
 
-        token,
+        token:
+          tokenHash,
 
         expiresAt,
       },
