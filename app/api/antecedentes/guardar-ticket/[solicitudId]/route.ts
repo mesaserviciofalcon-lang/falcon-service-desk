@@ -15,6 +15,9 @@ import {
   validarRegistroAntecedente,
 } from "@/lib/validacionAntecedentesGestion";
 
+import { obtenerFechaActualColombiaISO }
+from "@/lib/fecha";
+
 export async function PATCH(
   request: Request,
   context: {
@@ -129,6 +132,8 @@ export async function PATCH(
             id: registro.id,
           },
           data: {
+            fechaRespuesta:
+              obtenerFechaActualColombiaISO(),
             eai:
               registro.eai || null,
             tipoDocumento:

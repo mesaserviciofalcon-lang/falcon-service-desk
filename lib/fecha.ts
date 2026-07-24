@@ -20,3 +20,26 @@ export function formatearFechaColombia(
     }
   );
 }
+
+export function obtenerFechaActualColombiaISO() {
+  const partes =
+    new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone: "America/Bogota",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }
+    ).formatToParts(new Date());
+
+  const mapa =
+    Object.fromEntries(
+      partes.map((parte) => [
+        parte.type,
+        parte.value,
+      ])
+    );
+
+  return `${mapa.year}-${mapa.month}-${mapa.day}`;
+}

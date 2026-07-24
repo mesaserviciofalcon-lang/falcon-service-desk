@@ -28,6 +28,8 @@ export default function UploadButton({
 
   requiredHeaders,
 
+  validateRequiredRows,
+
 }: any) {
 
   return (
@@ -183,6 +185,119 @@ export default function UploadButton({
                 );
 
                 return [];
+              }
+
+              if (validateRequiredRows) {
+                const normalizarTexto = (
+                  valor: string
+                ) =>
+                  valor
+                    .normalize("NFD")
+                    .replace(
+                      /[\u0300-\u036f]/g,
+                      ""
+                    )
+                    .trim()
+                    .toUpperCase();
+
+                const camposObligatorios =
+                  requiredHeaders
+                    .filter(
+                      (header: string) =>
+                        normalizarTexto(
+                          header
+                        ) !==
+                        "FECHA RESPUESTA"
+                    );
+
+                const indicesObligatorios =
+                  camposObligatorios.map(
+                    (header: string) => ({
+                      header,
+                      index:
+                        requiredHeaders.findIndex(
+                          (
+                            requerido: string
+                          ) =>
+                            normalizarTexto(
+                              requerido
+                            ) ===
+                            normalizarTexto(
+                              header
+                            )
+                        ),
+                    })
+                  );
+
+                for (
+                  let fila = range.s.r + 1;
+                  fila <= range.e.r;
+                  fila++
+                ) {
+                  const tieneDatos =
+                    requiredHeaders.some(
+                      (
+                        _header: string,
+                        columna: number
+                      ) => {
+                        const celda =
+                          sheet[
+                            XLSX.utils
+                              .encode_cell({
+                                r: fila,
+                                c: columna,
+                              })
+                          ];
+
+                        return (
+                          celda?.v !==
+                            undefined &&
+                          celda?.v !== null &&
+                          String(celda.v)
+                            .trim() !== ""
+                        );
+                      }
+                    );
+
+                  if (!tieneDatos) {
+                    continue;
+                  }
+
+                  const faltante =
+                    indicesObligatorios.find(
+                      ({
+                        index,
+                      }: {
+                        header: string;
+                        index: number;
+                      }) => {
+                        const celda =
+                          sheet[
+                            XLSX.utils
+                              .encode_cell({
+                                r: fila,
+                                c: index,
+                              })
+                          ];
+
+                        return (
+                          celda?.v ===
+                            undefined ||
+                          celda?.v === null ||
+                          String(celda.v)
+                            .trim() === ""
+                        );
+                      }
+                    );
+
+                  if (faltante) {
+                    alert(
+                      `No fue posible subir este archivo. La fila ${fila + 1} tiene incompleto el campo "${faltante.header}". Debe diligenciar todos los campos obligatorios.`
+                    );
+
+                    return [];
+                  }
+                }
               }
 
               const indiceIdentificacion =

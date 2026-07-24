@@ -8,6 +8,9 @@ import {
   nombrePlantillaAntecedentes,
 } from "@/lib/antecedentesPlantilla";
 
+import { obtenerFechaActualColombiaISO }
+from "@/lib/fecha";
+
 type RegistroAntecedenteExcel = {
   fechaSolicitud?: string;
   fechaRespuesta?: string;
@@ -122,6 +125,46 @@ function validarIdentificacionesDuplicadas(
   });
 }
 
+function validarFilasCompletasSolicitud(
+  filas: Record<string, unknown>[]
+) {
+  const camposObligatorios = [
+    "FECHA DE SOLICITUD",
+    "EAI",
+    "NOMBRES Y APELLIDOS",
+    "TIPO DE DOCUMENTO",
+    "IDENTIFICACION",
+    "FECHA EXPEDICION DOCUMENTO",
+  ];
+
+  filas.forEach((fila, index) => {
+    const tieneDatos =
+      Object.values(fila).some(
+        (valor) =>
+          limpiarValor(valor) !== ""
+      );
+
+    if (!tieneDatos) {
+      return;
+    }
+
+    const campoFaltante =
+      camposObligatorios.find(
+        (campo) =>
+          !obtenerValor(
+            fila,
+            campo
+          )
+      );
+
+    if (campoFaltante) {
+      throw new Error(
+        `No fue posible cargar este archivo. La fila ${index + 2} tiene incompleto el campo "${campoFaltante}". Debe diligenciar todos los campos obligatorios antes de guardar el ticket.`
+      );
+    }
+  });
+}
+
 function obtenerEncabezados(
   sheet: XLSX.WorkSheet
 ) {
@@ -232,7 +275,8 @@ function validarNombreArchivo(
 async function leerFilasDesdeUrl(
   url: string,
   requeridos: string[],
-  nombreArchivo?: string
+  nombreArchivo?: string,
+  validarFilasSolicitud = false
 ) {
   validarNombreArchivo(nombreArchivo);
 
@@ -288,12 +332,22 @@ async function leerFilasDesdeUrl(
     filas
   );
 
+  if (validarFilasSolicitud) {
+    validarFilasCompletasSolicitud(
+      filas
+    );
+  }
+
   return filas;
 }
 
 function mapearRegistros(
-  filas: Record<string, unknown>[]
+  filas: Record<string, unknown>[],
+  usarFechaRespuestaActual = false
 ) {
+  const fechaRespuestaActual =
+    obtenerFechaActualColombiaISO();
+
   return filas
     .map((fila) => ({
       fechaSolicitud:
@@ -302,10 +356,12 @@ function mapearRegistros(
           "FECHA DE SOLICITUD"
         ),
       fechaRespuesta:
-        obtenerValor(
-          fila,
-          "FECHA RESPUESTA"
-        ),
+        usarFechaRespuestaActual
+          ? fechaRespuestaActual
+          : obtenerValor(
+              fila,
+              "FECHA RESPUESTA"
+            ),
       eai:
         obtenerValor(fila, "EAI"),
       nombresApellidos:
@@ -374,10 +430,14 @@ export async function leerRegistrosAntecedentesDesdeUrl(
     await leerFilasDesdeUrl(
       url,
       encabezadosAntecedentesSolicitud,
-      nombreArchivo
+      nombreArchivo,
+      true
     );
 
-  return mapearRegistros(filas);
+  return mapearRegistros(
+    filas,
+    true
+  );
 }
 
 export async function leerRegistrosAntecedentesHistoricoDesdeUrl(

@@ -711,6 +711,10 @@ setTimeout(() => {
       : undefined
   }
 
+  validateRequiredRows={
+    tipo === "ANTECEDENTES"
+  }
+
   onComplete={(
 
     url: string,

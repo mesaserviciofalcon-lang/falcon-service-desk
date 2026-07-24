@@ -11,6 +11,9 @@ import {
   puedeVerAntecedenteCompleto,
 } from "@/lib/antecedentesCatalogos";
 
+import { obtenerFechaActualColombiaISO }
+from "@/lib/fecha";
+
 const OBSERVACION_NO_TENER_EN_CUENTA =
   "LA PERSONA NO DEBE SER TENIDA EN CUENTA";
 
@@ -139,6 +142,8 @@ export async function PATCH(
         },
 
         data: {
+          fechaRespuesta:
+            obtenerFechaActualColombiaISO(),
           eai:
             body.eai || null,
           tipoDocumento:
