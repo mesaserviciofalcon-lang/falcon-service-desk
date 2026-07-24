@@ -207,6 +207,12 @@ function formatearMes(
   );
 }
 
+function obtenerMesActual() {
+  return new Date()
+    .toISOString()
+    .slice(0, 7);
+}
+
 export default async function DashboardPage({
 
   searchParams,
@@ -227,6 +233,9 @@ export default async function DashboardPage({
 
   const mesSeleccionado =
     params?.mes || "";
+
+  const mesActual =
+    obtenerMesActual();
 
   const session =
     await getServerSession(
@@ -507,8 +516,13 @@ hace3Dias.setDate(
       : [];
 
   const aplicarFiltroMes =
-    role === "ADMIN" &&
-    mesSeleccionado;
+    role === "ADMIN";
+
+  const mesIndicadores =
+    role === "ADMIN"
+      ? mesSeleccionado ||
+        mesActual
+      : "";
 
   const ticketsMetricasFiltradas =
     aplicarFiltroMes
@@ -517,7 +531,7 @@ hace3Dias.setDate(
             obtenerMesTicket(
               ticket.fechaCreacion
             ) ===
-            mesSeleccionado
+            mesIndicadores
         )
       : ticketsMetricas;
 
@@ -604,7 +618,7 @@ hace3Dias.setDate(
             obtenerMesTicket(
               ticket.fechaCreacion
             ) ===
-            mesSeleccionado
+            mesIndicadores
         )
       : tickets;
 
@@ -779,7 +793,7 @@ hace3Dias.setDate(
             obtenerMesRegistroIndicador(
               registro
             ) ===
-            mesSeleccionado
+            mesIndicadores
         )
       : registrosAntecedentesIndicadores;
 
@@ -977,7 +991,7 @@ hace3Dias.setDate(
               href="/dashboard"
               className="rounded-lg border px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
             >
-              Ver general
+              Ver mes en curso
             </Link>
           )}
 
@@ -986,7 +1000,9 @@ hace3Dias.setDate(
               ? `Mostrando ${formatearMes(
                   mesSeleccionado
                 )}`
-              : "Mostrando acumulado general"}
+              : `Mostrando mes en curso: ${formatearMes(
+                  mesActual
+                )}`}
           </span>
 
         </form>
@@ -1002,9 +1018,10 @@ hace3Dias.setDate(
               tarjeta.estado;
 
             const queryMes =
-              mesSeleccionado
+              role === "ADMIN" &&
+              mesIndicadores
                 ? `mes=${encodeURIComponent(
-                    mesSeleccionado
+                    mesIndicadores
                   )}`
                 : "";
 
@@ -1076,23 +1093,23 @@ hace3Dias.setDate(
 
       {puedeVerMetricasAntecedentes && (
 
-        <div className="mb-8 grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="mb-8 grid grid-cols-1 xl:grid-cols-2 gap-4">
 
-          <div className="rounded-xl bg-white p-5 shadow-sm">
+          <div className="rounded-xl bg-white p-5 shadow-sm xl:col-span-2">
 
             <h2 className="text-sm font-bold uppercase text-gray-500">
               Conceptos de antecedentes
             </h2>
 
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
 
-              <div className="rounded-lg border bg-green-50 p-4">
+              <div className="min-w-0 rounded-lg border bg-green-50 p-4">
 
-                <span className="text-xs font-semibold uppercase text-gray-500">
+                <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
                   Continuar el proceso
                 </span>
 
-                <p className="mt-2 text-3xl font-bold text-green-700">
+                <p className="mt-3 break-words text-4xl font-bold leading-none text-green-700">
                   <NumeroAnimado
                     valor={continuarProceso}
                   />
@@ -1100,13 +1117,13 @@ hace3Dias.setDate(
 
               </div>
 
-              <div className="rounded-lg border bg-yellow-100 p-4">
+              <div className="min-w-0 rounded-lg border bg-yellow-100 p-4">
 
-                <span className="text-xs font-semibold uppercase text-gray-500">
+                <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
                   No debe ser tenida en cuenta
                 </span>
 
-                <p className="mt-2 text-3xl font-bold text-red-700">
+                <p className="mt-3 break-words text-4xl font-bold leading-none text-red-700">
                   <NumeroAnimado
                     valor={noPuedeContinuar}
                   />
@@ -1114,13 +1131,13 @@ hace3Dias.setDate(
 
               </div>
 
-              <div className="rounded-lg border bg-emerald-50 p-4">
+              <div className="min-w-0 rounded-lg border bg-emerald-50 p-4">
 
-                <span className="text-xs font-semibold uppercase text-gray-500">
+                <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
                   Documento no corresponde
                 </span>
 
-                <p className="mt-2 text-3xl font-bold text-emerald-800">
+                <p className="mt-3 break-words text-4xl font-bold leading-none text-emerald-800">
                   <NumeroAnimado
                     valor={documentoNoCorresponde}
                   />
@@ -1138,15 +1155,15 @@ hace3Dias.setDate(
               Nacionales y extranjeros
             </h2>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              <div className="rounded-lg border bg-blue-50 p-4">
+              <div className="min-w-0 rounded-lg border bg-blue-50 p-4">
 
-                <span className="text-xs font-semibold uppercase text-gray-500">
+                <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
                   Nacionales CC
                 </span>
 
-                <p className="mt-2 text-3xl font-bold text-blue-700">
+                <p className="mt-3 break-words text-4xl font-bold leading-none text-blue-700">
                   <NumeroAnimado
                     valor={nacionales}
                   />
@@ -1154,13 +1171,17 @@ hace3Dias.setDate(
 
               </div>
 
-              <div className="rounded-lg border bg-slate-50 p-4">
+              <div className="min-w-0 rounded-lg border bg-slate-50 p-4">
 
-                <span className="text-xs font-semibold uppercase text-gray-500">
-                  Extranjeros PP, PPT y CE
+                <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
+                  Extranjeros
                 </span>
 
-                <p className="mt-2 text-3xl font-bold text-slate-800">
+                <span className="mt-1 block text-xs font-semibold uppercase leading-5 text-gray-500">
+                  PP, PPT y CE
+                </span>
+
+                <p className="mt-3 break-words text-4xl font-bold leading-none text-slate-800">
                   <NumeroAnimado
                     valor={extranjeros}
                   />
@@ -1192,11 +1213,11 @@ hace3Dias.setDate(
 
             <div className="mt-4 rounded-lg border bg-gray-50 p-4">
 
-              <span className="text-xs font-semibold uppercase text-gray-500">
+              <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
                 Registros {anioActual}
               </span>
 
-              <p className="mt-2 text-4xl font-bold text-[#0F3D1F]">
+              <p className="mt-3 break-words text-4xl font-bold leading-none text-[#0F3D1F]">
                 <NumeroAnimado
                   valor={
                     registrosAntecedentesAnioCurso
@@ -1580,9 +1601,10 @@ hace3Dias.setDate(
 
             <Link
               href={
-                mesSeleccionado
+                role === "ADMIN" &&
+                mesIndicadores
                   ? `/dashboard?mes=${encodeURIComponent(
-                      mesSeleccionado
+                      mesIndicadores
                     )}`
                   : "/dashboard"
               }
