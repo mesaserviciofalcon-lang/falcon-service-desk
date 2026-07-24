@@ -409,8 +409,7 @@ export default function TicketCard({
       {/* ANTECEDENTES */}
 
       {solicitud.tipo ===
-        "ANTECEDENTES" &&
-        puedeVerTablaAntecedentes && (
+        "ANTECEDENTES" && (
 
         <div className="mt-4 border-t pt-4">
 
@@ -450,7 +449,8 @@ export default function TicketCard({
       )}
 
       {solicitud.tipo ===
-        "ANTECEDENTES" && (
+        "ANTECEDENTES" &&
+        puedeVerTablaAntecedentes && (
 
         <AntecedentesTicketTable
 
