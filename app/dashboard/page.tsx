@@ -10,6 +10,9 @@ from "@/lib/auth";
 import Link
 from "next/link";
 
+import NumeroAnimado
+from "@/components/NumeroAnimado";
+
 import { formatearFechaColombia }
 from "@/lib/fecha";
 
@@ -18,6 +21,70 @@ from "@/lib/visibilidadSolicitudes";
 
 import { ocultarSolicitudesHistoricas }
 from "@/lib/solicitudesHistoricas";
+
+import {
+  OBSERVACION_DOCUMENTO_NO_CORRESPONDE,
+  OBSERVACION_NO_TENER_EN_CUENTA,
+} from "@/lib/validacionAntecedentesGestion";
+
+const OBSERVACION_CONTINUAR =
+  "CONTINUAR CON EL PROCESO";
+
+function normalizarTexto(
+  valor?: string | null
+) {
+  return (valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+}
+
+function esConceptoContinuar(
+  observacion?: string | null
+) {
+  const valor =
+    normalizarTexto(observacion);
+
+  return [
+    normalizarTexto(
+      OBSERVACION_CONTINUAR
+    ),
+    "CONTINUAR EL PROCESO",
+  ].includes(valor);
+}
+
+function esConceptoNoTenerEnCuenta(
+  observacion?: string | null
+) {
+  return (
+    normalizarTexto(observacion) ===
+    normalizarTexto(
+      OBSERVACION_NO_TENER_EN_CUENTA
+    )
+  );
+}
+
+function esConceptoDocumentoNoCorresponde(
+  observacion?: string | null
+) {
+  const valor =
+    normalizarTexto(observacion);
+
+  return (
+    valor ===
+      normalizarTexto(
+        OBSERVACION_DOCUMENTO_NO_CORRESPONDE
+      ) ||
+    valor.includes(
+      "NO CORRESPONDE CON EL NOMBRE"
+    ) ||
+    valor.includes(
+      "NO COINCIDE CON EL NOMBRE"
+    )
+  );
+}
 
 function obtenerFincaTicket(
   ticket: any
@@ -36,6 +103,82 @@ function obtenerMesTicket(
   fecha: Date | string
 ) {
   return new Date(fecha)
+    .toISOString()
+    .slice(0, 7);
+}
+
+function parsearFechaRegistroIndicador(
+  valor?: string | null
+) {
+  if (!valor) {
+    return null;
+  }
+
+  const texto =
+    valor.trim();
+
+  const fecha =
+    new Date(texto);
+
+  if (
+    !Number.isNaN(
+      fecha.getTime()
+    )
+  ) {
+    return fecha;
+  }
+
+  const partes =
+    texto.match(
+      /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/
+    );
+
+  if (!partes) {
+    return null;
+  }
+
+  const fechaLocal =
+    new Date(
+      Number(partes[3]),
+      Number(partes[2]) - 1,
+      Number(partes[1])
+    );
+
+  return Number.isNaN(
+    fechaLocal.getTime()
+  )
+    ? null
+    : fechaLocal;
+}
+
+function obtenerFechaRegistroIndicador(
+  registro: {
+    fechaRespuesta?: string | null;
+    fechaSolicitud?: string | null;
+    createdAt: Date;
+  }
+) {
+  return (
+    parsearFechaRegistroIndicador(
+      registro.fechaRespuesta
+    ) ||
+    parsearFechaRegistroIndicador(
+      registro.fechaSolicitud
+    ) ||
+    registro.createdAt
+  );
+}
+
+function obtenerMesRegistroIndicador(
+  registro: {
+    fechaRespuesta?: string | null;
+    fechaSolicitud?: string | null;
+    createdAt: Date;
+  }
+) {
+  return obtenerFechaRegistroIndicador(
+    registro
+  )
     .toISOString()
     .slice(0, 7);
 }
@@ -348,6 +491,21 @@ hace3Dias.setDate(
 
     role === "SUPERVISOR";
 
+  const registrosAntecedentesIndicadores =
+    puedeVerMetricasAntecedentes
+      ? await prisma
+          .antecedenteRegistro
+          .findMany({
+            select: {
+              observacion: true,
+              tipoDocumento: true,
+              fechaRespuesta: true,
+              fechaSolicitud: true,
+              createdAt: true,
+            },
+          })
+      : [];
+
   const aplicarFiltroMes =
     role === "ADMIN" &&
     mesSeleccionado;
@@ -363,15 +521,42 @@ hace3Dias.setDate(
         )
       : ticketsMetricas;
 
+  const anioActual =
+    new Date().getFullYear();
+
   const mesesDisponibles =
     Array.from(
       new Set(
-        solicitudes.map(
-          (ticket: any) =>
-            obtenerMesTicket(
-              ticket.fechaCreacion
+        [
+          ...solicitudes
+            .filter(
+              (ticket: any) =>
+                new Date(
+                  ticket.fechaCreacion
+                ).getFullYear() ===
+                anioActual
             )
-        )
+            .map(
+              (ticket: any) =>
+                obtenerMesTicket(
+                  ticket.fechaCreacion
+                )
+            ),
+          ...registrosAntecedentesIndicadores
+            .filter(
+              (registro: any) =>
+                obtenerFechaRegistroIndicador(
+                  registro
+                ).getFullYear() ===
+                anioActual
+            )
+            .map(
+              (registro: any) =>
+                obtenerMesRegistroIndicador(
+                  registro
+                )
+            ),
+        ]
       )
     ).sort(
       (a, b) =>
@@ -588,31 +773,47 @@ hace3Dias.setDate(
       .slice(0, 5);
 
   const registrosAntecedentesMetricas =
-    ticketsMetricasFiltradas.flatMap(
-      (ticket: any) =>
-        ticket.antecedentesRegistros ||
-        []
-    );
+    aplicarFiltroMes
+      ? registrosAntecedentesIndicadores.filter(
+          (registro: any) =>
+            obtenerMesRegistroIndicador(
+              registro
+            ) ===
+            mesSeleccionado
+        )
+      : registrosAntecedentesIndicadores;
+
+  const registrosAntecedentesAnioCurso =
+    registrosAntecedentesIndicadores.filter(
+      (registro: any) =>
+        obtenerFechaRegistroIndicador(
+          registro
+        ).getFullYear() ===
+        anioActual
+    ).length;
 
   const continuarProceso =
     registrosAntecedentesMetricas.filter(
       (registro: any) =>
-        registro.observacion ===
-        "CONTINUAR CON EL PROCESO"
+        esConceptoContinuar(
+          registro.observacion
+        )
     ).length;
 
   const noPuedeContinuar =
     registrosAntecedentesMetricas.filter(
       (registro: any) =>
-        registro.observacion ===
-        "LA PERSONA NO DEBE SER TENIDA EN CUENTA"
+        esConceptoNoTenerEnCuenta(
+          registro.observacion
+        )
     ).length;
 
   const documentoNoCorresponde =
     registrosAntecedentesMetricas.filter(
       (registro: any) =>
-        registro.observacion ===
-        "EL NUMERO DE DOCUMENTO NO CORRESPONDE CON EL NOMBRE"
+        esConceptoDocumentoNoCorresponde(
+          registro.observacion
+        )
     ).length;
 
   const nacionales =
@@ -855,7 +1056,9 @@ hace3Dias.setDate(
                 <div className="mt-2 flex items-end justify-between gap-3">
 
                   <strong className="text-3xl leading-none">
-                    {tarjeta.total}
+                    <NumeroAnimado
+                      valor={tarjeta.total}
+                    />
                   </strong>
 
                   <span className="text-xs font-medium text-gray-500">
@@ -873,7 +1076,7 @@ hace3Dias.setDate(
 
       {puedeVerMetricasAntecedentes && (
 
-        <div className="mb-8 grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div className="mb-8 grid grid-cols-1 xl:grid-cols-3 gap-4">
 
           <div className="rounded-xl bg-white p-5 shadow-sm">
 
@@ -890,7 +1093,9 @@ hace3Dias.setDate(
                 </span>
 
                 <p className="mt-2 text-3xl font-bold text-green-700">
-                  {continuarProceso}
+                  <NumeroAnimado
+                    valor={continuarProceso}
+                  />
                 </p>
 
               </div>
@@ -898,11 +1103,13 @@ hace3Dias.setDate(
               <div className="rounded-lg border bg-yellow-100 p-4">
 
                 <span className="text-xs font-semibold uppercase text-gray-500">
-                  No puede continuar
+                  No debe ser tenida en cuenta
                 </span>
 
                 <p className="mt-2 text-3xl font-bold text-red-700">
-                  {noPuedeContinuar}
+                  <NumeroAnimado
+                    valor={noPuedeContinuar}
+                  />
                 </p>
 
               </div>
@@ -914,7 +1121,9 @@ hace3Dias.setDate(
                 </span>
 
                 <p className="mt-2 text-3xl font-bold text-emerald-800">
-                  {documentoNoCorresponde}
+                  <NumeroAnimado
+                    valor={documentoNoCorresponde}
+                  />
                 </p>
 
               </div>
@@ -938,7 +1147,9 @@ hace3Dias.setDate(
                 </span>
 
                 <p className="mt-2 text-3xl font-bold text-blue-700">
-                  {nacionales}
+                  <NumeroAnimado
+                    valor={nacionales}
+                  />
                 </p>
 
               </div>
@@ -950,7 +1161,9 @@ hace3Dias.setDate(
                 </span>
 
                 <p className="mt-2 text-3xl font-bold text-slate-800">
-                  {extranjeros}
+                  <NumeroAnimado
+                    valor={extranjeros}
+                  />
                 </p>
 
               </div>
@@ -961,8 +1174,40 @@ hace3Dias.setDate(
               Total registros evaluados:
               {" "}
               <strong>
-                {registrosAntecedentesMetricas.length}
+                <NumeroAnimado
+                  valor={
+                    registrosAntecedentesMetricas.length
+                  }
+                />
               </strong>
+            </p>
+
+          </div>
+
+          <div className="rounded-xl bg-white p-5 shadow-sm">
+
+            <h2 className="text-sm font-bold uppercase text-gray-500">
+              Histórico año en curso
+            </h2>
+
+            <div className="mt-4 rounded-lg border bg-gray-50 p-4">
+
+              <span className="text-xs font-semibold uppercase text-gray-500">
+                Registros {anioActual}
+              </span>
+
+              <p className="mt-2 text-4xl font-bold text-[#0F3D1F]">
+                <NumeroAnimado
+                  valor={
+                    registrosAntecedentesAnioCurso
+                  }
+                />
+              </p>
+
+            </div>
+
+            <p className="mt-3 text-xs text-gray-500">
+              Incluye registros cargados desde la base histórica y registros nuevos del sistema.
             </p>
 
           </div>
