@@ -45,14 +45,14 @@ function claseFilaPorObservacion(
     observacion ===
     OBSERVACION_NO_TENER_EN_CUENTA
   ) {
-    return "align-top bg-yellow-100 text-red-700";
+    return "align-top bg-yellow-300 text-red-800";
   }
 
   if (
     observacion ===
     OBSERVACION_DOCUMENTO_NO_CORRESPONDE
   ) {
-    return "align-top bg-green-100 text-black";
+    return "align-top bg-green-300 text-black";
   }
 
   return "align-top";
@@ -207,7 +207,7 @@ export default function AntecedentesTicketTable({
   }
 
   return (
-    <div className="mt-5 border-t pt-4">
+    <div className="mt-5 min-w-0 max-w-full border-t pt-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h3 className="font-bold text-lg">
           Personas del estudio de antecedentes
@@ -221,15 +221,16 @@ export default function AntecedentesTicketTable({
         </a>
       </div>
 
-      <div className="max-w-full overflow-hidden rounded-xl border bg-white">
+      <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border bg-white">
         <div
           className={
             tablaExpandida
-              ? "max-h-[82vh] overflow-auto"
-              : "max-h-[42vh] overflow-auto"
+              ? "max-h-[82vh] w-full max-w-full overflow-auto"
+              : "max-h-[42vh] w-full max-w-full overflow-auto"
           }
         >
-        <table className="w-max min-w-[1200px] border-collapse text-sm">
+        <div className="w-[1800px] max-w-none">
+        <table className="w-full table-fixed border-collapse text-sm">
           <thead className="bg-gray-100">
             <tr>
               <th className="sticky top-0 z-10 w-32 border bg-gray-100 p-2 text-left">
@@ -456,6 +457,7 @@ export default function AntecedentesTicketTable({
             })}
           </tbody>
         </table>
+        </div>
         </div>
 
       {puedeVerCompleto && (

@@ -674,6 +674,17 @@ setTimeout(() => {
 
         {/* ARCHIVOS */}
 
+{!tipo && (
+
+  <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+
+    Seleccione primero el tipo de solicitud para habilitar la carga de archivos.
+
+  </div>
+)}
+
+{tipo && (
+
 <UploadButton
 
   allowedExtensions={
@@ -722,6 +733,7 @@ setTimeout(() => {
     ]);
   }}
 />
+)}
 
 {/* LISTA ARCHIVOS */}
 

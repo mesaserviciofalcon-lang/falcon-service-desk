@@ -43,7 +43,7 @@ export default function TicketCard({
   return (
 
     <div
-      className="bg-white p-5 rounded-xl shadow-md"
+      className="max-w-full min-w-0 overflow-hidden rounded-xl bg-white p-5 shadow-md"
     >
 
       <div className="flex justify-between items-center">
