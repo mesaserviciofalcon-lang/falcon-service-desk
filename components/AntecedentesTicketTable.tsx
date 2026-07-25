@@ -273,7 +273,7 @@ export default function AntecedentesTicketTable({
           className={
             puedeVerCompleto
               ? "w-[1800px] max-w-none"
-              : "w-[950px] max-w-none"
+              : "w-[1080px] max-w-none"
           }
         >
         <table className="w-full table-fixed border-collapse text-sm">
@@ -282,6 +282,11 @@ export default function AntecedentesTicketTable({
               <th className="sticky top-0 z-10 w-32 border bg-gray-100 p-2 text-left">
                 Fecha solicitud
               </th>
+              {!puedeVerCompleto && (
+                <th className="sticky top-0 z-10 w-32 border bg-gray-100 p-2 text-left">
+                  Fecha respuesta
+                </th>
+              )}
               {puedeVerCompleto && (
                 <>
                   <th className="sticky top-0 z-10 w-32 border bg-gray-100 p-2 text-left">
@@ -347,6 +352,13 @@ export default function AntecedentesTicketTable({
                     fila.fechaSolicitud
                   )}
                 </td>
+                {!puedeVerCompleto && (
+                  <td className="w-32 border p-2">
+                    {formatearFechaTabla(
+                      fila.fechaRespuesta
+                    )}
+                  </td>
+                )}
                 {puedeVerCompleto && (
                   <>
                     <td className="w-32 border p-2">

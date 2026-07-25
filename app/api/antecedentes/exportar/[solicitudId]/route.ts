@@ -114,6 +114,8 @@ export async function GET(
           const base = {
             "FECHA DE SOLICITUD":
               registro.fechaSolicitud || "",
+            "FECHA RESPUESTA":
+              registro.fechaRespuesta || "",
             "NOMBRES Y APELLIDOS":
               registro.nombresApellidos || "",
             "TIPO DE DOCUMENTO":

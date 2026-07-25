@@ -32,7 +32,14 @@ export default function TicketCard({
     solicitud.estado;
 
   const isCompletado =
-    estado === "COMPLETADO";
+    [
+      "COMPLETADO",
+      "CERRADO",
+    ].includes(
+      String(estado || "")
+        .trim()
+        .toUpperCase()
+    );
 
   const puedeReabrir =
     isSolicitante &&
