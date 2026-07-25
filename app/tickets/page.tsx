@@ -16,6 +16,10 @@ from "@/lib/visibilidadSolicitudes";
 import { ocultarSolicitudesHistoricas }
 from "@/lib/solicitudesHistoricas";
 
+import {
+  visibleEnBandejaPorRol,
+} from "@/lib/visibilidadTickets";
+
 async function obtenerSolicitudes() {
 
   return prisma.solicitud.findMany({
@@ -72,13 +76,13 @@ const fincaEAI =
     );
 
   let solicitudes =
-    todasSolicitudes;
-    const hace8Dias =
-  new Date();
-
-hace8Dias.setDate(
-  hace8Dias.getDate() - 8
-);
+    todasSolicitudes.filter(
+      (solicitud) =>
+        visibleEnBandejaPorRol(
+          solicitud,
+          role
+        )
+    );
 
   // TECNICO
 
@@ -95,7 +99,7 @@ hace8Dias.setDate(
   ) {
 
   solicitudes =
-    todasSolicitudes.filter(
+    solicitudes.filter(
       (solicitud: any) => {
 
         const esSeguridad =
@@ -130,10 +134,6 @@ hace8Dias.setDate(
             )
           )
 
-          &&
-
-          solicitud.estado !==
-            "COMPLETADO"
         );
       }
     );
@@ -142,23 +142,8 @@ hace8Dias.setDate(
 if (role === "SOLICITANTE") {
 
   solicitudes =
-    todasSolicitudes.filter(
+    solicitudes.filter(
       (solicitud: any) => {
-
-        const visible =
-
-          solicitud.estado !==
-            "COMPLETADO"
-
-          ||
-
-          (
-            solicitud.fechaCierre &&
-
-            new Date(
-              solicitud.fechaCierre
-            ) >= hace8Dias
-          );
 
         return (
 
@@ -168,9 +153,6 @@ if (role === "SOLICITANTE") {
             fincaEAI
           )
 
-          &&
-
-          visible
         );
       }
     );
@@ -181,7 +163,7 @@ if (role === "SOLICITANTE") {
   if (role === "VISITA") {
 
   solicitudes =
-    todasSolicitudes.filter(
+    solicitudes.filter(
       (solicitud: any) => {
 
         return (
@@ -189,10 +171,6 @@ if (role === "SOLICITANTE") {
           solicitud.tipo ===
             "VISITA DOMICILIARIA"
 
-          &&
-
-          solicitud.estado !==
-            "COMPLETADO"
         );
       }
     );
@@ -201,7 +179,7 @@ if (role === "SOLICITANTE") {
 if (role === "SUPERVISOR") {
 
   solicitudes =
-    todasSolicitudes.filter(
+    solicitudes.filter(
       (solicitud: any) => {
 
         return (
@@ -214,10 +192,6 @@ if (role === "SUPERVISOR") {
           solicitud.tipo ===
             "ANTECEDENTES"
 
-          &&
-
-          solicitud.estado !==
-            "COMPLETADO"
         );
       }
     );

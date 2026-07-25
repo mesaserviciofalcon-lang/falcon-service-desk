@@ -10,8 +10,34 @@ import {
 
 } from "react";
 
-import TicketCard
-from "@/components/TicketCard";
+import Link
+from "next/link";
+
+function obtenerFincaTicket(
+  solicitud: any
+) {
+  return (
+    solicitud?.cctv?.fincaEAI ||
+    solicitud?.visita?.fincaEAI ||
+    solicitud?.radio?.fincaEAI ||
+    solicitud?.antecedente?.fincaEAI ||
+    solicitud?.novedad?.fincaEAI ||
+    "Sin finca"
+  );
+}
+
+function formatearFecha(
+  fecha: Date | string
+) {
+  return new Date(fecha)
+    .toLocaleDateString("es-CO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+}
 
 export default function FiltrosTickets({
 
@@ -300,26 +326,67 @@ export default function FiltrosTickets({
 
       {/* LISTADO */}
 
-      <div className="grid gap-4">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
 
-        {ticketsPaginados.map(
-          (solicitud: any) => (
+        <div className="hidden grid-cols-[90px_1.2fr_1fr_1fr_120px_110px] gap-3 border-b bg-slate-100 px-4 py-3 text-xs font-bold uppercase text-slate-600 md:grid">
+          <span>Ticket</span>
+          <span>Tipo</span>
+          <span>Finca</span>
+          <span>Solicitante</span>
+          <span>Estado</span>
+          <span>Accion</span>
+        </div>
 
-            <TicketCard
-
-              key={solicitud.id}
-
-              solicitud={solicitud}
-
-              role={role}
-
-              session={session}
-
-              mostrarTablaAntecedentes={false}
-
-            />
-          )
+        {ticketsPaginados.length === 0 && (
+          <div className="p-6 text-sm text-gray-500">
+            No hay tickets para mostrar.
+          </div>
         )}
+
+        {ticketsPaginados.map((solicitud: any) => (
+          <div
+            key={solicitud.id}
+            className="grid gap-2 border-b px-4 py-4 text-sm last:border-b-0 md:grid-cols-[90px_1.2fr_1fr_1fr_120px_110px] md:items-center md:gap-3"
+          >
+            <div className="font-bold text-[#0F3D1F]">
+              #{solicitud.id}
+            </div>
+
+            <div>
+              <p className="font-semibold">
+                {solicitud.tipo}
+              </p>
+              <p className="text-xs text-gray-500">
+                {formatearFecha(
+                  solicitud.fechaCreacion
+                )}
+              </p>
+            </div>
+
+            <div>
+              {obtenerFincaTicket(
+                solicitud
+              )}
+            </div>
+
+            <div className="truncate">
+              {solicitud.solicitante}
+            </div>
+
+            <div>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                {solicitud.estado}
+              </span>
+            </div>
+
+            <Link
+              href={`/tickets/${solicitud.id}`}
+              className="inline-flex justify-center rounded-lg bg-[#0F3D1F] px-3 py-2 text-xs font-semibold text-white hover:bg-[#14532d]"
+            >
+              Ver ticket
+            </Link>
+          </div>
+        ))}
 
       </div>
 

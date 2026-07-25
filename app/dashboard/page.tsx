@@ -23,6 +23,10 @@ import { ocultarSolicitudesHistoricas }
 from "@/lib/solicitudesHistoricas";
 
 import {
+  visibleEnBandejaPorRol,
+} from "@/lib/visibilidadTickets";
+
+import {
   OBSERVACION_DOCUMENTO_NO_CORRESPONDE,
   OBSERVACION_NO_TENER_EN_CUENTA,
 } from "@/lib/validacionAntecedentesGestion";
@@ -450,11 +454,11 @@ export default async function DashboardPage({
   let tickets =
     solicitudes;
 
-const hace3Dias =
+const hace5Dias =
   new Date();
 
-hace3Dias.setDate(
-  hace3Dias.getDate() - 3
+hace5Dias.setDate(
+  hace5Dias.getDate() - 5
 );
   if (role === "SOLICITANTE") {
 
@@ -475,7 +479,7 @@ hace3Dias.setDate(
 
             new Date(
               s.fechaCierre
-            ) >= hace3Dias
+            ) >= hace5Dias
           );
 
         return (
@@ -523,7 +527,7 @@ hace3Dias.setDate(
 
             new Date(
               s.fechaCierre
-            ) >= hace3Dias
+            ) >= hace5Dias
           );
 
         const esSeguridad =
@@ -584,7 +588,7 @@ hace3Dias.setDate(
 
             new Date(
               s.fechaCierre
-            ) >= hace3Dias
+            ) >= hace5Dias
           );
 
         return (
@@ -619,7 +623,7 @@ hace3Dias.setDate(
 
             new Date(
               s.fechaCierre
-            ) >= hace3Dias
+            ) >= hace5Dias
           );
 
         return (
@@ -635,19 +639,16 @@ hace3Dias.setDate(
     );
 }
 
-  const rolesVistaEjecutivaCompleta =
-    role === "ADMIN"
-
-    ||
-
-    role === "DIRECTOR_SEG"
-
-    ||
-
-    role === "JEFE_SEG";
+  tickets =
+    tickets.filter((ticket: any) =>
+      visibleEnBandejaPorRol(
+        ticket,
+        role
+      )
+    );
 
   const ticketsMetricas =
-    rolesVistaEjecutivaCompleta
+    role === "ADMIN"
       ? solicitudes
       : tickets;
 
