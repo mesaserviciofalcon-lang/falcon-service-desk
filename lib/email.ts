@@ -1,6 +1,10 @@
 import nodemailer
 from "nodemailer";
 
+const emailFrom =
+  process.env.EMAIL_FROM ||
+  "Falcon Service Desk <sala.control@falconfarms.com.co>";
+
 export const transporter =
   nodemailer.createTransport({
 
@@ -43,7 +47,7 @@ export async function enviarCorreo({
   await transporter.sendMail({
 
     from:
-      process.env.EMAIL_FROM,
+      emailFrom,
 
     to,
 
