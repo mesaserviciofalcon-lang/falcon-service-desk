@@ -1739,108 +1739,70 @@ hace5Dias.setDate(
 
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
 
-          <table className="w-full">
+          <div className="hidden grid-cols-[90px_1.2fr_1fr_1fr_120px_110px] gap-3 border-b bg-slate-100 px-4 py-3 text-xs font-bold uppercase text-slate-600 md:grid">
+            <span>Ticket</span>
+            <span>Tipo</span>
+            <span>Finca</span>
+            <span>Solicitante</span>
+            <span>Estado</span>
+            <span>Accion</span>
+          </div>
 
-            <thead>
+          {ticketsFiltrados.length ===
+            0 && (
+            <div className="p-6 text-sm text-gray-500">
+              No hay tickets para mostrar.
+            </div>
+          )}
 
-              <tr className="border-b">
+          {ticketsFiltrados
+            .slice(0, 10)
+            .map((ticket: any) => (
+              <div
+                key={ticket.id}
+                className="grid gap-2 border-b px-4 py-4 text-sm last:border-b-0 md:grid-cols-[90px_1.2fr_1fr_1fr_120px_110px] md:items-center md:gap-3"
+              >
+                <div className="font-bold text-[#0F3D1F]">
+                  #{ticket.id}
+                </div>
 
-                <th className="text-left p-3">
-                  ID
-                </th>
-
-                <th className="text-left p-3">
-                  Tipo
-                </th>
-
-                <th className="text-left p-3">
-                  Solicitante
-                </th>
-
-                <th className="text-left p-3">
-                  Finca
-                </th>
-
-                <th className="text-left p-3">
-                  Estado
-                </th>
-
-                <th className="text-left p-3">
-                  Fecha
-                </th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {ticketsFiltrados
-                .slice(0, 10)
-                .map((ticket: any) => (
-
-                <tr
-  key={ticket.id}
-  className="
-    border-b
-    hover:bg-green-50
-    transition
-  "
->
-
-                  <td className="p-3">
-
-  <Link
-
-    href={`/tickets/${ticket.id}`}
-
-    className="
-      font-bold
-      text-blue-700
-      hover:underline
-    "
-  >
-
-    #{ticket.id}
-
-  </Link>
-
-</td>
-
-                  <td className="p-3">
+                <div>
+                  <p className="font-semibold">
                     {ticket.tipo}
-                  </td>
-
-                  <td className="p-3">
-                    {ticket.solicitante}
-                  </td>
-
-                  <td className="p-3">
-                    {obtenerFincaTicket(
-                      ticket
-                    )}
-                  </td>
-
-                  <td className="p-3">
-                    {ticket.estado}
-                  </td>
-
-                  <td className="p-3">
-
+                  </p>
+                  <p className="text-xs text-gray-500">
                     {formatearFechaColombia(
                       ticket.fechaCreacion
                     )}
+                  </p>
+                </div>
 
-                  </td>
+                <div>
+                  {obtenerFincaTicket(
+                    ticket
+                  )}
+                </div>
 
-                </tr>
-              ))}
+                <div className="truncate">
+                  {ticket.solicitante}
+                </div>
 
-            </tbody>
+                <div>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                    {ticket.estado}
+                  </span>
+                </div>
 
-          </table>
+                <Link
+                  href={`/tickets/${ticket.id}`}
+                  className="inline-flex justify-center rounded-lg bg-[#0F3D1F] px-3 py-2 text-xs font-semibold text-white hover:bg-[#14532d]"
+                >
+                  Ver ticket
+                </Link>
+              </div>
+            ))}
 
         </div>
 
