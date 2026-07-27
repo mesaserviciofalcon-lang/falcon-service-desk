@@ -674,7 +674,7 @@ hace5Dias.setDate(
     role === "ADMIN"
       ? mesSeleccionado ||
         mesActual
-      : "";
+      : mesActual;
 
   const ticketsMetricasFiltradas =
     aplicarFiltroMes
@@ -693,9 +693,7 @@ hace5Dias.setDate(
   const metricasAntecedentesMes =
     puedeVerMetricasAntecedentes
       ? await obtenerMetricasAntecedentes(
-          role === "ADMIN"
-            ? mesIndicadores
-            : undefined
+          mesIndicadores
         )
       : metricasAntecedentesVacias;
 

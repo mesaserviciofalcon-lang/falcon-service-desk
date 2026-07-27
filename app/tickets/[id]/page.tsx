@@ -19,6 +19,10 @@ from "@/lib/visibilidadSolicitudes";
 import { esSolicitudHistorica }
 from "@/lib/solicitudesHistoricas";
 
+import {
+  visibleEnBandejaPorRol,
+} from "@/lib/visibilidadTickets";
+
 export default async function TicketDetalle({
 
   params,
@@ -108,6 +112,23 @@ export default async function TicketDetalle({
       <div className="p-8">
 
         No tiene permiso para ver este ticket
+
+      </div>
+    );
+  }
+
+  if (
+    !visibleEnBandejaPorRol(
+      solicitud,
+      session?.user?.role
+    )
+  ) {
+
+    return (
+
+      <div className="p-8">
+
+        Este ticket ya fue completado y no se encuentra disponible en su bandeja.
 
       </div>
     );
