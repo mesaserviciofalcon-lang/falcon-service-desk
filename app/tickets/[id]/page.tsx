@@ -23,6 +23,10 @@ import {
   visibleEnBandejaPorRol,
 } from "@/lib/visibilidadTickets";
 
+import {
+  obtenerUltimaVisitaHistorica,
+} from "@/lib/visitasHistoricas";
+
 export default async function TicketDetalle({
 
   params,
@@ -134,6 +138,14 @@ export default async function TicketDetalle({
     );
   }
 
+  const ultimaVisitaHistorica =
+    solicitud.tipo ===
+      "VISITA DOMICILIARIA"
+      ? await obtenerUltimaVisitaHistorica(
+          solicitud.visita?.cedula
+        )
+      : null;
+
   return (
 
     <div className="p-8 bg-[#E8EEF2] min-h-screen">
@@ -158,7 +170,10 @@ export default async function TicketDetalle({
 
       <TicketCard
 
-        solicitud={solicitud}
+        solicitud={{
+          ...solicitud,
+          ultimaVisitaHistorica,
+        }}
 
         role={
           session?.user?.role

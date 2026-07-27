@@ -345,6 +345,64 @@ export default function TicketCard({
 
           </p>
 
+          {solicitud
+            .ultimaVisitaHistorica && (
+
+            <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
+
+              <p className="font-bold">
+                Ultima visita registrada
+              </p>
+
+              <p className="mt-2">
+                <strong>
+                  Fecha:
+                </strong>
+                {" "}
+                {
+                  solicitud
+                    .ultimaVisitaHistorica
+                    .fechaVisitaRealizada ||
+                  formatearFechaColombia(
+                    solicitud
+                      .ultimaVisitaHistorica
+                      .fechaVisitaDate
+                  )
+                }
+              </p>
+
+              <p>
+                <strong>
+                  Finca:
+                </strong>
+                {" "}
+                {
+                  solicitud
+                    .ultimaVisitaHistorica
+                    .fincaEAI ||
+                  "Sin finca"
+                }
+              </p>
+
+              {solicitud
+                .ultimaVisitaHistorica
+                .motivoVisita && (
+                <p>
+                  <strong>
+                    Motivo:
+                  </strong>
+                  {" "}
+                  {
+                    solicitud
+                      .ultimaVisitaHistorica
+                      .motivoVisita
+                  }
+                </p>
+              )}
+
+            </div>
+          )}
+
         </div>
       )}
 

@@ -131,6 +131,46 @@ model SolicitudVisita {
   resultadoVisita String?
 }
 
+model VisitaHistorica {
+  id Int @id @default(autoincrement())
+
+  fechaSolicitud String?
+
+  fechaSolicitudDate DateTime?
+
+  nombresApellidos String?
+
+  cedula String
+
+  telefono String?
+
+  direccion String?
+
+  municipio String?
+
+  zona String?
+
+  motivoVisita String?
+
+  cargo String?
+
+  fincaEAI String?
+
+  fechaExpedicionCedula String?
+
+  fechaVisitaRealizada String?
+
+  fechaVisitaDate DateTime?
+
+  origenArchivo String?
+
+  createdAt DateTime @default(now())
+
+  @@index([cedula])
+  @@index([fincaEAI])
+  @@index([fechaVisitaDate])
+}
+
 model SolicitudRadio {
   id Int @id @default(autoincrement())
 
