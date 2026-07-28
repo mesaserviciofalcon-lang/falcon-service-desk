@@ -25,6 +25,8 @@ import {
 
   TableProperties,
 
+  MapPinned,
+
 } from "lucide-react";
 
 export default function Sidebar({
@@ -145,6 +147,25 @@ export default function Sidebar({
 
           {[
             "ADMIN",
+            "VISITA",
+          ].includes(role) && (
+
+            <Link
+
+              href="/visitas"
+
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
+            >
+
+              <MapPinned size={20} />
+
+              Consulta visitas
+
+            </Link>
+          )}
+
+          {[
+            "ADMIN",
             "DIRECTOR_SEG",
             "JEFE_SEG",
             "SUPERVISOR",
@@ -197,19 +218,6 @@ export default function Sidebar({
 
               </Link>
 
-              <Link
-
-                href="/visitas"
-
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
-              >
-
-                <UserSearch size={20} />
-
-                Consulta visitas
-
-              </Link>
-
             </>
           )}
 
@@ -259,17 +267,6 @@ export default function Sidebar({
                 Visita domiciliaria
 
               </div>
-
-              <Link
-                href="/visitas"
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
-              >
-
-                <UserSearch size={20} />
-
-                Consulta visitas
-
-              </Link>
 
             </>
           )}
