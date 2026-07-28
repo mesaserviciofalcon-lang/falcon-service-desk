@@ -191,6 +191,10 @@ async function main() {
             formatearFecha(fila[4]),
           fechaSolicitudDate:
             parsearFecha(fila[4]),
+          correoSolicitante:
+            limpiarTexto(fila[2]),
+          solicitanteNombre:
+            limpiarTexto(fila[3]),
           nombresApellidos:
             limpiarTexto(fila[5]),
           cedula,

@@ -15,6 +15,8 @@ export const config = {
 
     "/antecedentes/:path*",
 
+    "/visitas/:path*",
+
     "/usuarios/:path*",
 
     "/cambiar-password/:path*",

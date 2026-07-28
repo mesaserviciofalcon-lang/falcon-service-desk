@@ -35,15 +35,6 @@ async function obtenerSolicitudes() {
       antecedente: true,
 
       novedad: true,
-
-      gestiones: {
-
-        orderBy: {
-          fecha: "desc",
-        },
-      },
-
-      archivos: true,
     },
 
     orderBy: {

@@ -24,6 +24,13 @@ export async function obtenerUltimaVisitaHistorica(
       cedula:
         cedulaNormalizada,
     },
+    select: {
+      id: true,
+      fechaVisitaRealizada: true,
+      fechaVisitaDate: true,
+      fincaEAI: true,
+      motivoVisita: true,
+    },
     orderBy: [
       {
         fechaVisitaDate: {

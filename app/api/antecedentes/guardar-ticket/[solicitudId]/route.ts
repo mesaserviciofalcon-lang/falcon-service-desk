@@ -134,11 +134,6 @@ export async function PATCH(
           data: {
             fechaRespuesta:
               obtenerFechaActualColombiaISO(),
-            eai:
-              registro.eai || null,
-            tipoDocumento:
-              registro.tipoDocumento ||
-              null,
             observacion:
               registro.observacion ||
               null,

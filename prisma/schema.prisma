@@ -138,6 +138,10 @@ model VisitaHistorica {
 
   fechaSolicitudDate DateTime?
 
+  correoSolicitante String?
+
+  solicitanteNombre String?
+
   nombresApellidos String?
 
   cedula String

@@ -11,11 +11,9 @@ from "react-hot-toast";
 
 import {
   autorizacionAntecedenteOpciones,
-  eaiOpciones,
   motivoAntecedenteOpciones,
   observacionAntecedenteOpciones,
   revisadoPorOpciones,
-  tipoDocumentoOpciones,
 } from "@/lib/antecedentesCatalogos";
 
 import {
@@ -621,33 +619,17 @@ export default function GestionMasivaAntecedentes({
                             )}
                           </td>
                           <td className="w-24 border p-2">
-                            <SelectCampo
-                              value={fila.eai}
-                              options={eaiOpciones}
-                              onChange={(value) =>
-                                actualizarFila(
-                                  fila.id,
-                                  "eai",
-                                  value
-                                )
-                              }
-                            />
+                            <span className="block rounded-md border border-gray-200 bg-gray-100 px-2 py-2 text-sm font-semibold text-gray-700">
+                              {fila.eai || ""}
+                            </span>
                           </td>
                           <td className="w-64 border p-2">
                             {fila.nombresApellidos || ""}
                           </td>
                           <td className="w-32 border p-2">
-                            <SelectCampo
-                              value={fila.tipoDocumento}
-                              options={tipoDocumentoOpciones}
-                              onChange={(value) =>
-                                actualizarFila(
-                                  fila.id,
-                                  "tipoDocumento",
-                                  value
-                                )
-                              }
-                            />
+                            <span className="block rounded-md border border-gray-200 bg-gray-100 px-2 py-2 text-sm font-semibold text-gray-700">
+                              {fila.tipoDocumento || ""}
+                            </span>
                           </td>
                           <td className="w-36 border p-2">
                             {fila.identificacion}

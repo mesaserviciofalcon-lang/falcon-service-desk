@@ -135,11 +135,6 @@ export async function PATCH(
           },
           data: {
             fechaRespuesta,
-            eai:
-              registro.eai || null,
-            tipoDocumento:
-              registro.tipoDocumento ||
-              null,
             observacion:
               registro.observacion ||
               null,

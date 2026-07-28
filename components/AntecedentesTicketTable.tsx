@@ -8,12 +8,10 @@ from "react-hot-toast";
 
 import {
   autorizacionAntecedenteOpciones,
-  eaiOpciones,
   motivoAntecedenteOpciones,
   observacionAntecedenteOpciones,
   puedeVerAntecedenteCompleto,
   revisadoPorOpciones,
-  tipoDocumentoOpciones,
 } from "@/lib/antecedentesCatalogos";
 
 import {
@@ -367,17 +365,9 @@ export default function AntecedentesTicketTable({
                       )}
                     </td>
                     <td className="w-24 border p-2">
-                      <SelectCampo
-                        value={fila.eai}
-                        options={eaiOpciones}
-                        onChange={(value) =>
-                          actualizarFila(
-                            fila.id,
-                            "eai",
-                            value
-                          )
-                        }
-                      />
+                      <span className="block rounded-md border border-gray-200 bg-gray-100 px-2 py-2 text-sm font-semibold text-gray-700">
+                        {fila.eai || ""}
+                      </span>
                     </td>
                   </>
                 )}
@@ -385,23 +375,7 @@ export default function AntecedentesTicketTable({
                   {fila.nombresApellidos || ""}
                 </td>
                 <td className="w-32 border p-2">
-                  {puedeVerCompleto ? (
-                    <SelectCampo
-                      value={fila.tipoDocumento}
-                      options={
-                        tipoDocumentoOpciones
-                      }
-                      onChange={(value) =>
-                        actualizarFila(
-                          fila.id,
-                          "tipoDocumento",
-                          value
-                        )
-                      }
-                    />
-                  ) : (
-                    fila.tipoDocumento || ""
-                  )}
+                  {fila.tipoDocumento || ""}
                 </td>
                 <td className="w-36 border p-2">
                   {fila.identificacion}

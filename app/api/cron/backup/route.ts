@@ -90,6 +90,7 @@ export async function GET(request: Request) {
       radios,
       antecedentes,
       antecedentesRegistros,
+      visitasHistoricas,
       novedades,
       usuarios,
     ] = await Promise.all([
@@ -101,6 +102,7 @@ export async function GET(request: Request) {
       prisma.solicitudRadio.findMany(),
       prisma.solicitudAntecedente.findMany(),
       prisma.antecedenteRegistro.findMany(),
+      prisma.visitaHistorica.findMany(),
       prisma.seguridadNovedad.findMany(),
       prisma.usuario.findMany({
         select: {
@@ -131,6 +133,7 @@ export async function GET(request: Request) {
           radios: radios.length,
           antecedentes: antecedentes.length,
           antecedentesRegistros: antecedentesRegistros.length,
+          visitasHistoricas: visitasHistoricas.length,
           novedades: novedades.length,
           usuarios: usuarios.length,
         },
@@ -144,6 +147,7 @@ export async function GET(request: Request) {
         radios,
         antecedentes,
         antecedentesRegistros,
+        visitasHistoricas,
         novedades,
         usuarios,
       },

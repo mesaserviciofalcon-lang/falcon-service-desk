@@ -247,6 +247,17 @@ export default function Sidebar({
 
               </div>
 
+              <Link
+                href="/visitas"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
+              >
+
+                <UserSearch size={20} />
+
+                Consulta visitas
+
+              </Link>
+
             </>
           )}
 

@@ -144,10 +144,6 @@ export async function PATCH(
         data: {
           fechaRespuesta:
             obtenerFechaActualColombiaISO(),
-          eai:
-            body.eai || null,
-          tipoDocumento:
-            body.tipoDocumento || null,
           observacion:
             body.observacion || null,
           revisadoPor:
