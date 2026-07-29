@@ -11,6 +11,11 @@ import {
 import { obtenerFechaActualColombiaISO }
 from "@/lib/fecha";
 
+import {
+  eaiOpciones,
+  tipoDocumentoOpciones,
+} from "@/lib/antecedentesCatalogos";
+
 type RegistroAntecedenteExcel = {
   fechaSolicitud?: string;
   fechaRespuesta?: string;
@@ -61,6 +66,76 @@ function limpiarValor(
   }
 
   return String(valor).trim();
+}
+
+function obtenerLetraColumna(
+  indice: number
+) {
+  return XLSX.utils.encode_col(
+    indice
+  );
+}
+
+function obtenerCelda(
+  sheet: XLSX.WorkSheet,
+  fila: number,
+  columna: number
+) {
+  return sheet[
+    XLSX.utils.encode_cell({
+      r: fila,
+      c: columna,
+    })
+  ];
+}
+
+function valorCelda(
+  celda: XLSX.CellObject | undefined
+) {
+  return limpiarValor(celda?.v);
+}
+
+function celdaTieneValor(
+  celda: XLSX.CellObject | undefined
+) {
+  return valorCelda(celda) !== "";
+}
+
+function celdaEsFechaValida(
+  celda: XLSX.CellObject | undefined
+) {
+  if (!celdaTieneValor(celda)) {
+    return false;
+  }
+
+  if (celda?.v instanceof Date) {
+    return !Number.isNaN(
+      celda.v.getTime()
+    );
+  }
+
+  if (typeof celda?.v === "number") {
+    const fechaExcel =
+      XLSX.SSF.parse_date_code(celda.v);
+
+    return Boolean(
+      fechaExcel &&
+      fechaExcel.y >= 1900 &&
+      fechaExcel.y <= 2100
+    );
+  }
+
+  return false;
+}
+
+function lanzarErrorCelda(
+  fila: number,
+  columna: number,
+  mensaje: string
+) {
+  throw new Error(
+    `No fue posible cargar este archivo. Fila ${fila}, columna ${obtenerLetraColumna(columna)}: ${mensaje}`
+  );
 }
 
 function obtenerValor(
@@ -163,6 +238,218 @@ function validarFilasCompletasSolicitud(
       );
     }
   });
+}
+
+function validarTipoDatosSolicitud(
+  sheet: XLSX.WorkSheet,
+  requeridos: string[]
+) {
+  const range =
+    sheet["!ref"]
+      ? XLSX.utils.decode_range(
+          sheet["!ref"]
+        )
+      : null;
+
+  if (!range) {
+    return;
+  }
+
+  const indiceFechaSolicitud =
+    requeridos.indexOf(
+      "FECHA DE SOLICITUD"
+    );
+  const indiceFechaRespuesta =
+    requeridos.indexOf(
+      "FECHA RESPUESTA"
+    );
+  const indiceEai =
+    requeridos.indexOf("EAI");
+  const indiceNombres =
+    requeridos.indexOf(
+      "NOMBRES Y APELLIDOS"
+    );
+  const indiceTipoDocumento =
+    requeridos.indexOf(
+      "TIPO DE DOCUMENTO"
+    );
+  const indiceIdentificacion =
+    requeridos.findIndex(
+      (encabezado) =>
+        normalizarTexto(encabezado) ===
+        "IDENTIFICACION"
+    );
+  const indiceFechaExpedicion =
+    requeridos.indexOf(
+      "FECHA EXPEDICION DOCUMENTO"
+    );
+
+  for (
+    let fila = range.s.r + 1;
+    fila <= range.e.r;
+    fila++
+  ) {
+    const numeroFila =
+      fila + 1;
+
+    const celdasFila =
+      requeridos.map((_, columna) =>
+        obtenerCelda(
+          sheet,
+          fila,
+          columna
+        )
+      );
+
+    const tieneDatos =
+      celdasFila.some(
+        celdaTieneValor
+      );
+
+    if (!tieneDatos) {
+      continue;
+    }
+
+    const fechaSolicitud =
+      obtenerCelda(
+        sheet,
+        fila,
+        indiceFechaSolicitud
+      );
+
+    if (
+      !celdaEsFechaValida(
+        fechaSolicitud
+      )
+    ) {
+      lanzarErrorCelda(
+        numeroFila,
+        indiceFechaSolicitud,
+        "FECHA DE SOLICITUD debe ser una fecha valida de Excel, no texto."
+      );
+    }
+
+    const fechaRespuesta =
+      obtenerCelda(
+        sheet,
+        fila,
+        indiceFechaRespuesta
+      );
+
+    if (
+      celdaTieneValor(
+        fechaRespuesta
+      ) &&
+      !celdaEsFechaValida(
+        fechaRespuesta
+      )
+    ) {
+      lanzarErrorCelda(
+        numeroFila,
+        indiceFechaRespuesta,
+        "FECHA RESPUESTA debe estar vacia o ser una fecha valida de Excel."
+      );
+    }
+
+    const eai =
+      valorCelda(
+        obtenerCelda(
+          sheet,
+          fila,
+          indiceEai
+        )
+      ).toUpperCase();
+
+    if (
+      !eaiOpciones.includes(eai)
+    ) {
+      lanzarErrorCelda(
+        numeroFila,
+        indiceEai,
+        `EAI debe ser uno de estos valores: ${eaiOpciones.join(", ")}.`
+      );
+    }
+
+    const nombres =
+      valorCelda(
+        obtenerCelda(
+          sheet,
+          fila,
+          indiceNombres
+        )
+      );
+
+    if (
+      /\d/.test(nombres)
+    ) {
+      lanzarErrorCelda(
+        numeroFila,
+        indiceNombres,
+        "NOMBRES Y APELLIDOS debe contener texto, no numeros."
+      );
+    }
+
+    const tipoDocumento =
+      valorCelda(
+        obtenerCelda(
+          sheet,
+          fila,
+          indiceTipoDocumento
+        )
+      ).toUpperCase();
+
+    if (
+      !tipoDocumentoOpciones.includes(
+        tipoDocumento
+      )
+    ) {
+      lanzarErrorCelda(
+        numeroFila,
+        indiceTipoDocumento,
+        `TIPO DE DOCUMENTO debe ser uno de estos valores: ${tipoDocumentoOpciones.join(", ")}.`
+      );
+    }
+
+    const identificacion =
+      valorCelda(
+        obtenerCelda(
+          sheet,
+          fila,
+          indiceIdentificacion
+        )
+      );
+
+    if (
+      !/^\d+$/.test(
+        identificacion
+      )
+    ) {
+      lanzarErrorCelda(
+        numeroFila,
+        indiceIdentificacion,
+        "IDENTIFICACION debe contener solo numeros. No use puntos, comas, espacios ni separadores de miles."
+      );
+    }
+
+    const fechaExpedicion =
+      obtenerCelda(
+        sheet,
+        fila,
+        indiceFechaExpedicion
+      );
+
+    if (
+      !celdaEsFechaValida(
+        fechaExpedicion
+      )
+    ) {
+      lanzarErrorCelda(
+        numeroFila,
+        indiceFechaExpedicion,
+        "FECHA EXPEDICION DOCUMENTO debe ser una fecha valida de Excel, no texto."
+      );
+    }
+  }
 }
 
 function obtenerEncabezados(
@@ -320,6 +607,13 @@ async function leerFilasDesdeUrl(
     sheet,
     requeridos
   );
+
+  if (validarFilasSolicitud) {
+    validarTipoDatosSolicitud(
+      sheet,
+      requeridos
+    );
+  }
 
   const filas =
     XLSX.utils.sheet_to_json<

@@ -219,7 +219,15 @@ export default function GestionMasivaAntecedentes({
   ) {
     setFilas((actuales) =>
       actuales.map((fila) =>
-        fila.id === id
+        campo === "revisadoPor" &&
+        ticketsSeleccionados.includes(
+          fila.solicitudId
+        )
+          ? {
+              ...fila,
+              revisadoPor: valor,
+            }
+          : fila.id === id
           ? {
               ...fila,
               [campo]: valor,
