@@ -15,6 +15,9 @@ import {
 import ImportarHistoricoAntecedentes
 from "@/components/ImportarHistoricoAntecedentes";
 
+import FormularioAntecedenteManual
+from "@/components/FormularioAntecedenteManual";
+
 export default async function AntecedentesPage({
   searchParams,
 }: {
@@ -105,6 +108,10 @@ export default async function AntecedentesPage({
 
       {puedeImportarHistorico && (
         <ImportarHistoricoAntecedentes />
+      )}
+
+      {puedeVerCompleto && (
+        <FormularioAntecedenteManual />
       )}
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">

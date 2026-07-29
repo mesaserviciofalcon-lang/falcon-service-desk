@@ -1,0 +1,271 @@
+import { getServerSession }
+from "next-auth";
+
+import { authOptions }
+from "@/lib/auth";
+
+import { prisma }
+from "@/lib/prisma";
+
+import {
+  autorizacionAntecedenteOpciones,
+  eaiOpciones,
+  motivoAntecedenteOpciones,
+  observacionAntecedenteOpciones,
+  puedeVerAntecedenteCompleto,
+  revisadoPorOpciones,
+  tipoDocumentoOpciones,
+} from "@/lib/antecedentesCatalogos";
+
+import {
+  validarRegistroAntecedente,
+} from "@/lib/validacionAntecedentesGestion";
+
+import { obtenerFechaActualColombiaISO }
+from "@/lib/fecha";
+
+function texto(
+  valor: unknown
+) {
+  return String(valor || "").trim();
+}
+
+function normalizarDocumento(
+  valor: unknown
+) {
+  return texto(valor).replace(/\D/g, "");
+}
+
+function validarOpcion(
+  valor: string,
+  opciones: string[],
+  campo: string,
+  obligatorio = true
+) {
+  if (!valor && !obligatorio) {
+    return null;
+  }
+
+  if (!valor) {
+    return `Debe diligenciar ${campo}`;
+  }
+
+  if (!opciones.includes(valor)) {
+    return `${campo} no tiene un valor valido`;
+  }
+
+  return null;
+}
+
+export async function POST(
+  request: Request
+) {
+  const session =
+    await getServerSession(
+      authOptions
+    );
+
+  if (
+    !puedeVerAntecedenteCompleto(
+      session?.user?.role
+    )
+  ) {
+    return Response.json(
+      {
+        error:
+          "No tiene permiso para registrar antecedentes manuales",
+      },
+      {
+        status: 403,
+      }
+    );
+  }
+
+  try {
+    const body =
+      await request.json();
+
+    const fechaActual =
+      obtenerFechaActualColombiaISO();
+
+    const registro = {
+      fechaSolicitud:
+        texto(body.fechaSolicitud) ||
+        fechaActual,
+      fechaRespuesta:
+        texto(body.fechaRespuesta) ||
+        fechaActual,
+      eai:
+        texto(body.eai).toUpperCase(),
+      nombresApellidos:
+        texto(body.nombresApellidos)
+          .toUpperCase(),
+      tipoDocumento:
+        texto(body.tipoDocumento)
+          .toUpperCase(),
+      identificacion:
+        normalizarDocumento(
+          body.identificacion
+        ),
+      fechaExpedicionDocumento:
+        texto(
+          body.fechaExpedicionDocumento
+        ),
+      observacion:
+        texto(body.observacion),
+      revisadoPor:
+        texto(body.revisadoPor),
+      motivo:
+        texto(body.motivo),
+      autorizacion:
+        texto(body.autorizacion),
+      observaciones:
+        texto(body.observaciones),
+    };
+
+    if (
+      !registro.identificacion ||
+      !/^\d+$/.test(
+        registro.identificacion
+      )
+    ) {
+      return Response.json(
+        {
+          error:
+            "La identificacion debe contener solo numeros, sin puntos ni separadores",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      !registro.nombresApellidos
+    ) {
+      return Response.json(
+        {
+          error:
+            "Debe diligenciar nombres y apellidos",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const erroresOpciones = [
+      validarOpcion(
+        registro.eai,
+        eaiOpciones,
+        "EAI"
+      ),
+      validarOpcion(
+        registro.tipoDocumento,
+        tipoDocumentoOpciones,
+        "tipo de documento"
+      ),
+      validarOpcion(
+        registro.observacion,
+        observacionAntecedenteOpciones,
+        "observacion"
+      ),
+      validarOpcion(
+        registro.revisadoPor,
+        revisadoPorOpciones,
+        "revisado por"
+      ),
+      validarOpcion(
+        registro.motivo,
+        motivoAntecedenteOpciones,
+        "motivo",
+        false
+      ),
+      validarOpcion(
+        registro.autorizacion,
+        autorizacionAntecedenteOpciones,
+        "autorizacion",
+        false
+      ),
+    ].find(Boolean);
+
+    if (erroresOpciones) {
+      return Response.json(
+        {
+          error: erroresOpciones,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const errorGestion =
+      validarRegistroAntecedente(
+        registro
+      );
+
+    if (errorGestion) {
+      return Response.json(
+        {
+          error: errorGestion,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const solicitud =
+      await prisma.solicitud.create({
+        data: {
+          tipo: "ANTECEDENTES",
+          solicitante:
+            session?.user?.name ||
+            "REGISTRO MANUAL",
+          correoSolicitante:
+            session?.user?.email,
+          estado: "COMPLETADO",
+          asignadoA: "SEGURIDAD",
+          gestionadoPor:
+            session?.user?.name ||
+            "SISTEMA",
+          fechaGestion: new Date(),
+          fechaCierre: new Date(),
+          antecedente: {
+            create: {
+              fincaEAI: "HISTORICO",
+              observaciones:
+                "Registro historico manual",
+            },
+          },
+          antecedentesRegistros: {
+            create: registro,
+          },
+        },
+        include: {
+          antecedentesRegistros: true,
+        },
+      });
+
+    return Response.json({
+      solicitudId: solicitud.id,
+      registro:
+        solicitud.antecedentesRegistros[0],
+    });
+
+  } catch (error: any) {
+    console.error(error);
+
+    return Response.json(
+      {
+        error:
+          error.message ||
+          "Error registrando antecedente manual",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
