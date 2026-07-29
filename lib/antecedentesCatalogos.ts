@@ -30,7 +30,7 @@ export const revisadoPorOpciones = [
   "CRISTIAN SALGADO",
   "YEISON HERNANDEZ",
   "JOSE PEREZ",
-  "SEBASTIAN YUNDA",
+  "IVAN MORA",
   "JAVIER SERNA",
   "MAURICIO CALDERON",
   "LUIS CHARRY",
