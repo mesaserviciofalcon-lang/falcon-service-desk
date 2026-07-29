@@ -155,6 +155,16 @@ export async function autocompletarAntecedentes(
         orderBy: {
           createdAt: "desc",
         },
+        select: {
+          id: true,
+          identificacion: true,
+          fechaRespuesta: true,
+          fechaSolicitud: true,
+          observacion: true,
+          motivo: true,
+          observaciones: true,
+          createdAt: true,
+        },
       });
 
   return registros.map(

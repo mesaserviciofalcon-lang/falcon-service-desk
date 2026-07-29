@@ -45,7 +45,11 @@ export const motivoAntecedenteOpciones = [
   "JEMPS",
   "SPOA",
   "GHESTOR",
-  "ACCES",
+];
+
+export const motivoAntecedenteManualOpciones = [
+  ...motivoAntecedenteOpciones,
+  "FINCA",
 ];
 
 export const autorizacionAntecedenteOpciones = [

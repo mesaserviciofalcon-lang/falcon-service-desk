@@ -12,7 +12,7 @@ from "react-hot-toast";
 import {
   autorizacionAntecedenteOpciones,
   eaiOpciones,
-  motivoAntecedenteOpciones,
+  motivoAntecedenteManualOpciones,
   observacionAntecedenteOpciones,
   revisadoPorOpciones,
   tipoDocumentoOpciones,
@@ -42,6 +42,37 @@ const estadoInicial = {
   autorizacion: "",
   observaciones: "",
 };
+
+function normalizarFechaInput(
+  valor?: string | null
+) {
+  const texto =
+    String(valor || "").trim();
+
+  if (!texto) {
+    return "";
+  }
+
+  const iso =
+    texto.match(
+      /^(\d{4})-(\d{1,2})-(\d{1,2})/
+    );
+
+  if (iso) {
+    return `${iso[1]}-${iso[2].padStart(2, "0")}-${iso[3].padStart(2, "0")}`;
+  }
+
+  const local =
+    texto.match(
+      /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/
+    );
+
+  if (local) {
+    return `${local[3]}-${local[2].padStart(2, "0")}-${local[1].padStart(2, "0")}`;
+  }
+
+  return "";
+}
 
 function SelectCampo({
   label,
@@ -103,6 +134,16 @@ export default function FormularioAntecedenteManual() {
   const [guardando, setGuardando] =
     useState(false);
 
+  const [
+    buscandoIdentificacion,
+    setBuscandoIdentificacion,
+  ] = useState(false);
+
+  const [
+    identificacionConsultada,
+    setIdentificacionConsultada,
+  ] = useState("");
+
   const [form, setForm] =
     useState(estadoInicial);
 
@@ -121,6 +162,74 @@ export default function FormularioAntecedenteManual() {
           ? value.replace(/\D/g, "")
           : value,
     }));
+  }
+
+  async function buscarDatosIdentificacion() {
+    const identificacion =
+      form.identificacion.trim();
+
+    if (
+      identificacion.length < 5 ||
+      identificacion ===
+        identificacionConsultada
+    ) {
+      return;
+    }
+
+    try {
+      setBuscandoIdentificacion(true);
+      setIdentificacionConsultada(
+        identificacion
+      );
+
+      const response =
+        await fetch(
+          `/api/antecedentes/manual?identificacion=${encodeURIComponent(
+            identificacion
+          )}`
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          "No se pudo consultar la identificacion"
+        );
+      }
+
+      const fechaExpedicion =
+        normalizarFechaInput(
+          data.registro
+            ?.fechaExpedicionDocumento
+        );
+
+      if (fechaExpedicion) {
+        setForm((actual) => ({
+          ...actual,
+          fechaExpedicionDocumento:
+            actual
+              .fechaExpedicionDocumento ||
+            fechaExpedicion,
+        }));
+
+        toast.success(
+          "Fecha de expedicion encontrada en el historico"
+        );
+      }
+
+    } catch (error: any) {
+      console.error(error);
+
+      toast.error(
+        error.message ||
+        "Error consultando identificacion"
+      );
+
+    } finally {
+      setBuscandoIdentificacion(false);
+    }
   }
 
   async function guardar(
@@ -215,6 +324,32 @@ export default function FormularioAntecedenteManual() {
         >
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">
+              Identificacion
+              <input
+                name="identificacion"
+                value={form.identificacion}
+                required
+                inputMode="numeric"
+                pattern="\d+"
+                onBlur={
+                  buscarDatosIdentificacion
+                }
+                onChange={(event) =>
+                  actualizar(
+                    event.target.name,
+                    event.target.value
+                  )
+                }
+                className="rounded-lg border border-slate-300 p-2.5 font-normal"
+              />
+              {buscandoIdentificacion && (
+                <span className="text-xs font-normal text-blue-700">
+                  Buscando fecha de expedicion...
+                </span>
+              )}
+            </label>
+
+            <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">
               Fecha de solicitud
               <input
                 type="date"
@@ -283,24 +418,6 @@ export default function FormularioAntecedenteManual() {
             />
 
             <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">
-              Identificacion
-              <input
-                name="identificacion"
-                value={form.identificacion}
-                required
-                inputMode="numeric"
-                pattern="\d+"
-                onChange={(event) =>
-                  actualizar(
-                    event.target.name,
-                    event.target.value
-                  )
-                }
-                className="rounded-lg border border-slate-300 p-2.5 font-normal"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">
               Fecha expedicion documento
               <input
                 type="date"
@@ -340,7 +457,7 @@ export default function FormularioAntecedenteManual() {
               label="Motivo"
               name="motivo"
               value={form.motivo}
-              options={motivoAntecedenteOpciones}
+              options={motivoAntecedenteManualOpciones}
               required={requiereDetalle}
               onChange={actualizar}
             />

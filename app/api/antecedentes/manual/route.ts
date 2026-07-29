@@ -10,7 +10,7 @@ from "@/lib/prisma";
 import {
   autorizacionAntecedenteOpciones,
   eaiOpciones,
-  motivoAntecedenteOpciones,
+  motivoAntecedenteManualOpciones,
   observacionAntecedenteOpciones,
   puedeVerAntecedenteCompleto,
   revisadoPorOpciones,
@@ -55,6 +55,67 @@ function validarOpcion(
   }
 
   return null;
+}
+
+export async function GET(
+  request: Request
+) {
+  const session =
+    await getServerSession(
+      authOptions
+    );
+
+  if (
+    !puedeVerAntecedenteCompleto(
+      session?.user?.role
+    )
+  ) {
+    return Response.json(
+      {
+        error:
+          "No tiene permiso para consultar antecedentes manuales",
+      },
+      {
+        status: 403,
+      }
+    );
+  }
+
+  const url =
+    new URL(request.url);
+
+  const identificacion =
+    normalizarDocumento(
+      url.searchParams.get(
+        "identificacion"
+      )
+    );
+
+  if (identificacion.length < 5) {
+    return Response.json({
+      registro: null,
+    });
+  }
+
+  const registro =
+    await prisma.antecedenteRegistro.findFirst({
+      where: {
+        identificacion,
+        fechaExpedicionDocumento: {
+          not: null,
+        },
+      },
+      select: {
+        fechaExpedicionDocumento: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+  return Response.json({
+    registro,
+  });
 }
 
 export async function POST(
@@ -177,7 +238,7 @@ export async function POST(
       ),
       validarOpcion(
         registro.motivo,
-        motivoAntecedenteOpciones,
+        motivoAntecedenteManualOpciones,
         "motivo",
         false
       ),
@@ -243,8 +304,15 @@ export async function POST(
             create: registro,
           },
         },
-        include: {
-          antecedentesRegistros: true,
+        select: {
+          id: true,
+          antecedentesRegistros: {
+            select: {
+              id: true,
+              identificacion: true,
+              observacion: true,
+            },
+          },
         },
       });
 

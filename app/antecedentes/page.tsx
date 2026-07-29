@@ -61,10 +61,28 @@ export default async function AntecedentesPage({
                     ?.fincaEAI || "",
           },
 
-          include: {
+          select: {
+            id: true,
+            solicitudId: true,
+            fechaSolicitud: true,
+            fechaRespuesta: true,
+            eai: true,
+            nombresApellidos: true,
+            tipoDocumento: true,
+            identificacion: true,
+            fechaExpedicionDocumento: true,
+            observacion: true,
+            revisadoPor: true,
+            motivo: true,
+            autorizacion: true,
+            observaciones: true,
             solicitud: {
-              include: {
-                antecedente: true,
+              select: {
+                antecedente: {
+                  select: {
+                    fincaEAI: true,
+                  },
+                },
               },
             },
           },
