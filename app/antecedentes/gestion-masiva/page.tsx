@@ -108,6 +108,18 @@ export default async function GestionMasivaAntecedentesPage() {
               registro.autorizacion,
             observaciones:
               registro.observaciones,
+            tusdatosBatchId:
+              registro.tusdatosBatchId,
+            tusdatosJobId:
+              registro.tusdatosJobId,
+            tusdatosBatchNumber:
+              registro.tusdatosBatchNumber,
+            tusdatosEstado:
+              registro.tusdatosEstado,
+            tusdatosEnviadoAt:
+              registro.tusdatosEnviadoAt
+                ? registro.tusdatosEnviadoAt.toISOString()
+                : null,
             solicitudId:
               solicitud.id,
             ticketEstado:

@@ -40,6 +40,11 @@ type RegistroMasivo = {
   motivo?: string | null;
   autorizacion?: string | null;
   observaciones?: string | null;
+  tusdatosBatchId?: string | null;
+  tusdatosJobId?: string | null;
+  tusdatosBatchNumber?: number | null;
+  tusdatosEstado?: string | null;
+  tusdatosEnviadoAt?: string | null;
 };
 
 type TicketMasivo = {
@@ -159,6 +164,9 @@ export default function GestionMasivaAntecedentes({
   const [guardando, setGuardando] =
     useState(false);
 
+  const [enviandoTusDatos, setEnviandoTusDatos] =
+    useState(false);
+
   const [tablaExpandida, setTablaExpandida] =
     useState(false);
 
@@ -181,7 +189,19 @@ export default function GestionMasivaAntecedentes({
       () =>
         filasVisibles.filter(
           (fila) =>
-            !fila.observacion?.trim()
+            !fila.observacion?.trim() &&
+            !fila.tusdatosBatchId
+        ),
+      [filasVisibles]
+    );
+
+  const filasEnviadasTusDatos =
+    useMemo(
+      () =>
+        filasVisibles.filter(
+          (fila) =>
+            !fila.observacion?.trim() &&
+            fila.tusdatosBatchId
         ),
       [filasVisibles]
     );
@@ -322,6 +342,115 @@ export default function GestionMasivaAntecedentes({
     toast.success(
       `Excel TusDatos generado con ${filasPendientesTusDatos.length} registros`
     );
+  }
+
+  async function enviarTusDatos() {
+    try {
+      if (filasVisibles.length === 0) {
+        toast.error(
+          "Debe seleccionar al menos un ticket"
+        );
+        return;
+      }
+
+      if (
+        filasPendientesTusDatos.length === 0
+      ) {
+        toast.error(
+          "No hay personas nuevas pendientes por enviar a Tusdatos"
+        );
+        return;
+      }
+
+      const incompleta =
+        filasPendientesTusDatos.find(
+          (fila) =>
+            !fila.identificacion?.trim() ||
+            !fila.tipoDocumento?.trim() ||
+            !fila
+              .fechaExpedicionDocumento
+              ?.trim()
+        );
+
+      if (incompleta) {
+        toast.error(
+          `La identificacion ${incompleta.identificacion || "sin numero"} tiene datos incompletos para Tusdatos`
+        );
+        return;
+      }
+
+      setEnviandoTusDatos(true);
+
+      const response =
+        await fetch(
+          "/api/antecedentes/tusdatos",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              ids:
+                filasPendientesTusDatos.map(
+                  (fila) => fila.id
+                ),
+            }),
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          "No se pudo enviar el lote a Tusdatos"
+        );
+      }
+
+      setFilas((actuales) =>
+        actuales.map((fila) =>
+          filasPendientesTusDatos.some(
+            (pendiente) =>
+              pendiente.id === fila.id
+          )
+            ? {
+                ...fila,
+                tusdatosBatchId:
+                  data.batchId ||
+                  "ENVIADO",
+                tusdatosJobId:
+                  data.jobId ||
+                  null,
+                tusdatosBatchNumber:
+                  data.batchNumber ||
+                  null,
+                tusdatosEstado:
+                  data.jobStatus ||
+                  "ENVIADO",
+                tusdatosEnviadoAt:
+                  new Date().toISOString(),
+              }
+            : fila
+        )
+      );
+
+      toast.success(
+        `Lote enviado a Tusdatos: ${data.enviados} registro(s). El resultado llegara por correo.`
+      );
+
+    } catch (error: any) {
+      console.error(error);
+
+      toast.error(
+        error.message ||
+        "Error enviando a Tusdatos"
+      );
+
+    } finally {
+      setEnviandoTusDatos(false);
+    }
   }
 
   async function guardarGestionMasiva() {
@@ -515,19 +644,41 @@ export default function GestionMasivaAntecedentes({
               <strong>
                 {filasPendientesTusDatos.length}
               </strong>
+              {" "}
+              | Enviadas:
+              {" "}
+              <strong>
+                {filasEnviadasTusDatos.length}
+              </strong>
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={descargarExcelTusDatos}
-            disabled={
-              filasPendientesTusDatos.length === 0
-            }
-            className="rounded-lg bg-black px-5 py-3 text-sm font-semibold text-white hover:bg-gray-800 disabled:bg-gray-400"
-          >
-            Descargar Excel TusDatos
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={descargarExcelTusDatos}
+              disabled={
+                filasPendientesTusDatos.length === 0
+              }
+              className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:bg-gray-400"
+            >
+              Descargar Excel TusDatos
+            </button>
+
+            <button
+              type="button"
+              onClick={enviarTusDatos}
+              disabled={
+                enviandoTusDatos ||
+                filasPendientesTusDatos.length === 0
+              }
+              className="rounded-lg bg-[#0F7A3B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0B5F2E] disabled:bg-gray-400"
+            >
+              {enviandoTusDatos
+                ? "Enviando..."
+                : "Enviar a Tusdatos"}
+            </button>
+          </div>
         </div>
 
         {filasVisibles.length === 0 ? (

@@ -260,6 +260,16 @@ model AntecedenteRegistro {
 
   observaciones String?
 
+  tusdatosBatchId String?
+
+  tusdatosJobId String?
+
+  tusdatosBatchNumber Int?
+
+  tusdatosEstado String?
+
+  tusdatosEnviadoAt DateTime?
+
   createdAt DateTime @default(now())
 
   updatedAt DateTime @updatedAt
@@ -267,6 +277,7 @@ model AntecedenteRegistro {
   @@index([identificacion])
   @@index([eai])
   @@index([solicitudId])
+  @@index([tusdatosBatchId])
 }
 
 model SeguridadNovedad {
