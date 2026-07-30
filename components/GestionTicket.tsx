@@ -12,6 +12,13 @@ from "react-hot-toast";
 import UploadButton
 from "@/components/uploadthing/UploadButton";
 
+import {
+  encabezadosAntecedentesSolicitud,
+  nombreHojaAntecedentes,
+  nombrePlantillaAntecedentes,
+}
+from "@/lib/antecedentesPlantilla";
+
 export default function GestionTicket({
 
   ticketId,
@@ -22,6 +29,8 @@ export default function GestionTicket({
 
   estadoActual,
 
+  tipoSolicitud,
+
 }: {
 
   ticketId: number;
@@ -31,6 +40,8 @@ export default function GestionTicket({
   role: string;
 
   estadoActual: string;
+
+  tipoSolicitud?: string;
 
 }) {
 
@@ -59,6 +70,10 @@ export default function GestionTicket({
 
   const router =
     useRouter();
+
+  const esAntecedentes =
+    tipoSolicitud ===
+    "ANTECEDENTES";
 
   async function guardarGestion() {
 
@@ -187,11 +202,12 @@ setTimeout(() => {
 
 }, 1200);
 
-    } catch (error) {
+    } catch (error: any) {
 
       console.error(error);
 
       toast.error(
+  error.message ||
   "Error al actualizar ticket"
 );
 
@@ -279,6 +295,37 @@ setTimeout(() => {
 
       <UploadButton
 
+        allowedExtensions={
+          esAntecedentes
+            ? [
+                "xlsx",
+                "xls",
+              ]
+            : undefined
+        }
+
+        requiredFileName={
+          esAntecedentes
+            ? nombrePlantillaAntecedentes
+            : undefined
+        }
+
+        requiredSheetName={
+          esAntecedentes
+            ? nombreHojaAntecedentes
+            : undefined
+        }
+
+        requiredHeaders={
+          esAntecedentes
+            ? encabezadosAntecedentesSolicitud
+            : undefined
+        }
+
+        validateRequiredRows={
+          esAntecedentes
+        }
+
         onComplete={(
 
           url: string,
@@ -289,9 +336,7 @@ setTimeout(() => {
 
         ) => {
 
-          setArchivos((prev) => [
-
-            ...prev,
+          setArchivos(() => [
 
             {
               url,

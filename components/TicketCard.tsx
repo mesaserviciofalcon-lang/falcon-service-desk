@@ -755,6 +755,10 @@ export default function TicketCard({
             solicitud.estado
           }
 
+          tipoSolicitud={
+            solicitud.tipo
+          }
+
         />
       )}
 
