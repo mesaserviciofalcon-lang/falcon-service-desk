@@ -66,6 +66,24 @@ function formatearFechaTabla(
   const texto =
     valor.trim();
 
+  const partes =
+    texto.match(
+      /^(\d{4})-(\d{1,2})-(\d{1,2})$/
+    );
+
+  if (partes) {
+    return `${partes[3].padStart(2, "0")}/${partes[2].padStart(2, "0")}/${partes[1]}`;
+  }
+
+  const partesLocal =
+    texto.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+    );
+
+  if (partesLocal) {
+    return `${partesLocal[1].padStart(2, "0")}/${partesLocal[2].padStart(2, "0")}/${partesLocal[3]}`;
+  }
+
   const fecha =
     new Date(texto);
 
@@ -80,17 +98,10 @@ function formatearFechaTabla(
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
+        timeZone:
+          "America/Bogota",
       }
     );
-  }
-
-  const partes =
-    texto.match(
-      /^(\d{4})-(\d{1,2})-(\d{1,2})$/
-    );
-
-  if (partes) {
-    return `${partes[3].padStart(2, "0")}/${partes[2].padStart(2, "0")}/${partes[1]}`;
   }
 
   return texto;
