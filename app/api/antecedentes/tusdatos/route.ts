@@ -71,11 +71,25 @@ function normalizarFechaTusdatos(
 }
 
 function obtenerAutorizacionTusdatos() {
+  const modo =
+    (
+      process.env.TUSDATOS_AUTH_MODE ||
+      "bearer"
+    )
+      .trim()
+      .toLowerCase();
+
   const token =
     process.env.TUSDATOS_API_TOKEN ||
     process.env.TUSDATOS_CLIENT_ID;
 
   if (token) {
+    if (modo === "basic-token") {
+      return `Basic ${Buffer.from(
+        `${token}:`
+      ).toString("base64")}`;
+    }
+
     return `Bearer ${token}`;
   }
 
@@ -333,11 +347,34 @@ export async function POST(
     }
 
     if (!response.ok) {
+      console.error(
+        "Tusdatos rechazo la consulta",
+        {
+          status:
+            response.status,
+          statusText:
+            response.statusText,
+          respuesta:
+            data,
+          enviados:
+            checks.length,
+          authMode:
+            process.env
+              .TUSDATOS_AUTH_MODE ||
+            "bearer",
+        }
+      );
+
       return Response.json(
         {
           error:
+            `Tusdatos rechazo la consulta (${response.status})`,
+          mensaje:
             data?.message ||
-            "Tusdatos rechazo la consulta",
+            data?.detail ||
+            data?.error ||
+            response.statusText ||
+            "Sin detalle de Tusdatos",
           detalle:
             data,
         },

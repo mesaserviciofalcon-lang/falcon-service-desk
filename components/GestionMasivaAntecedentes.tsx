@@ -414,8 +414,19 @@ export default function GestionMasivaAntecedentes({
         await response.json();
 
       if (!response.ok) {
+        const detalle =
+          data.mensaje ||
+          data.detalle?.message ||
+          data.detalle?.detail ||
+          data.detalle?.error;
+
         throw new Error(
-          data.error ||
+          [
+            data.error,
+            detalle,
+          ]
+            .filter(Boolean)
+            .join(": ") ||
           "No se pudo enviar el lote a Tusdatos"
         );
       }
