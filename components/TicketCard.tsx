@@ -46,8 +46,11 @@ export default function TicketCard({
     isCompletado;
 
   const puedeGestionar =
-    !isSolicitante &&
-    Boolean(role);
+    Boolean(role) &&
+    (
+      !isSolicitante ||
+      estado === "REABIERTO"
+    );
 
   const puedeVerTablaAntecedentes =
     mostrarTablaAntecedentes &&

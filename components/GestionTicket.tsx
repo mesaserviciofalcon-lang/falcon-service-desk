@@ -85,7 +85,8 @@ export default function GestionTicket({
 
         for (const archivo of archivos) {
 
-          await fetch(
+          const archivoResponse =
+            await fetch(
             "/api/guardar-archivo",
             {
 
@@ -113,6 +114,16 @@ export default function GestionTicket({
               }),
             }
           );
+
+          if (!archivoResponse.ok) {
+            const errorData =
+              await archivoResponse.json();
+
+            throw new Error(
+              errorData.error ||
+              "No se pudo guardar el archivo"
+            );
+          }
         }
       }
 

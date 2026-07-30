@@ -7,6 +7,12 @@ from "next-auth";
 import { authOptions }
 from "@/lib/auth";
 
+import { leerRegistrosAntecedentesDesdeUrl }
+from "@/lib/antecedentesExcel";
+
+import { autocompletarAntecedentes }
+from "@/lib/autocompletarAntecedentes";
+
 const rolesGestores = [
   "ADMIN",
   "DIRECTOR_SEG",
@@ -103,6 +109,118 @@ export async function POST(
         {
           status: 403,
         }
+      );
+    }
+
+    const esExcelAntecedentes =
+      solicitud.tipo ===
+        "ANTECEDENTES" &&
+      (
+        body.tipo?.includes(
+          "sheet"
+        ) ||
+        body.nombre?.match(
+          /\.(xlsx|xls)$/i
+        )
+      );
+
+    if (esExcelAntecedentes) {
+      const registrosBase =
+        await leerRegistrosAntecedentesDesdeUrl(
+          body.ruta,
+          body.nombre
+        );
+
+      const registros =
+        await autocompletarAntecedentes(
+          registrosBase,
+          {
+            excluirSolicitudId:
+              solicitudId,
+          }
+        );
+
+      if (registros.length === 0) {
+        return Response.json(
+          {
+            error:
+              "El Excel no tiene registros validos para reemplazar la tabla",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      const resultado =
+        await prisma.$transaction(
+          async (tx) => {
+            const archivo =
+              await tx.archivoAdjunto.create({
+                data: {
+                  solicitudId,
+                  nombre:
+                    body.nombre,
+                  ruta:
+                    body.ruta,
+                  tipo:
+                    body.tipo,
+                },
+              });
+
+            await tx
+              .antecedenteRegistro
+              .deleteMany({
+                where: {
+                  solicitudId,
+                },
+              });
+
+            await tx
+              .antecedenteRegistro
+              .createMany({
+                data:
+                  registros.map(
+                    (registro) => ({
+                      solicitudId,
+                      fechaSolicitud:
+                        registro.fechaSolicitud,
+                      fechaRespuesta:
+                        registro.fechaRespuesta,
+                      eai:
+                        registro.eai,
+                      nombresApellidos:
+                        registro
+                          .nombresApellidos,
+                      tipoDocumento:
+                        registro
+                          .tipoDocumento,
+                      identificacion:
+                        registro
+                          .identificacion,
+                      fechaExpedicionDocumento:
+                        registro
+                          .fechaExpedicionDocumento,
+                      observacion:
+                        registro.observacion,
+                      motivo:
+                        registro.motivo,
+                      observaciones:
+                        registro.observaciones,
+                    })
+                  ),
+              });
+
+            return {
+              ...archivo,
+              registrosReemplazados:
+                registros.length,
+            };
+          }
+        );
+
+      return Response.json(
+        resultado
       );
     }
 

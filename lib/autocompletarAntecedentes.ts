@@ -100,7 +100,10 @@ function fechaBaseRegistro(
 }
 
 export async function autocompletarAntecedentes(
-  registros: RegistroAntecedente[]
+  registros: RegistroAntecedente[],
+  opciones?: {
+    excluirSolicitudId?: number;
+  }
 ) {
   const idsActuales =
     registros
@@ -151,6 +154,13 @@ export async function autocompletarAntecedentes(
           identificacion: {
             in: identificaciones,
           },
+          solicitudId:
+            opciones?.excluirSolicitudId
+              ? {
+                  not:
+                    opciones.excluirSolicitudId,
+                }
+              : undefined,
         },
         orderBy: {
           createdAt: "desc",
