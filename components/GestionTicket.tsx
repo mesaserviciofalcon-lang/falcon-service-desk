@@ -75,6 +75,25 @@ export default function GestionTicket({
     tipoSolicitud ===
     "ANTECEDENTES";
 
+  const esCargaSoporteSolicitante =
+    role === "SOLICITANTE";
+
+  const extensionesPermitidas =
+    esCargaSoporteSolicitante
+      ? [
+          "jpg",
+          "jpeg",
+          "png",
+          "webp",
+          "pdf",
+        ]
+      : esAntecedentes
+      ? [
+          "xlsx",
+          "xls",
+        ]
+      : undefined;
+
   async function guardarGestion() {
 
   if (loading) return;
@@ -293,37 +312,52 @@ setTimeout(() => {
 
       {/* ARCHIVOS */}
 
+      <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3">
+
+        <p className="mb-2 text-sm font-semibold text-gray-700">
+          {esCargaSoporteSolicitante
+            ? "Adjuntar soporte de reapertura"
+            : "Adjuntar archivo"}
+        </p>
+
       <UploadButton
 
         allowedExtensions={
-          esAntecedentes
-            ? [
-                "xlsx",
-                "xls",
-              ]
+          extensionesPermitidas
+        }
+
+        allowedExtensionsLabel={
+          esCargaSoporteSolicitante
+            ? "imagenes (.jpg, .jpeg, .png, .webp) o PDF (.pdf)"
+            : esAntecedentes
+            ? "Excel (.xlsx o .xls)"
             : undefined
         }
 
         requiredFileName={
-          esAntecedentes
+          esAntecedentes &&
+          !esCargaSoporteSolicitante
             ? nombrePlantillaAntecedentes
             : undefined
         }
 
         requiredSheetName={
-          esAntecedentes
+          esAntecedentes &&
+          !esCargaSoporteSolicitante
             ? nombreHojaAntecedentes
             : undefined
         }
 
         requiredHeaders={
-          esAntecedentes
+          esAntecedentes &&
+          !esCargaSoporteSolicitante
             ? encabezadosAntecedentesSolicitud
             : undefined
         }
 
         validateRequiredRows={
-          esAntecedentes
+          esAntecedentes &&
+          !esCargaSoporteSolicitante
         }
 
         onComplete={(
@@ -346,6 +380,8 @@ setTimeout(() => {
           ]);
         }}
       />
+
+      </div>
 
       {/* LISTA ARCHIVOS */}
 

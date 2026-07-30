@@ -22,6 +22,8 @@ export default function UploadButton({
 
   allowedExtensions,
 
+  allowedExtensionsLabel,
+
   requiredFileName,
 
   requiredSheetName,
@@ -397,8 +399,16 @@ export default function UploadButton({
               });
 
             if (archivoNoPermitido) {
+              const formatos =
+                allowedExtensionsLabel ||
+                allowedExtensions
+                  .map((extension: string) =>
+                    `.${extension}`
+                  )
+                  .join(", ");
+
               alert(
-                `El archivo "${archivoNoPermitido.name}" no tiene un formato permitido. Use únicamente Excel (.xlsx o .xls).`
+                `El archivo "${archivoNoPermitido.name}" no tiene un formato permitido. Use unicamente ${formatos}.`
               );
 
               return [];
@@ -503,7 +513,7 @@ export default function UploadButton({
             if (
               allowedExtensions?.length
             ) {
-              return `Solo Excel (.xlsx o .xls) hasta ${MAX_FILE_SIZE_MB} MB`;
+              return `Solo ${allowedExtensionsLabel || allowedExtensions.map((extension: string) => `.${extension}`).join(", ")} hasta ${MAX_FILE_SIZE_MB} MB`;
             }
 
             return `Imágenes, PDF y archivos hasta ${MAX_FILE_SIZE_MB} MB`;

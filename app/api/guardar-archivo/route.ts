@@ -95,6 +95,10 @@ export async function POST(
         session.user.role || ""
       );
 
+    const esSolicitante =
+      session.user.role ===
+      "SOLICITANTE";
+
     if (
       !solicitud ||
       (!esGestor &&
@@ -112,9 +116,43 @@ export async function POST(
       );
     }
 
+    if (
+      esSolicitante &&
+      solicitud.estado ===
+        "REABIERTO"
+    ) {
+      const esImagen =
+        body.tipo?.includes(
+          "image"
+        ) ||
+        body.nombre?.match(
+          /\.(jpg|jpeg|png|webp)$/i
+        );
+
+      const esPdf =
+        body.tipo ===
+          "application/pdf" ||
+        body.nombre?.match(
+          /\.pdf$/i
+        );
+
+      if (!esImagen && !esPdf) {
+        return Response.json(
+          {
+            error:
+              "En tickets reabiertos solo puede adjuntar imagenes o PDF",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+    }
+
     const esExcelAntecedentes =
       solicitud.tipo ===
         "ANTECEDENTES" &&
+      !esSolicitante &&
       (
         body.tipo?.includes(
           "sheet"
