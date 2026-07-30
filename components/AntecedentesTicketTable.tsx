@@ -271,7 +271,7 @@ export default function AntecedentesTicketTable({
           className={
             puedeVerCompleto
               ? "w-[1800px] max-w-none"
-              : "w-[1080px] max-w-none"
+              : "w-[1240px] max-w-none"
           }
         >
         <table className="w-full table-fixed border-collapse text-sm">
@@ -304,11 +304,9 @@ export default function AntecedentesTicketTable({
               <th className="sticky top-0 z-10 w-36 border bg-gray-100 p-2 text-left">
                 Identificacion
               </th>
-              {puedeVerCompleto && (
-                <th className="sticky top-0 z-10 w-40 border bg-gray-100 p-2 text-left">
-                  Fecha expedicion
-                </th>
-              )}
+              <th className="sticky top-0 z-10 w-40 border bg-gray-100 p-2 text-left">
+                Fecha expedicion
+              </th>
               <th className="sticky top-0 z-10 w-72 border bg-gray-100 p-2 text-left">
                 Observacion
               </th>
@@ -380,14 +378,12 @@ export default function AntecedentesTicketTable({
                 <td className="w-36 border p-2">
                   {fila.identificacion}
                 </td>
-                {puedeVerCompleto && (
-                  <td className="w-40 border p-2">
-                    {formatearFechaTabla(
-                      fila
-                        .fechaExpedicionDocumento
-                    )}
-                  </td>
-                )}
+                <td className="w-40 border p-2">
+                  {formatearFechaTabla(
+                    fila
+                      .fechaExpedicionDocumento
+                  )}
+                </td>
                 <td className="w-72 border p-2">
                   {puedeVerCompleto ? (
                     <div className="flex flex-col gap-1">

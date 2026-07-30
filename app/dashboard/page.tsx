@@ -111,6 +111,63 @@ function obtenerMesTicket(
     .slice(0, 7);
 }
 
+function obtenerMesMetricaTicket(
+  ticket: any
+) {
+  if (
+    ticket.estado === "COMPLETADO"
+  ) {
+    return obtenerMesTicket(
+      ticket.fechaCierre ||
+      ticket.fechaGestion ||
+      ticket.fechaCreacion
+    );
+  }
+
+  return obtenerMesTicket(
+    ticket.fechaCreacion
+  );
+}
+
+function obtenerMesAnterior(
+  mes: string
+) {
+  const [
+    anio,
+    numeroMes,
+  ] = mes.split("-");
+
+  const fecha =
+    new Date(
+      Number(anio),
+      Number(numeroMes) - 2,
+      1
+    );
+
+  return fecha
+    .toISOString()
+    .slice(0, 7);
+}
+
+function obtenerDiaMesColombia() {
+  const partes =
+    new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone:
+          "America/Bogota",
+        day: "2-digit",
+      }
+    ).formatToParts(new Date());
+
+  return Number(
+    partes.find(
+      (parte) =>
+        parte.type === "day"
+    )?.value || 1
+  );
+}
+
 function parsearFechaRegistroIndicador(
   valor?: string | null
 ) {
@@ -380,9 +437,26 @@ function formatearMes(
 }
 
 function obtenerMesActual() {
-  return new Date()
-    .toISOString()
-    .slice(0, 7);
+  const partes =
+    new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone:
+          "America/Bogota",
+        year: "numeric",
+        month: "2-digit",
+      }
+    ).formatToParts(new Date());
+
+  const mapa =
+    Object.fromEntries(
+      partes.map((parte) => [
+        parte.type,
+        parte.value,
+      ])
+    );
+
+  return `${mapa.year}-${mapa.month}`;
 }
 
 export default async function DashboardPage({
@@ -647,10 +721,37 @@ hace5Dias.setDate(
       )
     );
 
+  const usaMetricasMensualesGestor =
+    role === "VISITA" ||
+    role === "SUPERVISOR";
+
+  const diaMesColombia =
+    obtenerDiaMesColombia();
+
+  const mesGestor =
+    usaMetricasMensualesGestor &&
+    diaMesColombia <= 3
+      ? obtenerMesAnterior(
+          mesActual
+        )
+      : mesActual;
+
   const ticketsMetricas =
     role === "ADMIN"
       ? solicitudes
-      : tickets;
+      : role === "VISITA"
+        ? solicitudes.filter(
+            (ticket: any) =>
+              ticket.tipo ===
+              "VISITA DOMICILIARIA"
+          )
+        : role === "SUPERVISOR"
+          ? solicitudes.filter(
+              (ticket: any) =>
+                ticket.tipo ===
+                "ANTECEDENTES"
+            )
+          : tickets;
 
   const puedeVerMetricasAntecedentes =
     role === "ADMIN"
@@ -668,13 +769,16 @@ hace5Dias.setDate(
     role === "SUPERVISOR";
 
   const aplicarFiltroMes =
-    role === "ADMIN";
+    role === "ADMIN" ||
+    usaMetricasMensualesGestor;
 
   const mesIndicadores =
     role === "ADMIN"
       ? mesSeleccionado ||
         mesActual
-      : mesActual;
+      : usaMetricasMensualesGestor
+        ? mesGestor
+        : mesActual;
 
   const ticketsMetricasFiltradas =
     aplicarFiltroMes
@@ -682,6 +786,17 @@ hace5Dias.setDate(
           (ticket: any) =>
             obtenerMesTicket(
               ticket.fechaCreacion
+            ) ===
+            mesIndicadores
+        )
+      : ticketsMetricas;
+
+  const ticketsMetricasEstados =
+    aplicarFiltroMes
+      ? ticketsMetricas.filter(
+          (ticket: any) =>
+            obtenerMesMetricaTicket(
+              ticket
             ) ===
             mesIndicadores
         )
@@ -741,7 +856,7 @@ hace5Dias.setDate(
   // CONTADORES
 
   const pendientes =
-    ticketsMetricasFiltradas.filter(
+    ticketsMetricasEstados.filter(
       (s: any) =>
 
         s.estado ===
@@ -749,7 +864,7 @@ hace5Dias.setDate(
     ).length;
 
   const enProceso =
-    ticketsMetricasFiltradas.filter(
+    ticketsMetricasEstados.filter(
       (s: any) =>
 
         s.estado ===
@@ -757,7 +872,7 @@ hace5Dias.setDate(
     ).length;
 
   const reabiertos =
-    ticketsMetricasFiltradas.filter(
+    ticketsMetricasEstados.filter(
       (s: any) =>
 
         s.estado ===
@@ -765,7 +880,7 @@ hace5Dias.setDate(
     ).length;
 
   const completados =
-    ticketsMetricasFiltradas.filter(
+    ticketsMetricasEstados.filter(
       (s: any) =>
 
         s.estado ===
@@ -1158,6 +1273,55 @@ hace5Dias.setDate(
                   : ""
               }`;
 
+            const noEsClickable =
+              usaMetricasMensualesGestor &&
+              tarjeta.estado ===
+                "COMPLETADO";
+
+            const contenidoTarjeta = (
+              <>
+                <span className="text-xs font-semibold uppercase tracking-normal text-gray-500">
+                  {tarjeta.titulo}
+                </span>
+
+                <div className="mt-2 flex items-end justify-between gap-3">
+
+                  <strong className="text-3xl leading-none">
+                    <NumeroAnimado
+                      valor={tarjeta.total}
+                    />
+                  </strong>
+
+                  <span className="text-xs font-medium text-gray-500">
+                    {noEsClickable
+                      ? formatearMes(
+                          mesIndicadores
+                        )
+                      : "Ver"}
+                  </span>
+
+                </div>
+              </>
+            );
+
+            if (noEsClickable) {
+              return (
+                <div
+                  key={tarjeta.estado}
+                  className={`
+                    rounded-lg
+                    border-l-4
+                    bg-white
+                    p-4
+                    shadow-sm
+                    ${tarjeta.color}
+                  `}
+                >
+                  {contenidoTarjeta}
+                </div>
+              );
+            }
+
             return (
 
               <Link
@@ -1184,24 +1348,7 @@ hace5Dias.setDate(
                   }
                 `}
               >
-
-                <span className="text-xs font-semibold uppercase tracking-normal text-gray-500">
-                  {tarjeta.titulo}
-                </span>
-
-                <div className="mt-2 flex items-end justify-between gap-3">
-
-                  <strong className="text-3xl leading-none">
-                    <NumeroAnimado
-                      valor={tarjeta.total}
-                    />
-                  </strong>
-
-                  <span className="text-xs font-medium text-gray-500">
-                    Ver
-                  </span>
-
-                </div>
+                {contenidoTarjeta}
 
               </Link>
             );

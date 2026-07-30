@@ -122,6 +122,8 @@ export async function GET(
               registro.tipoDocumento || "",
             IDENTIFICACION:
               registro.identificacion || "",
+            "FECHA EXPEDICION DOCUMENTO":
+              registro.fechaExpedicionDocumento || "",
             OBSERVACION:
               registro.observacion || "",
           };

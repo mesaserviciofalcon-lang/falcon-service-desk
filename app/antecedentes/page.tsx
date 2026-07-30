@@ -195,11 +195,9 @@ export default async function AntecedentesPage({
                       Tipo documento
                     </th>
                   )}
-                  {puedeVerCompleto && (
-                    <th className="border p-2 text-left">
-                      Fecha expedicion
-                    </th>
-                  )}
+                  <th className="border p-2 text-left">
+                    Fecha expedicion
+                  </th>
                   <th className="border p-2 text-left">
                     Observacion
                   </th>
@@ -252,15 +250,13 @@ export default async function AntecedentesPage({
                         {registro.tipoDocumento || ""}
                       </td>
                     )}
-                    {puedeVerCompleto && (
-                      <td className="border p-2">
-                        {
-                          registro
-                            .fechaExpedicionDocumento ||
-                          ""
-                        }
-                      </td>
-                    )}
+                    <td className="border p-2">
+                      {
+                        registro
+                          .fechaExpedicionDocumento ||
+                        ""
+                      }
+                    </td>
                     <td className="border p-2">
                       {registro.observacion || ""}
                     </td>
