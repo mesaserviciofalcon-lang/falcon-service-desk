@@ -678,17 +678,6 @@ export default function GestionMasivaAntecedentes({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={descargarExcelTusDatos}
-              disabled={
-                filasPendientesTusDatos.length === 0
-              }
-              className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:bg-gray-400"
-            >
-              Descargar Excel TusDatos
-            </button>
-
-            <button
-              type="button"
               onClick={enviarTusDatos}
               disabled={
                 enviandoTusDatos ||
@@ -699,6 +688,17 @@ export default function GestionMasivaAntecedentes({
               {enviandoTusDatos
                 ? "Enviando..."
                 : "Enviar a Tusdatos"}
+            </button>
+
+            <button
+              type="button"
+              onClick={descargarExcelTusDatos}
+              disabled={
+                filasPendientesTusDatos.length === 0
+              }
+              className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:bg-gray-400"
+            >
+              Descargar respaldo Excel
             </button>
           </div>
         </div>

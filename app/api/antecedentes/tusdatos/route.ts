@@ -83,6 +83,23 @@ function obtenerAutorizacionTusdatos() {
     process.env.TUSDATOS_CLIENT_ID;
   const clientSecret =
     process.env.TUSDATOS_CLIENT_SECRET;
+  const usuario =
+    process.env.TUSDATOS_USER;
+  const clave =
+    process.env.TUSDATOS_PASSWORD;
+
+  if (
+    modo === "basic-user" &&
+    usuario &&
+    clave
+  ) {
+    return {
+      Authorization:
+        `Basic ${Buffer.from(
+          `${usuario}:${clave}`
+        ).toString("base64")}`,
+    } as Record<string, string>;
+  }
 
   if (
     modo === "basic-client" &&
@@ -129,11 +146,6 @@ function obtenerAutorizacionTusdatos() {
         `Bearer ${token}`,
     } as Record<string, string>;
   }
-
-  const usuario =
-    process.env.TUSDATOS_USER;
-  const clave =
-    process.env.TUSDATOS_PASSWORD;
 
   if (usuario && clave) {
     return {
@@ -435,6 +447,8 @@ export async function POST(
             response.statusText,
           respuesta:
             data,
+          respuestaJson:
+            JSON.stringify(data),
           enviados:
             checks.length,
           authMode:
