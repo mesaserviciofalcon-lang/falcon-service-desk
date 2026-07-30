@@ -79,18 +79,55 @@ function obtenerAutorizacionTusdatos() {
       .trim()
       .toLowerCase();
 
+  const clientId =
+    process.env.TUSDATOS_CLIENT_ID;
+  const clientSecret =
+    process.env.TUSDATOS_CLIENT_SECRET;
+
+  if (
+    modo === "basic-client" &&
+    clientId &&
+    clientSecret
+  ) {
+    return {
+      Authorization:
+        `Basic ${Buffer.from(
+          `${clientId}:${clientSecret}`
+        ).toString("base64")}`,
+    } as Record<string, string>;
+  }
+
   const token =
     process.env.TUSDATOS_API_TOKEN ||
-    process.env.TUSDATOS_CLIENT_ID;
+    clientId;
 
   if (token) {
     if (modo === "basic-token") {
-      return `Basic ${Buffer.from(
-        `${token}:`
-      ).toString("base64")}`;
+      return {
+        Authorization:
+          `Basic ${Buffer.from(
+            `${token}:`
+          ).toString("base64")}`,
+      } as Record<string, string>;
     }
 
-    return `Bearer ${token}`;
+    if (modo === "token") {
+      return {
+        Authorization:
+          `Token ${token}`,
+      } as Record<string, string>;
+    }
+
+    if (modo === "x-api-key") {
+      return {
+        "X-API-Key": token,
+      } as Record<string, string>;
+    }
+
+    return {
+      Authorization:
+        `Bearer ${token}`,
+    } as Record<string, string>;
   }
 
   const usuario =
@@ -99,12 +136,55 @@ function obtenerAutorizacionTusdatos() {
     process.env.TUSDATOS_PASSWORD;
 
   if (usuario && clave) {
-    return `Basic ${Buffer.from(
-      `${usuario}:${clave}`
-    ).toString("base64")}`;
+    return {
+      Authorization:
+        `Basic ${Buffer.from(
+          `${usuario}:${clave}`
+        ).toString("base64")}`,
+    } as Record<string, string>;
   }
 
   return null;
+}
+
+function extraerMensajeTusdatos(
+  data: any,
+  fallback: string
+) {
+  const errores =
+    data?.response?.errors;
+
+  if (Array.isArray(errores)) {
+    const mensaje =
+      errores
+        .map((error) => {
+          if (
+            typeof error === "string"
+          ) {
+            return error;
+          }
+
+          return (
+            error?.message ||
+            error?.detail ||
+            error?.error ||
+            JSON.stringify(error)
+          );
+        })
+        .filter(Boolean)
+        .join(" | ");
+
+    if (mensaje) {
+      return mensaje;
+    }
+  }
+
+  return (
+    data?.message ||
+    data?.detail ||
+    data?.error ||
+    fallback
+  );
 }
 
 export async function POST(
@@ -177,7 +257,7 @@ export async function POST(
       return Response.json(
         {
           error:
-            "Falta configurar TUSDATOS_API_TOKEN en las variables de entorno",
+            "Falta configurar las credenciales de Tusdatos en las variables de entorno",
         },
         {
           status: 500,
@@ -316,8 +396,7 @@ export async function POST(
         {
           method: "POST",
           headers: {
-            Authorization:
-              autorizacion,
+            ...autorizacion,
             "Content-Type":
               "application/json",
           },
@@ -370,11 +449,11 @@ export async function POST(
           error:
             `Tusdatos rechazo la consulta (${response.status})`,
           mensaje:
-            data?.message ||
-            data?.detail ||
-            data?.error ||
-            response.statusText ||
-            "Sin detalle de Tusdatos",
+            extraerMensajeTusdatos(
+              data,
+              response.statusText ||
+                "Sin detalle de Tusdatos"
+            ),
           detalle:
             data,
         },
