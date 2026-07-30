@@ -147,6 +147,24 @@ export async function POST(
           }
         );
       }
+
+      const archivoExistente =
+        await prisma
+          .archivoAdjunto
+          .findFirst({
+            where: {
+              solicitudId,
+              nombre:
+                body.nombre,
+            },
+          });
+
+      if (archivoExistente) {
+        return Response.json({
+          ...archivoExistente,
+          duplicado: true,
+        });
+      }
     }
 
     const esExcelAntecedentes =

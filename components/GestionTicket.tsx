@@ -94,6 +94,10 @@ export default function GestionTicket({
         ]
       : undefined;
 
+  const esSoporteReapertura =
+    role === "SOLICITANTE" &&
+    estadoActual === "REABIERTO";
+
   async function guardarGestion() {
 
   if (loading) return;
@@ -161,6 +165,25 @@ export default function GestionTicket({
         }
       }
 
+      if (
+        esSoporteReapertura &&
+        !observaciones.trim()
+      ) {
+        toast.success(
+          "Soporte adjuntado correctamente"
+        );
+
+        setTimeout(() => {
+
+          router.push(
+            "/dashboard"
+          );
+
+        }, 1200);
+
+        return;
+      }
+
       // ACTUALIZAR TICKET
 
       const response =
@@ -180,10 +203,14 @@ export default function GestionTicket({
 
             body: JSON.stringify({
 
-              estado:
-                role === "SOLICITANTE"
-                  ? "REABIERTO"
-                  : estado,
+              ...(esSoporteReapertura
+                ? {}
+                : {
+                    estado:
+                      role === "SOLICITANTE"
+                        ? "REABIERTO"
+                        : estado,
+                  }),
 
               observacionesTecnico:
                 observaciones,

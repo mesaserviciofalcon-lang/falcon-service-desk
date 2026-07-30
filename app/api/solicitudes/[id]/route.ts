@@ -120,9 +120,20 @@ export async function PATCH(
         estadoSolicitado
       );
 
+    const esActualizacionSolicitanteReabierto =
+      !estadoSolicitado &&
+      solicitudActual.estado ===
+        "REABIERTO" &&
+      solicitantePuedeVerSolicitud(
+        solicitudActual,
+        session.user.email,
+        session.user.fincaEAI
+      );
+
     if (
       !esGestionValida &&
-      !esReaperturaValida
+      !esReaperturaValida &&
+      !esActualizacionSolicitanteReabierto
     ) {
       return Response.json(
         {
@@ -140,6 +151,11 @@ export async function PATCH(
       body.gestionadoPor ||
       "SISTEMA";
 
+    const estadoFinal =
+      esActualizacionSolicitanteReabierto
+        ? solicitudActual.estado
+        : estadoSolicitado;
+
     // ACTUALIZAR TICKET
 
     const solicitud =
@@ -152,7 +168,7 @@ export async function PATCH(
         data: {
 
           estado:
-            estadoSolicitado,
+            estadoFinal,
 
           observacionesTecnico:
             body.observacionesTecnico || "",
@@ -165,7 +181,7 @@ export async function PATCH(
 
           fechaCierre:
 
-            estadoSolicitado ===
+            estadoFinal ===
             "COMPLETADO"
 
               ? new Date()
@@ -187,7 +203,7 @@ export async function PATCH(
           gestionadoPor,
 
         estado:
-          estadoSolicitado,
+          estadoFinal,
 
         observacion:
           body.observacionesTecnico || "",
@@ -215,7 +231,7 @@ if (
     solicitud.id,
 
   estado:
-    estadoSolicitado,
+    estadoFinal,
 
   gestionadoPor:
     gestionadoPor,
@@ -239,8 +255,9 @@ if (
 // NOTIFICAR RESPONSABLES
 
 if (
-  estadoSolicitado ===
+  estadoFinal ===
   "REABIERTO"
+  && !esActualizacionSolicitanteReabierto
 ) {
 
   const responsables =
