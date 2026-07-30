@@ -725,6 +725,10 @@ hace5Dias.setDate(
     role === "VISITA" ||
     role === "SUPERVISOR";
 
+  const usaCompletadosMensualesNoClickable =
+    usaMetricasMensualesGestor ||
+    role === "SOLICITANTE";
+
   const diaMesColombia =
     obtenerDiaMesColombia();
 
@@ -752,6 +756,18 @@ hace5Dias.setDate(
                 "ANTECEDENTES"
             )
           : tickets;
+
+  const ticketsMetricasSolicitante =
+    role === "SOLICITANTE"
+      ? solicitudes.filter(
+          (ticket: any) =>
+            solicitantePuedeVerSolicitud(
+              ticket,
+              email,
+              fincaEAI
+            )
+        )
+      : [];
 
   const puedeVerMetricasAntecedentes =
     role === "ADMIN"
@@ -880,12 +896,21 @@ hace5Dias.setDate(
     ).length;
 
   const completados =
-    ticketsMetricasEstados.filter(
-      (s: any) =>
+    role === "SOLICITANTE"
+      ? ticketsMetricasSolicitante.filter(
+          (s: any) =>
+            s.estado ===
+              "COMPLETADO" &&
+            obtenerMesMetricaTicket(
+              s
+            ) === mesActual
+        ).length
+      : ticketsMetricasEstados.filter(
+          (s: any) =>
 
-        s.estado ===
-        "COMPLETADO"
-    ).length;
+            s.estado ===
+            "COMPLETADO"
+        ).length;
 
   const ticketsTablaBase =
     aplicarFiltroMes
@@ -1274,7 +1299,7 @@ hace5Dias.setDate(
               }`;
 
             const noEsClickable =
-              usaMetricasMensualesGestor &&
+              usaCompletadosMensualesNoClickable &&
               tarjeta.estado ===
                 "COMPLETADO";
 
