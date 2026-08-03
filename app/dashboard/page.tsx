@@ -253,6 +253,14 @@ type MetricasAntecedentes = {
   extranjeros: number;
 };
 
+type MetricasVisitas = {
+  total: number;
+  confiables: number;
+  noConfiables: number;
+  ingreso: number;
+  mantenimiento: number;
+};
+
 type ConteoMes = {
   mes: string;
 };
@@ -264,6 +272,14 @@ const metricasAntecedentesVacias: MetricasAntecedentes = {
   documentoNoCorresponde: 0,
   nacionales: 0,
   extranjeros: 0,
+};
+
+const metricasVisitasVacias: MetricasVisitas = {
+  total: 0,
+  confiables: 0,
+  noConfiables: 0,
+  ingreso: 0,
+  mantenimiento: 0,
 };
 
 function normalizarConteo(
@@ -404,6 +420,117 @@ async function obtenerMesesAntecedentes(
         to_char(fecha_indicador, 'YYYY-MM') AS mes
       FROM registros
       WHERE EXTRACT(YEAR FROM fecha_indicador)::int = ${anio}
+      ORDER BY mes DESC
+    `;
+
+  return resultado.map(
+    (fila) => fila.mes
+  );
+}
+
+async function obtenerMetricasVisitas(
+  mes: string
+) {
+  const resultado =
+    await prisma.$queryRaw<
+      Array<{
+        total: bigint | number;
+        confiables: bigint | number;
+        no_confiables: bigint | number;
+        ingreso: bigint | number;
+        mantenimiento: bigint | number;
+      }>
+    >`
+      WITH visitas AS (
+        SELECT
+          upper(trim(COALESCE(v."resultadoVisita", ''))) AS resultado,
+          upper(trim(COALESCE(v."motivoVisita", ''))) AS motivo,
+          COALESCE(
+            v."fechaRealizada",
+            s."fechaGestion",
+            s."fechaCierre",
+            s."fechaCreacion"
+          ) AS fecha_indicador
+        FROM "SolicitudVisita" v
+        INNER JOIN "Solicitud" s
+          ON s."id" = v."solicitudId"
+        WHERE s."tipo" = 'VISITA DOMICILIARIA'
+      )
+      SELECT
+        COUNT(*) AS total,
+        COUNT(*) FILTER (
+          WHERE resultado LIKE '%CONFIABLE%'
+            AND resultado NOT LIKE '%NO%CONFIABLE%'
+        ) AS confiables,
+        COUNT(*) FILTER (
+          WHERE resultado LIKE '%NO%CONFIABLE%'
+        ) AS no_confiables,
+        COUNT(*) FILTER (
+          WHERE motivo = 'INGRESO'
+        ) AS ingreso,
+        COUNT(*) FILTER (
+          WHERE motivo = 'MANTENIMIENTO'
+        ) AS mantenimiento
+      FROM visitas
+      WHERE to_char(fecha_indicador, 'YYYY-MM') = ${mes}
+    `;
+
+  const fila =
+    resultado[0];
+
+  if (!fila) {
+    return metricasVisitasVacias;
+  }
+
+  return {
+    total:
+      normalizarConteo(fila.total),
+    confiables:
+      normalizarConteo(
+        fila.confiables
+      ),
+    noConfiables:
+      normalizarConteo(
+        fila.no_confiables
+      ),
+    ingreso:
+      normalizarConteo(
+        fila.ingreso
+      ),
+    mantenimiento:
+      normalizarConteo(
+        fila.mantenimiento
+      ),
+  };
+}
+
+async function obtenerMesesVisitas(
+  anio: number
+) {
+  const resultado =
+    await prisma.$queryRaw<ConteoMes[]>`
+      SELECT DISTINCT
+        to_char(
+          COALESCE(
+            v."fechaRealizada",
+            s."fechaGestion",
+            s."fechaCierre",
+            s."fechaCreacion"
+          ),
+          'YYYY-MM'
+        ) AS mes
+      FROM "SolicitudVisita" v
+      INNER JOIN "Solicitud" s
+        ON s."id" = v."solicitudId"
+      WHERE s."tipo" = 'VISITA DOMICILIARIA'
+        AND EXTRACT(
+          YEAR FROM COALESCE(
+            v."fechaRealizada",
+            s."fechaGestion",
+            s."fechaCierre",
+            s."fechaCreacion"
+          )
+        )::int = ${anio}
       ORDER BY mes DESC
     `;
 
@@ -784,12 +911,26 @@ hace5Dias.setDate(
 
     role === "SUPERVISOR";
 
+  const puedeVerMetricasVisitas =
+    role === "ADMIN"
+
+    ||
+
+    role === "DIRECTOR_SEG"
+
+    ||
+
+    role === "JEFE_SEG";
+
+  const puedeSeleccionarMes =
+    role === "ADMIN";
+
   const aplicarFiltroMes =
     role === "ADMIN" ||
     usaMetricasMensualesGestor;
 
   const mesIndicadores =
-    role === "ADMIN"
+    puedeSeleccionarMes
       ? mesSeleccionado ||
         mesActual
       : usaMetricasMensualesGestor
@@ -837,8 +978,22 @@ hace5Dias.setDate(
       : metricasAntecedentesVacias;
 
   const mesesAntecedentesDisponibles =
-    role === "ADMIN"
+    puedeSeleccionarMes
       ? await obtenerMesesAntecedentes(
+          anioActual
+        )
+      : [];
+
+  const metricasVisitasMes =
+    puedeVerMetricasVisitas
+      ? await obtenerMetricasVisitas(
+          mesIndicadores
+        )
+      : metricasVisitasVacias;
+
+  const mesesVisitasDisponibles =
+    puedeSeleccionarMes
+      ? await obtenerMesesVisitas(
           anioActual
         )
       : [];
@@ -862,6 +1017,7 @@ hace5Dias.setDate(
                 )
             ),
           ...mesesAntecedentesDisponibles,
+          ...mesesVisitasDisponibles,
         ]
       )
     ).sort(
@@ -1193,7 +1349,7 @@ hace5Dias.setDate(
 
   </div>
 
-      {role === "ADMIN" && (
+      {puedeSeleccionarMes && (
 
         <form
           className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-md"
@@ -1277,7 +1433,7 @@ hace5Dias.setDate(
               tarjeta.estado;
 
             const queryMes =
-              role === "ADMIN" &&
+              puedeSeleccionarMes &&
               mesIndicadores
                 ? `mes=${encodeURIComponent(
                     mesIndicadores
@@ -1521,6 +1677,107 @@ hace5Dias.setDate(
             <p className="mt-3 text-xs text-gray-500">
               Incluye registros cargados desde la base histórica y registros nuevos del sistema.
             </p>
+
+          </div>
+
+        </div>
+      )}
+
+      {puedeVerMetricasVisitas && (
+
+        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-5 shadow-md">
+
+          <div className="flex flex-wrap items-start justify-between gap-3">
+
+            <div>
+
+              <h2 className="text-sm font-bold uppercase text-gray-500">
+                Visitas domiciliarias
+              </h2>
+
+              <p className="mt-1 text-xs text-gray-500">
+                Indicadores de {formatearMes(mesIndicadores)}
+              </p>
+
+            </div>
+
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+              Total:
+              {" "}
+              <NumeroAnimado
+                valor={
+                  metricasVisitasMes.total
+                }
+              />
+            </span>
+
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+
+            <div className="min-w-0 rounded-lg border bg-green-50 p-4">
+
+              <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
+                Confiables
+              </span>
+
+              <p className="mt-3 break-words text-4xl font-bold leading-none text-green-700">
+                <NumeroAnimado
+                  valor={
+                    metricasVisitasMes.confiables
+                  }
+                />
+              </p>
+
+            </div>
+
+            <div className="min-w-0 rounded-lg border bg-red-50 p-4">
+
+              <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
+                No confiables
+              </span>
+
+              <p className="mt-3 break-words text-4xl font-bold leading-none text-red-700">
+                <NumeroAnimado
+                  valor={
+                    metricasVisitasMes.noConfiables
+                  }
+                />
+              </p>
+
+            </div>
+
+            <div className="min-w-0 rounded-lg border bg-blue-50 p-4">
+
+              <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
+                Ingreso
+              </span>
+
+              <p className="mt-3 break-words text-4xl font-bold leading-none text-blue-700">
+                <NumeroAnimado
+                  valor={
+                    metricasVisitasMes.ingreso
+                  }
+                />
+              </p>
+
+            </div>
+
+            <div className="min-w-0 rounded-lg border bg-amber-50 p-4">
+
+              <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
+                Mantenimiento
+              </span>
+
+              <p className="mt-3 break-words text-4xl font-bold leading-none text-amber-700">
+                <NumeroAnimado
+                  valor={
+                    metricasVisitasMes.mantenimiento
+                  }
+                />
+              </p>
+
+            </div>
 
           </div>
 
