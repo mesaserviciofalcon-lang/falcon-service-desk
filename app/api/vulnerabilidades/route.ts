@@ -329,7 +329,8 @@ export async function POST(
           eai: informe.eai,
           actoInseguro:
             informe.actoInseguro,
-          supervisor:
+          reportadoPor:
+            informe.reportadoPor ||
             informe.supervisor,
         }),
       attachments: [

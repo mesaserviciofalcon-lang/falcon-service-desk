@@ -371,13 +371,13 @@ export function vulnerabilidadCorreoTemplate({
   referencia,
   eai,
   actoInseguro,
-  supervisor,
+  reportadoPor,
 }: {
   id: number;
   referencia?: string;
   eai: string;
   actoInseguro: string;
-  supervisor: string;
+  reportadoPor: string;
 }) {
   return `
     <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.5">
@@ -395,7 +395,7 @@ export function vulnerabilidadCorreoTemplate({
         y gestion correspondiente.
       </p>
       <p>
-        <strong>Supervisor:</strong> ${supervisor}
+        <strong>Reportado por:</strong> ${reportadoPor}
       </p>
       <hr />
       <p style="font-size:12px;color:#64748b">
