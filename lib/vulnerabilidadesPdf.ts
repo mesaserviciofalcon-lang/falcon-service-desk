@@ -1,5 +1,5 @@
 import PDFDocument
-from "pdfkit";
+from "pdfkit/js/pdfkit.standalone";
 
 import fs
 from "fs";
