@@ -4,8 +4,17 @@ from "next-auth";
 import { authOptions }
 from "@/lib/auth";
 
+import { enviarCorreo }
+from "@/lib/email";
+
 import { prisma }
 from "@/lib/prisma";
+
+import {
+  cierreVulnerabilidadCorreoTemplate,
+  formatearReferenciaVulnerabilidad,
+  obtenerCopiasVulnerabilidad,
+} from "@/lib/vulnerabilidades";
 
 const rolesSeguridad = [
   "ADMIN",
@@ -70,6 +79,13 @@ export async function PATCH(
             id: true,
             estado: true,
             analistaSigCorreo: true,
+            consecutivo: true,
+            eai: true,
+            fecha: true,
+            actoInseguro: true,
+            correoSupervisor: true,
+            gerenteCorreo: true,
+            copiaCorreos: true,
           },
         });
 
@@ -98,6 +114,21 @@ export async function PATCH(
         },
         {
           status: 403,
+        }
+      );
+    }
+
+    if (
+      informe.estado ===
+      "CERRADO"
+    ) {
+      return Response.json(
+        {
+          error:
+            "Este analisis ya se encuentra cerrado",
+        },
+        {
+          status: 400,
         }
       );
     }
@@ -157,6 +188,11 @@ export async function PATCH(
       );
     }
 
+    const fechaCierre =
+      new Date();
+    const cerradoPor =
+      session.user.name ||
+      "Usuario";
     const actualizado =
       await prisma
         .vulnerabilidadInforme
@@ -181,19 +217,89 @@ export async function PATCH(
             fechaEjecucion:
               fechaEjecucion || null,
             cerradoPor:
-              session.user.name ||
-              "Usuario",
+              cerradoPor,
             cerradoPorCorreo:
               session.user.email,
             fechaCierre:
-              new Date(),
+              fechaCierre,
           },
         });
+
+    const referencia =
+      formatearReferenciaVulnerabilidad({
+        consecutivo:
+          informe.consecutivo,
+        eai:
+          informe.eai,
+        fecha:
+          informe.fecha,
+        id:
+          informe.id,
+      });
+    const destinatarios =
+      Array.from(
+        new Set(
+          [
+            informe.correoSupervisor,
+            "seguridad@falconfarms.com.co",
+            informe.gerenteCorreo,
+          ].filter(Boolean) as string[]
+        )
+      );
+    const copiasGuardadas =
+      (informe.copiaCorreos || "")
+        .split(/[;,]/)
+        .map((correo) =>
+          correo.trim()
+        )
+        .filter(Boolean);
+    const copias =
+      Array.from(
+        new Set([
+          ...copiasGuardadas,
+          ...obtenerCopiasVulnerabilidad(),
+        ])
+      ).filter(
+        (correo) =>
+          !destinatarios.includes(
+            correo
+          )
+      );
+
+    if (destinatarios.length > 0) {
+      try {
+        await enviarCorreo({
+          to:
+            destinatarios.join(","),
+          cc:
+            copias.join(","),
+          subject:
+            `Cierre de analisis de vulnerabilidad ${referencia}`,
+          html:
+            cierreVulnerabilidadCorreoTemplate({
+              referencia,
+              eai:
+                informe.eai,
+              actoInseguro:
+                informe.actoInseguro,
+              cerradoPor,
+              fechaCierre,
+            }),
+        });
+      } catch (error) {
+        console.error(
+          "No se pudo enviar correo de cierre de vulnerabilidad",
+          error
+        );
+      }
+    }
 
     return Response.json({
       ok: true,
       informe:
         actualizado,
+      correoEnviado:
+        destinatarios.length > 0,
     });
   } catch (error: any) {
     console.error(error);

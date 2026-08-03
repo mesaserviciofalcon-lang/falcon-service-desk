@@ -59,6 +59,7 @@ export default async function VulnerabilidadesPage({
 }: {
   searchParams: Promise<{
     pagina?: string;
+    cerradosPagina?: string;
   }>;
 }) {
   const session =
@@ -88,66 +89,42 @@ export default async function VulnerabilidadesPage({
     );
   const skip =
     (pagina - 1) * POR_PAGINA;
-  const where = puedeCrear
-    ? {
-        OR: [
-          {
-            estado: {
-              not:
-                "CERRADO",
-            },
-          },
-          {
-            estado:
-              "CERRADO",
-            fecha: {
-              gte:
-                rangoCerradosVisibles(),
-            },
-          },
-        ],
-      }
-    : {
-        analistaSigCorreo:
-          session?.user?.email || "",
-        estado:
-          "ABIERTO",
-      };
+  const cerradosPagina =
+    Math.max(
+      1,
+      Number(
+        params.cerradosPagina ||
+          "1"
+      ) || 1
+    );
+  const cerradosSkip =
+    (cerradosPagina - 1) *
+    POR_PAGINA;
 
-  const [
-    totalInformes,
-    informes,
-  ] = await Promise.all([
-    prisma
-      .vulnerabilidadInforme
-      .count({
-        where,
-      }),
-    prisma
-      .vulnerabilidadInforme
-      .findMany({
-        where,
-        select: {
-          id: true,
-          consecutivo: true,
-          eai: true,
-          fecha: true,
-          actoInseguro: true,
-          estado: true,
-          supervisor: true,
-          reportadoPor: true,
-        },
-        orderBy: {
-          fecha: "desc",
-        },
-        skip,
-        take:
-          POR_PAGINA,
-      }),
-  ]);
+  const selectResumen = {
+    id: true,
+    consecutivo: true,
+    eai: true,
+    fecha: true,
+    actoInseguro: true,
+    estado: true,
+    supervisor: true,
+    reportadoPor: true,
+  } as const;
 
-  const informesSerializados =
-    informes.map((informe) => ({
+  function serializarInformes(
+    informes: Array<{
+      id: number;
+      consecutivo: string | null;
+      eai: string;
+      fecha: Date;
+      actoInseguro: string;
+      estado: string;
+      supervisor: string;
+      reportadoPor: string | null;
+    }>
+  ) {
+    return informes.map((informe) => ({
       id: informe.id,
       consecutivo:
         informe.consecutivo,
@@ -163,6 +140,203 @@ export default async function VulnerabilidadesPage({
       reportadoPor:
         informe.reportadoPor,
     }));
+  }
+
+  if (!puedeCrear) {
+    const email =
+      session?.user?.email || "";
+    const wherePendientes = {
+      analistaSigCorreo:
+        email,
+      estado:
+        "ABIERTO",
+    };
+    const whereCerrados = {
+      analistaSigCorreo:
+        email,
+      estado:
+        "CERRADO",
+    };
+
+    const [
+      totalPendientes,
+      pendientes,
+      totalCerrados,
+      cerrados,
+    ] = await Promise.all([
+      prisma
+        .vulnerabilidadInforme
+        .count({
+          where:
+            wherePendientes,
+        }),
+      prisma
+        .vulnerabilidadInforme
+        .findMany({
+          where:
+            wherePendientes,
+          select:
+            selectResumen,
+          orderBy: {
+            fecha: "desc",
+          },
+          skip,
+          take:
+            POR_PAGINA,
+        }),
+      prisma
+        .vulnerabilidadInforme
+        .count({
+          where:
+            whereCerrados,
+        }),
+      prisma
+        .vulnerabilidadInforme
+        .findMany({
+          where:
+            whereCerrados,
+          select:
+            selectResumen,
+          orderBy: [
+            {
+              fechaCierre:
+                "desc",
+            },
+            {
+              fecha:
+                "desc",
+            },
+          ],
+          skip:
+            cerradosSkip,
+          take:
+            POR_PAGINA,
+        }),
+    ]);
+
+    const totalPaginasPendientes =
+      Math.max(
+        1,
+        Math.ceil(
+          totalPendientes /
+            POR_PAGINA
+        )
+      );
+    const totalPaginasCerrados =
+      Math.max(
+        1,
+        Math.ceil(
+          totalCerrados /
+            POR_PAGINA
+        )
+      );
+
+    return (
+      <div className="min-h-screen bg-[#E8EEF2] p-8">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-[#0F3D1F]">
+            Analisis de vulnerabilidades
+          </h1>
+          <p className="mt-2 text-gray-600">
+            Consulte y gestione los analisis asignados por seguridad.
+          </p>
+        </div>
+
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-[#0F3D1F]">
+            Mis analisis pendientes
+          </h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Cierre los analisis asignados y adjunte la evidencia correspondiente.
+          </p>
+        </div>
+
+        <ListadoVulnerabilidades
+          informes={
+            serializarInformes(
+              pendientes
+            )
+          }
+          pagina={pagina}
+          totalPaginas={
+            totalPaginasPendientes
+          }
+        />
+
+        <div className="mb-4 mt-8">
+          <h2 className="text-xl font-bold text-[#0F3D1F]">
+            Analisis cerrados
+          </h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Vista compacta para consulta y soporte en auditorias.
+          </p>
+        </div>
+
+        <ListadoVulnerabilidades
+          informes={
+            serializarInformes(
+              cerrados
+            )
+          }
+          pagina={
+            cerradosPagina
+          }
+          totalPaginas={
+            totalPaginasCerrados
+          }
+          parametroPagina="cerradosPagina"
+        />
+      </div>
+    );
+  }
+
+  const where = {
+    OR: [
+      {
+        estado: {
+          not:
+            "CERRADO",
+        },
+      },
+      {
+        estado:
+          "CERRADO",
+        fecha: {
+          gte:
+            rangoCerradosVisibles(),
+        },
+      },
+    ],
+  };
+
+  const [
+    totalInformes,
+    informes,
+  ] = await Promise.all([
+    prisma
+      .vulnerabilidadInforme
+      .count({
+        where,
+      }),
+    prisma
+      .vulnerabilidadInforme
+      .findMany({
+        where,
+        select:
+          selectResumen,
+        orderBy: {
+          fecha: "desc",
+        },
+        skip,
+        take:
+          POR_PAGINA,
+      }),
+  ]);
+
+  const informesSerializados =
+    serializarInformes(
+      informes
+    );
   const totalPaginas =
     Math.max(
       1,

@@ -36,6 +36,7 @@ type Informe = {
   planAccionEai?: string | null;
   responsables?: string | null;
   fechaEjecucion?: string | null;
+  cierreEvidencias?: Archivo[];
 };
 
 function formatearFecha(
@@ -343,10 +344,82 @@ export default function DetalleVulnerabilidad({
           </button>
         </div>
       ) : cerrado ? (
-        <div className="mt-4 rounded-lg border bg-green-50 p-3 text-sm text-green-900">
-          <strong>Cierre:</strong>{" "}
-          {informe.cierreObservaciones ||
-            "Analisis cerrado"}
+        <div className="mt-4 rounded-lg border bg-green-50 p-4 text-sm text-green-950">
+          <p className="font-bold">
+            Gestion de cierre
+          </p>
+
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <p>
+              <strong>Causa raiz:</strong>{" "}
+              {informe.causaRaiz ||
+                "No registrada"}
+            </p>
+            <p>
+              <strong>Proceso:</strong>{" "}
+              {informe.proceso ||
+                "No registrado"}
+            </p>
+            <p>
+              <strong>Responsables:</strong>{" "}
+              {informe.responsables ||
+                "No registrado"}
+            </p>
+            <p>
+              <strong>Fecha de ejecucion:</strong>{" "}
+              {informe.fechaEjecucion ||
+                "No registrada"}
+            </p>
+          </div>
+
+          <div className="mt-3 rounded-lg border border-green-200 bg-white p-3">
+            <p className="font-bold">
+              Plan de accion EAI
+            </p>
+            <p className="mt-1 whitespace-pre-wrap">
+              {informe.planAccionEai ||
+                "No registrado"}
+            </p>
+          </div>
+
+          <div className="mt-3 rounded-lg border border-green-200 bg-white p-3">
+            <p className="font-bold">
+              Observaciones de cierre
+            </p>
+            <p className="mt-1 whitespace-pre-wrap">
+              {informe.cierreObservaciones ||
+                "Analisis cerrado"}
+            </p>
+          </div>
+
+          {informe.cierreEvidencias &&
+            informe.cierreEvidencias.length >
+              0 && (
+              <div className="mt-3 rounded-lg border border-green-200 bg-white p-3">
+                <p className="font-bold">
+                  Evidencias
+                </p>
+                <div className="mt-2 flex flex-col gap-2">
+                  {informe.cierreEvidencias.map(
+                    (archivo) => (
+                      <a
+                        key={
+                          archivo.url
+                        }
+                        href={
+                          archivo.url
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-lg border bg-gray-50 p-2 text-sm font-semibold text-[#0F3D1F] hover:bg-gray-100"
+                      >
+                        {archivo.nombre}
+                      </a>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
         </div>
       ) : (
         <div className="mt-4 rounded-lg border bg-yellow-50 p-3 text-sm text-yellow-900">

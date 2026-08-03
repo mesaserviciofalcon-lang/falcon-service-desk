@@ -38,11 +38,13 @@ export default function ListadoVulnerabilidades({
   pagina,
   totalPaginas,
   puedeEliminar = false,
+  parametroPagina = "pagina",
 }: {
   informes: InformeResumen[];
   pagina: number;
   totalPaginas: number;
   puedeEliminar?: boolean;
+  parametroPagina?: string;
 }) {
   if (informes.length === 0) {
     return (
@@ -128,7 +130,7 @@ export default function ListadoVulnerabilidades({
       {totalPaginas > 1 && (
         <div className="flex flex-wrap items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-md">
           <Link
-            href={`/vulnerabilidades?pagina=${Math.max(
+            href={`/vulnerabilidades?${parametroPagina}=${Math.max(
               1,
               pagina - 1
             )}`}
@@ -146,7 +148,7 @@ export default function ListadoVulnerabilidades({
           </span>
 
           <Link
-            href={`/vulnerabilidades?pagina=${Math.min(
+            href={`/vulnerabilidades?${parametroPagina}=${Math.min(
               totalPaginas,
               pagina + 1
             )}`}

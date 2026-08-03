@@ -45,8 +45,34 @@ function fechaFormulario(
     return new Date();
   }
 
+  const partesHora =
+    new Intl.DateTimeFormat(
+      "en-US",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+        timeZone:
+          "America/Bogota",
+      }
+    ).formatToParts(new Date());
+  const obtenerParte = (
+    tipo: string
+  ) =>
+    partesHora.find(
+      (parte) =>
+        parte.type === tipo
+    )?.value || "00";
+  const hora =
+    obtenerParte("hour");
+  const minuto =
+    obtenerParte("minute");
+  const segundo =
+    obtenerParte("second");
+
   return new Date(
-    `${textoFecha}T12:00:00-05:00`
+    `${textoFecha}T${hora}:${minuto}:${segundo}-05:00`
   );
 }
 

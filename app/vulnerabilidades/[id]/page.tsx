@@ -77,6 +77,34 @@ export default async function VulnerabilidadDetallePage({
     redirect("/dashboard");
   }
 
+  const cierreEvidencias =
+    Array.isArray(
+      informe.cierreEvidencias
+    )
+      ? informe.cierreEvidencias
+          .map((archivo: any) => ({
+            url:
+              typeof archivo?.url ===
+              "string"
+                ? archivo.url
+                : "",
+            nombre:
+              typeof archivo?.nombre ===
+              "string"
+                ? archivo.nombre
+                : "Evidencia",
+            tipo:
+              typeof archivo?.tipo ===
+              "string"
+                ? archivo.tipo
+                : undefined,
+          }))
+          .filter(
+            (archivo) =>
+              archivo.url
+          )
+      : [];
+
   const informeSerializado = {
     id: informe.id,
     consecutivo:
@@ -98,6 +126,8 @@ export default async function VulnerabilidadDetallePage({
       informe.reportadoPor,
     cierreObservaciones:
       informe.cierreObservaciones,
+    cierreEvidencias:
+      cierreEvidencias,
     causaRaiz:
       informe.causaRaiz,
     proceso:

@@ -466,3 +466,41 @@ export function recordatorioVulnerabilidadesTemplate({
     </div>
   `;
 }
+
+export function cierreVulnerabilidadCorreoTemplate({
+  referencia,
+  eai,
+  actoInseguro,
+  cerradoPor,
+  fechaCierre,
+}: {
+  referencia: string;
+  eai: string;
+  actoInseguro: string;
+  cerradoPor: string;
+  fechaCierre: Date | string;
+}) {
+  return `
+    <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.5">
+      <h2 style="color:#0F3D1F">Cierre de analisis de vulnerabilidad</h2>
+      <p>Buen dia,</p>
+      <p>
+        Se informa que el analisis de vulnerabilidad
+        <strong>${referencia}</strong> fue cerrado correctamente.
+      </p>
+      <p>
+        <strong>Finca / EAI:</strong> ${eai}<br />
+        <strong>Acto inseguro:</strong> ${actoInseguro}<br />
+        <strong>Cerrado por:</strong> ${cerradoPor}<br />
+        <strong>Fecha de cierre:</strong> ${formatearFechaVulnerabilidad(fechaCierre)}
+      </p>
+      <p>
+        Esta es una notificacion automatica de cierre. No requiere ingresar al sitio.
+      </p>
+      <hr />
+      <p style="font-size:12px;color:#64748b">
+        Falcon Service Desk - Security Department
+      </p>
+    </div>
+  `;
+}

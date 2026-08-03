@@ -288,7 +288,6 @@ export async function generarPdfVulnerabilidad(datos: DatosPdf) {
     [
       `Finca / EAI: ${datos.eai}`,
       `Reportado por: ${datos.reportadoPor || datos.supervisor}`,
-      `Supervisor: ${datos.supervisor}`,
       `Estado: ${datos.estado}`,
       datos.fotos.length
         ? `Evidencias adjuntas en plataforma: ${datos.fotos.length}`
