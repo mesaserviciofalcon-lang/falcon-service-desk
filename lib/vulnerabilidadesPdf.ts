@@ -425,7 +425,7 @@ export async function generarPdfVulnerabilidad(datos: DatosPdf) {
   cursor.y -= 6;
 
   agregarBloque(paginas, cursor, "Vulnerabilidad", datos.vulnerabilidad);
-  agregarBloque(paginas, cursor, "Plan de accion", datos.planAccionSugerido);
+  agregarBloque(paginas, cursor, "Acciones tomadas", datos.planAccionSugerido);
   agregarBloque(
     paginas,
     cursor,

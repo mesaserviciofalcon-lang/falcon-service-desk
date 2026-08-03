@@ -241,7 +241,7 @@ export default async function MetricasAnalisisPage({
     porEstado,
     porEai,
     porActo,
-    porSupervisor,
+    porReportadoPor,
     totalHistorico,
   ] = await Promise.all([
     prisma.$queryRaw<
@@ -344,23 +344,22 @@ export default async function MetricasAnalisisPage({
         },
         take: 10,
       }),
-    prisma
-      .vulnerabilidadInforme
-      .groupBy({
-        by: ["supervisor"],
-        where:
-          whereMes,
-        _count: {
-          _all: true,
-        },
-        orderBy: {
-          _count: {
-            supervisor:
-              "desc",
-          },
-        },
-        take: 10,
-      }),
+    prisma.$queryRaw<
+      Array<{
+        nombre: string | null;
+        total: bigint;
+      }>
+    >`
+      SELECT
+        COALESCE(NULLIF("reportadoPor", ''), "supervisor") AS nombre,
+        COUNT(*) AS total
+      FROM "VulnerabilidadInforme"
+      WHERE "fecha" >= ${inicio}
+        AND "fecha" < ${fin}
+      GROUP BY nombre
+      ORDER BY total DESC
+      LIMIT 10
+    `,
     prisma
       .vulnerabilidadInforme
       .count(),
@@ -488,13 +487,13 @@ export default async function MetricasAnalisisPage({
         <TablaSimple
           titulo="Reportados por"
           total={total}
-          filas={porSupervisor.map(
+          filas={porReportadoPor.map(
             (item) => ({
               nombre:
-                item.supervisor ||
+                item.nombre ||
                 "Sin supervisor",
               total:
-                item._count._all,
+                Number(item.total),
             })
           )}
         />

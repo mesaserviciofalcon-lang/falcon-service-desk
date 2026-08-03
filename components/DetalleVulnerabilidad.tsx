@@ -197,7 +197,7 @@ export default function DetalleVulnerabilidad({
 
       <div className="mt-3 rounded-lg border bg-green-50 p-3 text-sm">
         <p className="font-bold">
-          Plan sugerido
+          Acciones tomadas
         </p>
         <p className="mt-1">
           {informe.planAccionSugerido}

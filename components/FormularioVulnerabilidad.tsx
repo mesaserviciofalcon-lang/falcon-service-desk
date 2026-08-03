@@ -293,7 +293,7 @@ export default function FormularioVulnerabilidad() {
           )
         }
         className="min-h-28 rounded-lg border p-3"
-        placeholder="Plan de accion sugerido por Seguridad"
+        placeholder="Acciones tomadas"
         required
       />
 
