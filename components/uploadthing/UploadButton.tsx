@@ -34,6 +34,8 @@ export default function UploadButton({
 
   validateRequiredRows,
 
+  validateFechaSolicitudHoy,
+
 }: any) {
 
   return (
@@ -151,6 +153,127 @@ export default function UploadButton({
                 valor
                   .trim()
                   .toUpperCase();
+
+              const obtenerFechaHoyColombia =
+                () => {
+                  const partes =
+                    new Intl.DateTimeFormat(
+                      "en-CA",
+                      {
+                        timeZone:
+                          "America/Bogota",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                      }
+                    ).formatToParts(
+                      new Date()
+                    );
+
+                  const mapa =
+                    Object.fromEntries(
+                      partes.map(
+                        (parte) => [
+                          parte.type,
+                          parte.value,
+                        ]
+                      )
+                    );
+
+                  return `${mapa.year}-${mapa.month}-${mapa.day}`;
+                };
+
+              const formatearISO =
+                (
+                  anio: number,
+                  mes: number,
+                  dia: number
+                ) =>
+                  `${anio}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+
+              const obtenerFechaCeldaISO =
+                (celda: any) => {
+                  if (!celda?.v) {
+                    return "";
+                  }
+
+                  if (
+                    celda.v instanceof
+                    Date
+                  ) {
+                    return formatearISO(
+                      celda.v.getFullYear(),
+                      celda.v.getMonth() +
+                        1,
+                      celda.v.getDate()
+                    );
+                  }
+
+                  if (
+                    typeof celda.v ===
+                    "number"
+                  ) {
+                    const fechaExcel =
+                      XLSX.SSF.parse_date_code(
+                        celda.v
+                      );
+
+                    if (!fechaExcel) {
+                      return "";
+                    }
+
+                    return formatearISO(
+                      fechaExcel.y,
+                      fechaExcel.m,
+                      fechaExcel.d
+                    );
+                  }
+
+                  const texto =
+                    String(celda.v).trim();
+
+                  let partes =
+                    texto.match(
+                      /^(\d{4})-(\d{1,2})-(\d{1,2})$/
+                    );
+
+                  if (partes) {
+                    return formatearISO(
+                      Number(partes[1]),
+                      Number(partes[2]),
+                      Number(partes[3])
+                    );
+                  }
+
+                  partes =
+                    texto.match(
+                      /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/
+                    );
+
+                  if (partes) {
+                    return formatearISO(
+                      Number(partes[3]),
+                      Number(partes[2]),
+                      Number(partes[1])
+                    );
+                  }
+
+                  return "";
+                };
+
+              const formatearFechaMensaje =
+                (fechaISO: string) => {
+                  const partes =
+                    fechaISO.match(
+                      /^(\d{4})-(\d{2})-(\d{2})$/
+                    );
+
+                  if (!partes) {
+                    return fechaISO;
+                  }
+
+                  return `${partes[3]}/${partes[2]}/${partes[1]}`;
+                };
 
               for (
                 let index = 0;
@@ -300,6 +423,88 @@ export default function UploadButton({
                     );
 
                     return [];
+                  }
+                }
+              }
+
+              if (
+                validateFechaSolicitudHoy
+              ) {
+                const indiceFechaSolicitud =
+                  requiredHeaders.findIndex(
+                    (header: string) =>
+                      normalizar(header)
+                        .normalize("NFD")
+                        .replace(
+                          /[\u0300-\u036f]/g,
+                          ""
+                        ) ===
+                      "FECHA DE SOLICITUD"
+                  );
+
+                const fechaHoy =
+                  obtenerFechaHoyColombia();
+
+                if (
+                  indiceFechaSolicitud >= 0
+                ) {
+                  for (
+                    let fila = range.s.r + 1;
+                    fila <= range.e.r;
+                    fila++
+                  ) {
+                    const celdasFila =
+                      requiredHeaders.map(
+                        (
+                          _header: string,
+                          columna: number
+                        ) =>
+                          sheet[
+                            XLSX.utils
+                              .encode_cell({
+                                r: fila,
+                                c: columna,
+                              })
+                          ]
+                      );
+
+                    const tieneDatos =
+                      celdasFila.some(
+                        (celda: any) =>
+                          celda?.v !==
+                            undefined &&
+                          celda?.v !==
+                            null &&
+                          String(celda.v)
+                            .trim() !== ""
+                      );
+
+                    if (!tieneDatos) {
+                      continue;
+                    }
+
+                    const celdaFecha =
+                      sheet[
+                        XLSX.utils.encode_cell({
+                          r: fila,
+                          c: indiceFechaSolicitud,
+                        })
+                      ];
+
+                    const fechaFila =
+                      obtenerFechaCeldaISO(
+                        celdaFecha
+                      );
+
+                    if (
+                      fechaFila !== fechaHoy
+                    ) {
+                      alert(
+                        `No fue posible subir este archivo. La fila ${fila + 1} tiene fecha de solicitud "${formatearFechaMensaje(fechaFila || String(celdaFecha?.v || "vacía"))}". La fecha de solicitud no puede ser mayor ni menor a la fecha en curso (${formatearFechaMensaje(fechaHoy)}).`
+                      );
+
+                      return [];
+                    }
                   }
                 }
               }

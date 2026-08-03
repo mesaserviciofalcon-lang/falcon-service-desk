@@ -15,6 +15,29 @@ from "@/lib/fecha";
 import { ocultarSolicitudesHistoricas }
 from "@/lib/solicitudesHistoricas";
 
+function resultadoHistoricoVisita(
+  fechaVisitaRealizada?: string | null
+) {
+  const texto =
+    String(
+      fechaVisitaRealizada || ""
+    ).trim();
+
+  if (!texto) {
+    return "";
+  }
+
+  if (
+    texto
+      .toUpperCase()
+      .includes("CANCEL")
+  ) {
+    return texto;
+  }
+
+  return "Realizada";
+}
+
 export async function GET(
   request: Request
 ) {
@@ -209,13 +232,51 @@ export async function GET(
       tipo ===
       "VISITA DOMICILIARIA"
     ) {
+      const visitasHistoricas =
+        await prisma.visitaHistorica.findMany({
+          select: {
+            id: true,
+            fechaSolicitud: true,
+            fechaSolicitudDate: true,
+            correoSolicitante: true,
+            solicitanteNombre: true,
+            nombresApellidos: true,
+            cedula: true,
+            telefono: true,
+            direccion: true,
+            municipio: true,
+            zona: true,
+            motivoVisita: true,
+            cargo: true,
+            fincaEAI: true,
+            fechaExpedicionCedula: true,
+            fechaVisitaRealizada: true,
+            fechaVisitaDate: true,
+            origenArchivo: true,
+          },
+          orderBy: [
+            {
+              fechaVisitaDate: {
+                sort: "desc",
+                nulls: "last",
+              },
+            },
+            {
+              id: "desc",
+            },
+          ],
+        });
 
       data =
-        solicitudes.map(
+        [
+          ...solicitudes.map(
           (item: any) => ({
 
             ID:
               item.id,
+
+            ORIGEN:
+              "PLATAFORMA",
 
             CANDIDATO:
               item.visita
@@ -271,7 +332,77 @@ export async function GET(
                 item.fechaCreacion
               ),
           })
-        );
+        ),
+          ...visitasHistoricas.map((item) => ({
+            ID:
+              item.id,
+
+            ORIGEN:
+              "HISTORICO",
+
+            CANDIDATO:
+              item.nombresApellidos,
+
+            CEDULA:
+              item.cedula,
+
+            FECHA_EXPEDICION:
+              item.fechaExpedicionCedula,
+
+            TELEFONO:
+              item.telefono,
+
+            DIRECCION:
+              item.direccion,
+
+            MUNICIPIO:
+              item.municipio,
+
+            ZONA:
+              item.zona,
+
+            CARGO:
+              item.cargo,
+
+            FINCA:
+              item.fincaEAI,
+
+            MOTIVO:
+              item.motivoVisita,
+
+            ESTADO:
+              "HISTORICO",
+
+            OBSERVACION_TECNICA:
+              "",
+
+            RESULTADO:
+              resultadoHistoricoVisita(
+                item.fechaVisitaRealizada
+              ),
+
+            FECHA:
+              item.fechaVisitaDate
+                ? formatearFechaColombia(
+                    item.fechaVisitaDate
+                  )
+                : item.fechaVisitaRealizada ||
+                  item.fechaSolicitud ||
+                  "",
+
+            SOLICITANTE:
+              item.solicitanteNombre ||
+              "",
+
+            CORREO_SOLICITANTE:
+              item.correoSolicitante ||
+              "",
+
+            ARCHIVO_ORIGEN:
+              item.origenArchivo ||
+              "",
+          })),
+        ];
     }
 
     // ANTECEDENTES

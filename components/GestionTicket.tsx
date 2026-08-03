@@ -31,6 +31,8 @@ export default function GestionTicket({
 
   tipoSolicitud,
 
+  resultadoVisitaActual,
+
 }: {
 
   ticketId: number;
@@ -43,6 +45,8 @@ export default function GestionTicket({
 
   tipoSolicitud?: string;
 
+  resultadoVisitaActual?: string | null;
+
 }) {
 
   const [
@@ -54,6 +58,13 @@ export default function GestionTicket({
     observaciones,
     setObservaciones,
   ] = useState("");
+
+  const [
+    resultadoVisita,
+    setResultadoVisita,
+  ] = useState(
+    resultadoVisitaActual || ""
+  );
 
   const [
 
@@ -74,6 +85,10 @@ export default function GestionTicket({
   const esAntecedentes =
     tipoSolicitud ===
     "ANTECEDENTES";
+
+  const esVisita =
+    tipoSolicitud ===
+    "VISITA DOMICILIARIA";
 
   const esCargaSoporteSolicitante =
     role === "SOLICITANTE";
@@ -110,6 +125,18 @@ export default function GestionTicket({
     ) {
       toast.error(
         "Debe seleccionar el estado del ticket"
+      );
+      return;
+    }
+
+    if (
+      role !== "SOLICITANTE" &&
+      esVisita &&
+      estado === "COMPLETADO" &&
+      !resultadoVisita
+    ) {
+      toast.error(
+        "Debe seleccionar si la visita fue confiable o no confiable"
       );
       return;
     }
@@ -217,6 +244,13 @@ export default function GestionTicket({
 
               gestionadoPor:
                 usuario,
+
+              ...(role !== "SOLICITANTE" &&
+              esVisita
+                ? {
+                    resultadoVisita,
+                  }
+                : {}),
             }),
           }
         );
@@ -314,6 +348,44 @@ setTimeout(() => {
         </select>
       )}
 
+      {role !==
+        "SOLICITANTE" &&
+        esVisita && (
+
+        <select
+
+          value={resultadoVisita}
+
+          onChange={(e) =>
+            setResultadoVisita(
+              e.target.value
+            )
+          }
+
+          className="border p-3 rounded-lg"
+        >
+
+          <option value="">
+
+            Resultado de la visita
+
+          </option>
+
+          <option value="CONFIABLE">
+
+            CONFIABLE
+
+          </option>
+
+          <option value="NO CONFIABLE">
+
+            NO CONFIABLE
+
+          </option>
+
+        </select>
+      )}
+
       <textarea
 
         placeholder={
@@ -383,6 +455,11 @@ setTimeout(() => {
         }
 
         validateRequiredRows={
+          esAntecedentes &&
+          !esCargaSoporteSolicitante
+        }
+
+        validateFechaSolicitudHoy={
           esAntecedentes &&
           !esCargaSoporteSolicitante
         }

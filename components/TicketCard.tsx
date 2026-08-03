@@ -348,6 +348,25 @@ export default function TicketCard({
 
           </p>
 
+          {solicitud.visita
+            ?.resultadoVisita && (
+
+            <p>
+
+              <strong>
+                Resultado:
+              </strong>
+
+              {" "}
+
+              {
+                solicitud.visita
+                  ?.resultadoVisita
+              }
+
+            </p>
+          )}
+
           {solicitud
             .ultimaVisitaHistorica && (
 
@@ -757,6 +776,11 @@ export default function TicketCard({
 
           tipoSolicitud={
             solicitud.tipo
+          }
+
+          resultadoVisitaActual={
+            solicitud.visita
+              ?.resultadoVisita
           }
 
         />

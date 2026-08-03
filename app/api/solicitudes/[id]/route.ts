@@ -77,6 +77,7 @@ export async function PATCH(
         },
         include: {
           antecedente: true,
+          visita: true,
         },
       });
 
@@ -156,6 +157,34 @@ export async function PATCH(
         ? solicitudActual.estado
         : estadoSolicitado;
 
+    const resultadoVisita =
+      String(
+        body.resultadoVisita || ""
+      )
+        .trim()
+        .toUpperCase();
+
+    if (
+      solicitudActual.tipo ===
+        "VISITA DOMICILIARIA" &&
+      esGestionValida &&
+      estadoFinal === "COMPLETADO" &&
+      ![
+        "CONFIABLE",
+        "NO CONFIABLE",
+      ].includes(resultadoVisita)
+    ) {
+      return Response.json(
+        {
+          error:
+            "Debe seleccionar si la visita fue confiable o no confiable",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     // ACTUALIZAR TICKET
 
     const solicitud =
@@ -189,6 +218,27 @@ export async function PATCH(
               : null,
         },
       });
+
+    if (
+      solicitudActual.tipo ===
+        "VISITA DOMICILIARIA" &&
+      esGestionValida &&
+      resultadoVisita
+    ) {
+      await prisma.solicitudVisita.update({
+        where: {
+          solicitudId: id,
+        },
+        data: {
+          resultadoVisita,
+          fechaRealizada:
+            estadoFinal ===
+            "COMPLETADO"
+              ? new Date()
+              : undefined,
+        },
+      });
+    }
 
     // HISTORIAL
 

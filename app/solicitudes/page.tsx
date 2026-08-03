@@ -715,6 +715,10 @@ setTimeout(() => {
     tipo === "ANTECEDENTES"
   }
 
+  validateFechaSolicitudHoy={
+    tipo === "ANTECEDENTES"
+  }
+
   onComplete={(
 
     url: string,

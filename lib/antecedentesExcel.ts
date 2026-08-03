@@ -60,9 +60,11 @@ function limpiarValor(
   }
 
   if (valor instanceof Date) {
-    return valor
-      .toISOString()
-      .slice(0, 10);
+    return formatearISO(
+      valor.getFullYear(),
+      valor.getMonth() + 1,
+      valor.getDate()
+    );
   }
 
   return String(valor).trim();
@@ -104,13 +106,39 @@ function celdaTieneValor(
 function celdaEsFechaValida(
   celda: XLSX.CellObject | undefined
 ) {
+  return Boolean(
+    obtenerFechaCeldaISO(celda)
+  );
+}
+
+function formatearISO(
+  anio: number,
+  mes: number,
+  dia: number
+) {
+  return `${anio}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+}
+
+function obtenerFechaCeldaISO(
+  celda: XLSX.CellObject | undefined
+) {
   if (!celdaTieneValor(celda)) {
-    return false;
+    return "";
   }
 
   if (celda?.v instanceof Date) {
-    return !Number.isNaN(
-      celda.v.getTime()
+    if (
+      Number.isNaN(
+        celda.v.getTime()
+      )
+    ) {
+      return "";
+    }
+
+    return formatearISO(
+      celda.v.getFullYear(),
+      celda.v.getMonth() + 1,
+      celda.v.getDate()
     );
   }
 
@@ -118,14 +146,37 @@ function celdaEsFechaValida(
     const fechaExcel =
       XLSX.SSF.parse_date_code(celda.v);
 
-    return Boolean(
-      fechaExcel &&
-      fechaExcel.y >= 1900 &&
-      fechaExcel.y <= 2100
+    if (
+      !fechaExcel ||
+      fechaExcel.y < 1900 ||
+      fechaExcel.y > 2100
+    ) {
+      return "";
+    }
+
+    return formatearISO(
+      fechaExcel.y,
+      fechaExcel.m,
+      fechaExcel.d
     );
   }
 
-  return false;
+  return "";
+}
+
+function formatearFechaMensaje(
+  fechaISO: string
+) {
+  const partes =
+    fechaISO.match(
+      /^(\d{4})-(\d{2})-(\d{2})$/
+    );
+
+  if (!partes) {
+    return fechaISO;
+  }
+
+  return `${partes[3]}/${partes[2]}/${partes[1]}`;
 }
 
 function lanzarErrorCelda(
@@ -326,6 +377,25 @@ function validarTipoDatosSolicitud(
         numeroFila,
         indiceFechaSolicitud,
         "FECHA DE SOLICITUD debe ser una fecha valida de Excel, no texto."
+      );
+    }
+
+    const fechaSolicitudISO =
+      obtenerFechaCeldaISO(
+        fechaSolicitud
+      );
+
+    const fechaHoy =
+      obtenerFechaActualColombiaISO();
+
+    if (
+      fechaSolicitudISO !==
+      fechaHoy
+    ) {
+      lanzarErrorCelda(
+        numeroFila,
+        indiceFechaSolicitud,
+        `FECHA DE SOLICITUD no puede ser mayor ni menor a la fecha en curso (${formatearFechaMensaje(fechaHoy)}). Actualmente esta como ${formatearFechaMensaje(fechaSolicitudISO)}.`
       );
     }
 

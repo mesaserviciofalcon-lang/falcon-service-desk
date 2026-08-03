@@ -12,6 +12,29 @@ from "xlsx";
 import { formatearFechaColombia }
 from "@/lib/fecha";
 
+function resultadoHistorico(
+  fechaVisitaRealizada?: string | null
+) {
+  const texto =
+    String(
+      fechaVisitaRealizada || ""
+    ).trim();
+
+  if (!texto) {
+    return "";
+  }
+
+  if (
+    texto
+      .toUpperCase()
+      .includes("CANCEL")
+  ) {
+    return texto;
+  }
+
+  return "Realizada";
+}
+
 export async function GET() {
 
   try {
@@ -35,8 +58,11 @@ export async function GET() {
       );
     }
 
-    const visitas =
-      await prisma.solicitud.findMany({
+    const [
+      visitas,
+      visitasHistoricas,
+    ] = await Promise.all([
+      prisma.solicitud.findMany({
 
         where: {
 
@@ -63,13 +89,51 @@ export async function GET() {
           fechaCreacion:
             "desc",
         },
-      });
+      }),
+      prisma.visitaHistorica.findMany({
+        select: {
+          id: true,
+          fechaSolicitud: true,
+          fechaSolicitudDate: true,
+          correoSolicitante: true,
+          solicitanteNombre: true,
+          nombresApellidos: true,
+          cedula: true,
+          telefono: true,
+          direccion: true,
+          municipio: true,
+          zona: true,
+          motivoVisita: true,
+          cargo: true,
+          fincaEAI: true,
+          fechaExpedicionCedula: true,
+          fechaVisitaRealizada: true,
+          fechaVisitaDate: true,
+          origenArchivo: true,
+        },
+        orderBy: [
+          {
+            fechaVisitaDate: {
+              sort: "desc",
+              nulls: "last",
+            },
+          },
+          {
+            id: "desc",
+          },
+        ],
+      }),
+    ]);
 
     const data =
-      visitas.map((item: any) => ({
+      [
+        ...visitas.map((item: any) => ({
 
         ID:
           item.id,
+
+        ORIGEN:
+          "PLATAFORMA",
 
         CANDIDATO:
           item.visita
@@ -141,7 +205,87 @@ export async function GET() {
               )
 
             : "",
-      }));
+        })),
+        ...visitasHistoricas.map((item) => ({
+          ID:
+            item.id,
+
+          ORIGEN:
+            "HISTORICO",
+
+          CANDIDATO:
+            item.nombresApellidos,
+
+          CEDULA:
+            item.cedula,
+
+          FECHA_EXPEDICION:
+            item.fechaExpedicionCedula,
+
+          TELEFONO:
+            item.telefono,
+
+          DIRECCION:
+            item.direccion,
+
+          MUNICIPIO:
+            item.municipio,
+
+          ZONA:
+            item.zona,
+
+          CARGO:
+            item.cargo,
+
+          FINCA:
+            item.fincaEAI,
+
+          MOTIVO:
+            item.motivoVisita,
+
+          ESTADO:
+            "HISTORICO",
+
+          RESULTADO:
+            resultadoHistorico(
+              item.fechaVisitaRealizada
+            ),
+
+          OBSERVACIONES:
+            "",
+
+          OBSERVACION_TECNICA:
+            "",
+
+          FECHA_CREACION:
+            item.fechaSolicitudDate
+              ? formatearFechaColombia(
+                  item.fechaSolicitudDate
+                )
+              : item.fechaSolicitud ||
+                "",
+
+          FECHA_GESTION:
+            item.fechaVisitaDate
+              ? formatearFechaColombia(
+                  item.fechaVisitaDate
+                )
+              : item.fechaVisitaRealizada ||
+                "",
+
+          SOLICITANTE:
+            item.solicitanteNombre ||
+            "",
+
+          CORREO_SOLICITANTE:
+            item.correoSolicitante ||
+            "",
+
+          ARCHIVO_ORIGEN:
+            item.origenArchivo ||
+            "",
+        })),
+      ];
 
     const worksheet =
       XLSX.utils
