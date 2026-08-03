@@ -31,7 +31,36 @@ const rolesCreacion = [
   "SUPERVISOR",
 ];
 
-export default async function VulnerabilidadesPage() {
+const POR_PAGINA = 8;
+
+function rangoCerradosVisibles() {
+  const ahora =
+    new Date();
+  const year =
+    ahora.getFullYear();
+  const month =
+    ahora.getMonth();
+  const day =
+    ahora.getDate();
+  const mesInicio =
+    day <= 8
+      ? month - 1
+      : month;
+
+  return new Date(
+    year,
+    mesInicio,
+    1
+  );
+}
+
+export default async function VulnerabilidadesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    pagina?: string;
+  }>;
+}) {
   const session =
     await getServerSession(
       authOptions
@@ -49,27 +78,73 @@ export default async function VulnerabilidadesPage() {
     rolesCreacion.includes(
       session?.user?.role || ""
     );
-  const puedeCerrarAnalisis =
-    session?.user?.role ===
-    "SOLICITANTE";
+  const params =
+    await searchParams;
+  const pagina =
+    Math.max(
+      1,
+      Number(params.pagina || "1") ||
+        1
+    );
+  const skip =
+    (pagina - 1) * POR_PAGINA;
+  const where = puedeCrear
+    ? {
+        OR: [
+          {
+            estado: {
+              not:
+                "CERRADO",
+            },
+          },
+          {
+            estado:
+              "CERRADO",
+            fecha: {
+              gte:
+                rangoCerradosVisibles(),
+            },
+          },
+        ],
+      }
+    : {
+        analistaSigCorreo:
+          session?.user?.email || "",
+        estado:
+          "ABIERTO",
+      };
 
-  const informes =
-    await prisma
+  const [
+    totalInformes,
+    informes,
+  ] = await Promise.all([
+    prisma
+      .vulnerabilidadInforme
+      .count({
+        where,
+      }),
+    prisma
       .vulnerabilidadInforme
       .findMany({
-        where: puedeCrear
-          ? {}
-          : {
-              analistaSigCorreo:
-                session?.user?.email || "",
-              estado:
-                "ABIERTO",
-            },
+        where,
+        select: {
+          id: true,
+          consecutivo: true,
+          eai: true,
+          fecha: true,
+          actoInseguro: true,
+          estado: true,
+          supervisor: true,
+          reportadoPor: true,
+        },
         orderBy: {
           fecha: "desc",
         },
-        take: 50,
-      });
+        skip,
+        take:
+          POR_PAGINA,
+      }),
+  ]);
 
   const informesSerializados =
     informes.map((informe) => ({
@@ -81,29 +156,20 @@ export default async function VulnerabilidadesPage() {
         informe.fecha.toISOString(),
       actoInseguro:
         informe.actoInseguro,
-      vulnerabilidad:
-        informe.vulnerabilidad,
-      planAccionSugerido:
-        informe.planAccionSugerido,
       estado:
         informe.estado,
       supervisor:
         informe.supervisor,
       reportadoPor:
         informe.reportadoPor,
-      cierreObservaciones:
-        informe.cierreObservaciones,
-      causaRaiz:
-        informe.causaRaiz,
-      proceso:
-        informe.proceso,
-      planAccionEai:
-        informe.planAccionEai,
-      responsables:
-        informe.responsables,
-      fechaEjecucion:
-        informe.fechaEjecucion,
     }));
+  const totalPaginas =
+    Math.max(
+      1,
+      Math.ceil(
+        totalInformes / POR_PAGINA
+      )
+    );
 
   return (
     <div className="min-h-screen bg-[#E8EEF2] p-8">
@@ -112,7 +178,7 @@ export default async function VulnerabilidadesPage() {
           Analisis de vulnerabilidades
         </h1>
         <p className="mt-2 text-gray-600">
-          Registre la novedad, adjunte fotos y envie el informe PDF a la finca correspondiente.
+          Registre novedades y consulte el seguimiento resumido de los analisis.
         </p>
       </div>
 
@@ -139,9 +205,8 @@ export default async function VulnerabilidadesPage() {
         informes={
           informesSerializados
         }
-        puedeCerrar={
-          puedeCerrarAnalisis
-        }
+        pagina={pagina}
+        totalPaginas={totalPaginas}
       />
     </div>
   );
