@@ -307,6 +307,8 @@ model PasswordResetToken {
 model VulnerabilidadInforme {
   id Int @id @default(autoincrement())
 
+  consecutivo String?
+
   eai String
 
   fecha DateTime @default(now())
@@ -362,6 +364,7 @@ model VulnerabilidadInforme {
   createdAt DateTime @default(now())
 
   @@index([eai])
+  @@index([consecutivo])
   @@index([estado])
   @@index([fecha])
 }

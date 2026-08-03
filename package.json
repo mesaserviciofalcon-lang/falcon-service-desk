@@ -7,7 +7,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "importar:visitas": "tsx scripts/importarVisitasHistoricas.ts"
+    "importar:visitas": "tsx scripts/importarVisitasHistoricas.ts",
+    "importar:vulnerabilidades": "tsx scripts/importarVulnerabilidadesHistoricas.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

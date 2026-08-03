@@ -49,6 +49,9 @@ export default async function VulnerabilidadesPage() {
     rolesCreacion.includes(
       session?.user?.role || ""
     );
+  const puedeCerrarAnalisis =
+    session?.user?.role ===
+    "SOLICITANTE";
 
   const informes =
     await prisma
@@ -71,6 +74,8 @@ export default async function VulnerabilidadesPage() {
   const informesSerializados =
     informes.map((informe) => ({
       id: informe.id,
+      consecutivo:
+        informe.consecutivo,
       eai: informe.eai,
       fecha:
         informe.fecha.toISOString(),
@@ -88,6 +93,16 @@ export default async function VulnerabilidadesPage() {
         informe.reportadoPor,
       cierreObservaciones:
         informe.cierreObservaciones,
+      causaRaiz:
+        informe.causaRaiz,
+      proceso:
+        informe.proceso,
+      planAccionEai:
+        informe.planAccionEai,
+      responsables:
+        informe.responsables,
+      fechaEjecucion:
+        informe.fechaEjecucion,
     }));
 
   return (
@@ -123,6 +138,9 @@ export default async function VulnerabilidadesPage() {
       <ListadoVulnerabilidades
         informes={
           informesSerializados
+        }
+        puedeCerrar={
+          puedeCerrarAnalisis
         }
       />
     </div>

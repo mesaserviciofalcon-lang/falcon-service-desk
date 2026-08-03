@@ -91,6 +91,7 @@ export async function GET(request: Request) {
       antecedentes,
       antecedentesRegistros,
       visitasHistoricas,
+      vulnerabilidades,
       novedades,
       usuarios,
     ] = await Promise.all([
@@ -103,6 +104,7 @@ export async function GET(request: Request) {
       prisma.solicitudAntecedente.findMany(),
       prisma.antecedenteRegistro.findMany(),
       prisma.visitaHistorica.findMany(),
+      prisma.vulnerabilidadInforme.findMany(),
       prisma.seguridadNovedad.findMany(),
       prisma.usuario.findMany({
         select: {
@@ -134,6 +136,7 @@ export async function GET(request: Request) {
           antecedentes: antecedentes.length,
           antecedentesRegistros: antecedentesRegistros.length,
           visitasHistoricas: visitasHistoricas.length,
+          vulnerabilidades: vulnerabilidades.length,
           novedades: novedades.length,
           usuarios: usuarios.length,
         },
@@ -148,6 +151,7 @@ export async function GET(request: Request) {
         antecedentes,
         antecedentesRegistros,
         visitasHistoricas,
+        vulnerabilidades,
         novedades,
         usuarios,
       },

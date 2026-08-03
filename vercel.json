@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/backup",
       "schedule": "0 7 * * 0"
+    },
+    {
+      "path": "/api/cron/vulnerabilidades-pendientes",
+      "schedule": "0 13 * * *"
     }
   ]
 }

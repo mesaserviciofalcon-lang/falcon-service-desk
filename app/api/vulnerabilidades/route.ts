@@ -11,6 +11,8 @@ import { prisma }
 from "@/lib/prisma";
 
 import {
+  formatearReferenciaVulnerabilidad,
+  generarConsecutivoVulnerabilidad,
   obtenerContactosVulnerabilidad,
   obtenerCopiasVulnerabilidad,
   vulnerabilidadCorreoTemplate,
@@ -31,6 +33,21 @@ function texto(
 ) {
   return String(valor || "")
     .trim();
+}
+
+function fechaFormulario(
+  valor: unknown
+) {
+  const textoFecha =
+    texto(valor);
+
+  if (!textoFecha) {
+    return new Date();
+  }
+
+  return new Date(
+    `${textoFecha}T12:00:00-05:00`
+  );
 }
 
 export async function POST(
@@ -97,18 +114,6 @@ export async function POST(
       );
     }
 
-    if (fotos.length === 0) {
-      return Response.json(
-        {
-          error:
-            "Debe adjuntar al menos una foto para generar el informe",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
     const contactos =
       obtenerContactosVulnerabilidad(eai);
 
@@ -130,17 +135,6 @@ export async function POST(
         ...obtenerCopiasVulnerabilidad(),
       ].filter(Boolean) as string[];
 
-    const destinatariosAdicionales =
-      String(
-        body.destinatariosAdicionales ||
-        ""
-      )
-        .split(/[;,]/)
-        .map((correo) =>
-          correo.trim()
-        )
-        .filter(Boolean);
-
     const destinatarios =
       Array.from(
         new Set([
@@ -150,10 +144,7 @@ export async function POST(
 
     const copias =
       Array.from(
-        new Set([
-          ...copiasBase,
-          ...destinatariosAdicionales,
-        ])
+        new Set(copiasBase)
       );
 
     if (destinatarios.length === 0) {
@@ -168,32 +159,37 @@ export async function POST(
       );
     }
 
+    const fechaReporte =
+      fechaFormulario(body.fecha);
+    const consecutivo =
+      await generarConsecutivoVulnerabilidad({
+        prisma,
+        eai,
+        fecha:
+          fechaReporte,
+      });
+
     const informe =
       await prisma
         .vulnerabilidadInforme
         .create({
           data: {
+            consecutivo,
             eai,
-            fecha: body.fecha
-              ? new Date(body.fecha)
-              : new Date(),
+            fecha:
+              fechaReporte,
             actoInseguro,
             vulnerabilidad,
             planAccionSugerido,
             causaRaiz:
-              texto(body.causaRaiz) ||
               null,
             proceso:
-              texto(body.proceso) ||
               null,
             planAccionEai:
-              texto(body.planAccionEai) ||
               null,
             responsables:
-              texto(body.responsables) ||
               null,
             fechaEjecucion:
-              texto(body.fechaEjecucion) ||
               null,
             estado:
               texto(body.estado) ||
@@ -229,6 +225,8 @@ export async function POST(
     const pdf =
       await generarPdfVulnerabilidad({
         id: informe.id,
+        consecutivo:
+          informe.consecutivo,
         eai: informe.eai,
         fecha: informe.fecha,
         actoInseguro:
@@ -253,6 +251,10 @@ export async function POST(
           informe.supervisor,
         reportadoPor:
           informe.reportadoPor,
+        analistaSigNombre:
+          informe.analistaSigNombre,
+        gerenteNombre:
+          informe.gerenteNombre,
         fotos,
       });
 
@@ -262,10 +264,30 @@ export async function POST(
       cc:
         copias.join(","),
       subject:
-        `Analisis de vulnerabilidad ${eai} #${informe.id}`,
+        `Analisis de vulnerabilidad ${formatearReferenciaVulnerabilidad({
+          consecutivo:
+            informe.consecutivo,
+          eai:
+            informe.eai,
+          fecha:
+            informe.fecha,
+          id:
+            informe.id,
+        })}`,
       html:
         vulnerabilidadCorreoTemplate({
           id: informe.id,
+          referencia:
+            formatearReferenciaVulnerabilidad({
+              consecutivo:
+                informe.consecutivo,
+              eai:
+                informe.eai,
+              fecha:
+                informe.fecha,
+              id:
+                informe.id,
+            }),
           eai: informe.eai,
           actoInseguro:
             informe.actoInseguro,

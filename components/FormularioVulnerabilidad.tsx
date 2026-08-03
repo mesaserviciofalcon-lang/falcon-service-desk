@@ -9,9 +9,6 @@ from "next/navigation";
 import toast
 from "react-hot-toast";
 
-import UploadButton
-from "@/components/uploadthing/UploadButton";
-
 import { eaiOpciones }
 from "@/lib/antecedentesCatalogos";
 
@@ -21,14 +18,7 @@ from "@/lib/antecedentesCatalogos";
 import {
   actosInsegurosVulnerabilidad,
   estadosVulnerabilidad,
-  procesosVulnerabilidad,
 } from "@/lib/vulnerabilidades";
-
-type Foto = {
-  url: string;
-  nombre: string;
-  tipo?: string;
-};
 
 export default function FormularioVulnerabilidad() {
   const router =
@@ -44,18 +34,9 @@ export default function FormularioVulnerabilidad() {
       actoInseguro: "",
       vulnerabilidad: "",
       planAccionSugerido: "",
-      causaRaiz: "",
-      proceso: "",
-      planAccionEai: "",
-      responsables: "",
-      fechaEjecucion: "",
       estado: "ABIERTO",
-      destinatariosAdicionales: "",
       reportadoPor: "",
     });
-
-  const [fotos, setFotos] =
-    useState<Foto[]>([]);
 
   const [enviando, setEnviando] =
     useState(false);
@@ -79,13 +60,6 @@ export default function FormularioVulnerabilidad() {
       return;
     }
 
-    if (fotos.length === 0) {
-      toast.error(
-        "Debe adjuntar al menos una foto"
-      );
-      return;
-    }
-
     try {
       setEnviando(true);
 
@@ -100,7 +74,6 @@ export default function FormularioVulnerabilidad() {
             },
             body: JSON.stringify({
               ...form,
-              fotos,
             }),
           }
         );
@@ -303,142 +276,6 @@ export default function FormularioVulnerabilidad() {
         placeholder="Plan de accion sugerido por Seguridad"
         required
       />
-
-      <textarea
-        value={form.causaRaiz}
-        onChange={(event) =>
-          actualizar(
-            "causaRaiz",
-            event.target.value
-          )
-        }
-        className="min-h-20 rounded-lg border p-3"
-        placeholder="Causa raiz"
-      />
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <select
-          value={form.proceso}
-          onChange={(event) =>
-            actualizar(
-              "proceso",
-              event.target.value
-            )
-          }
-          className="rounded-lg border p-3"
-        >
-          <option value="">
-            Seleccione proceso
-          </option>
-          {procesosVulnerabilidad.map(
-            (proceso) => (
-              <option
-                key={proceso}
-                value={proceso}
-              >
-                {proceso}
-              </option>
-            )
-          )}
-        </select>
-
-        <input
-          value={form.responsables}
-          onChange={(event) =>
-            actualizar(
-              "responsables",
-              event.target.value
-            )
-          }
-          className="rounded-lg border p-3"
-          placeholder="Responsables"
-        />
-      </div>
-
-      <textarea
-        value={form.planAccionEai}
-        onChange={(event) =>
-          actualizar(
-            "planAccionEai",
-            event.target.value
-          )
-        }
-        className="min-h-20 rounded-lg border p-3"
-        placeholder="Plan de accion EAI"
-      />
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-semibold text-gray-600">
-            Fecha de ejecucion
-          </label>
-          <input
-            type="date"
-            value={form.fechaEjecucion}
-            onChange={(event) =>
-              actualizar(
-                "fechaEjecucion",
-                event.target.value
-              )
-            }
-            className="rounded-lg border p-3"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-semibold text-gray-600">
-            Correos adicionales
-          </label>
-          <input
-            value={
-              form.destinatariosAdicionales
-            }
-            onChange={(event) =>
-              actualizar(
-                "destinatariosAdicionales",
-                event.target.value
-              )
-            }
-            className="rounded-lg border p-3"
-            placeholder="correo1@empresa.com; correo2@empresa.com"
-          />
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3">
-        <p className="text-sm font-semibold text-gray-700">
-          Registro fotografico
-        </p>
-        <UploadButton
-          allowedExtensions={[
-            "jpg",
-            "jpeg",
-            "png",
-          ]}
-          allowedExtensionsLabel="imagenes (.jpg, .jpeg o .png)"
-          onCompleteMany={(archivos: Foto[]) =>
-            setFotos((actuales) => [
-              ...actuales,
-              ...archivos,
-            ])
-          }
-        />
-      </div>
-
-      {fotos.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {fotos.map((foto, index) => (
-            <div
-              key={`${foto.url}-${index}`}
-              className="rounded-lg border bg-gray-50 p-3"
-            >
-              <p className="truncate text-sm font-semibold">
-                {foto.nombre}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
 
       <button
         type="submit"

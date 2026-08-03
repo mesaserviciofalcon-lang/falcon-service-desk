@@ -29,6 +29,8 @@ import {
 
   AlertTriangle,
 
+  BarChart3,
+
 } from "lucide-react";
 
 export default function Sidebar({
@@ -236,7 +238,20 @@ export default function Sidebar({
 
                 <Users size={20} />
 
-                Gestion de usuarios
+              Gestion de usuarios
+
+              </Link>
+
+              <Link
+
+                href="/vulnerabilidades/metricas"
+
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
+              >
+
+                <BarChart3 size={20} />
+
+                Metricas analisis
 
               </Link>
 

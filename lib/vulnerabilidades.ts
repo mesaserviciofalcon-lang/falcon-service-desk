@@ -1,24 +1,19 @@
 export const actosInsegurosVulnerabilidad = [
   "BARRERAS ESTRUCTURALES",
   "BARRERAS PERIMETRALES",
-  "CONTROL INGRESO Y SALIDA DE MATERIALES Y EQUIPOS",
-  "CONTROL INGRESO Y SALIDA DEL PERSONAL CONTRATISTA",
-  "CONTROL INGRESO Y SALIDA DEL PERSONAL DE FINCA",
-  "CONTROL INGRESO Y SALIDA PERSONAL VISITANTE",
-  "DESPACHO AEROPUERTO",
-  "DESPACHO MARITIMO",
-  "EQUIPO SIN DISPOSITIVO DE SEGURIDAD",
+  "EQUIPOS SIN DISPOSITIVOS DE SEGURIDAD",
+  "FALLAS CCTV",
   "FALTA DE ILUMINACION",
   "OBJETO O MATERIAL ABANDONADO",
   "PUERTAS, VENTANAS Y CANDADOS SIN ASEGURAR",
-  "FALLAS CCTV",
-  "OTRO",
+  "OTROS",
 ];
 
 export const procesosVulnerabilidad = [
   "GESTION HUMANA",
   "MANTENIMIENTO",
-  "OSV",
+  "MIPE",
+  "MIRFE",
   "POSTCOSECHA",
   "PRODUCCION",
 ];
@@ -158,13 +153,102 @@ const contactosVulnerabilidad: ContactoVulnerabilidad[] = [
   },
 ];
 
-function codigoEai(
+export function codigoEai(
   eai: string
 ) {
   return eai
     .split("-")[0]
     .trim()
     .toUpperCase();
+}
+
+export function formatearFechaVulnerabilidad(
+  fecha: Date | string
+) {
+  return new Date(fecha)
+    .toLocaleDateString(
+      "es-CO",
+      {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        timeZone:
+          "America/Bogota",
+      }
+    );
+}
+
+export function formatearReferenciaVulnerabilidad({
+  consecutivo,
+  eai,
+  fecha,
+  id,
+}: {
+  consecutivo?: string | null;
+  eai: string;
+  fecha: Date | string;
+  id?: number;
+}) {
+  const base =
+    consecutivo ||
+    `${codigoEai(eai)} #${id || ""}`.trim();
+
+  return `${base} - ${formatearFechaVulnerabilidad(fecha)}`;
+}
+
+export async function generarConsecutivoVulnerabilidad({
+  prisma,
+  eai,
+  fecha,
+}: {
+  prisma: {
+    vulnerabilidadInforme: {
+      count: (args: any) => Promise<number>;
+    };
+  };
+  eai: string;
+  fecha: Date;
+}) {
+  const codigo =
+    codigoEai(eai);
+  const inicioAnio =
+    new Date(
+      fecha.getFullYear(),
+      0,
+      1
+    );
+  const inicioSiguienteAnio =
+    new Date(
+      fecha.getFullYear() + 1,
+      0,
+      1
+    );
+  const totalAnio =
+    await prisma
+      .vulnerabilidadInforme
+      .count({
+        where: {
+          eai: {
+            startsWith:
+              codigo,
+          },
+          fecha: {
+            gte:
+              inicioAnio,
+            lt:
+              inicioSiguienteAnio,
+          },
+        },
+      });
+  const anio =
+    String(
+      fecha.getFullYear()
+    ).slice(-2);
+  const secuencia =
+    String(totalAnio + 1)
+      .padStart(2, "0");
+
+  return `${codigo} ${anio}${secuencia}`;
 }
 
 function normalizarEai(
@@ -284,18 +368,20 @@ export function obtenerCopiasVulnerabilidad() {
 
 export function vulnerabilidadCorreoTemplate({
   id,
+  referencia,
   eai,
   actoInseguro,
   supervisor,
 }: {
   id: number;
+  referencia?: string;
   eai: string;
   actoInseguro: string;
   supervisor: string;
 }) {
   return `
     <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.5">
-      <h2 style="color:#0F3D1F">Analisis de vulnerabilidad #${id}</h2>
+      <h2 style="color:#0F3D1F">Analisis de vulnerabilidad ${referencia || `#${id}`}</h2>
       <p>Buen dia,</p>
       <p>
         Se remite informe de analisis de vulnerabilidad correspondiente a la finca
@@ -310,6 +396,68 @@ export function vulnerabilidadCorreoTemplate({
       </p>
       <p>
         <strong>Supervisor:</strong> ${supervisor}
+      </p>
+      <hr />
+      <p style="font-size:12px;color:#64748b">
+        Falcon Service Desk - Security Department
+      </p>
+    </div>
+  `;
+}
+
+export function recordatorioVulnerabilidadesTemplate({
+  analista,
+  informes,
+}: {
+  analista?: string | null;
+  informes: Array<{
+    id: number;
+    consecutivo?: string | null;
+    eai: string;
+    fecha: Date | string;
+    actoInseguro: string;
+    vulnerabilidad: string;
+    supervisor: string;
+  }>;
+}) {
+  const filas =
+    informes.map((informe) => `
+      <tr>
+        <td style="border:1px solid #d1d5db;padding:8px">
+          ${formatearReferenciaVulnerabilidad(informe)}
+        </td>
+        <td style="border:1px solid #d1d5db;padding:8px">${informe.eai}</td>
+        <td style="border:1px solid #d1d5db;padding:8px">${informe.actoInseguro}</td>
+        <td style="border:1px solid #d1d5db;padding:8px">${informe.supervisor}</td>
+        <td style="border:1px solid #d1d5db;padding:8px">${informe.vulnerabilidad}</td>
+      </tr>
+    `).join("");
+
+  return `
+    <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.5">
+      <h2 style="color:#0F3D1F">Analisis de vulnerabilidad pendientes por cerrar</h2>
+      <p>Buen dia${analista ? `, ${analista}` : ""}.</p>
+      <p>
+        Se relacionan los analisis de vulnerabilidad que llevan mas de 8 dias
+        abiertos y aun se encuentran pendientes de cierre.
+      </p>
+      <table style="border-collapse:collapse;width:100%;font-size:13px">
+        <thead>
+          <tr style="background:#0F3D1F;color:#ffffff">
+            <th style="border:1px solid #0F3D1F;padding:8px;text-align:left">Consecutivo</th>
+            <th style="border:1px solid #0F3D1F;padding:8px;text-align:left">EAI</th>
+            <th style="border:1px solid #0F3D1F;padding:8px;text-align:left">Acto inseguro</th>
+            <th style="border:1px solid #0F3D1F;padding:8px;text-align:left">Reportado por</th>
+            <th style="border:1px solid #0F3D1F;padding:8px;text-align:left">Vulnerabilidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filas}
+        </tbody>
+      </table>
+      <p>
+        Por favor ingresar a Falcon Service Desk para realizar el cierre y cargar
+        la evidencia correspondiente.
       </p>
       <hr />
       <p style="font-size:12px;color:#64748b">

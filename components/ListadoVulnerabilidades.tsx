@@ -9,6 +9,10 @@ from "react-hot-toast";
 import UploadButton
 from "@/components/uploadthing/UploadButton";
 
+import {
+  procesosVulnerabilidad,
+} from "@/lib/vulnerabilidades";
+
 type Archivo = {
   url: string;
   nombre: string;
@@ -17,6 +21,7 @@ type Archivo = {
 
 type Informe = {
   id: number;
+  consecutivo?: string | null;
   eai: string;
   fecha: string | Date;
   actoInseguro: string;
@@ -26,6 +31,11 @@ type Informe = {
   supervisor: string;
   reportadoPor?: string | null;
   cierreObservaciones?: string | null;
+  causaRaiz?: string | null;
+  proceso?: string | null;
+  planAccionEai?: string | null;
+  responsables?: string | null;
+  fechaEjecucion?: string | null;
 };
 
 function formatearFecha(
@@ -46,8 +56,10 @@ function formatearFecha(
 
 export default function ListadoVulnerabilidades({
   informes,
+  puedeCerrar,
 }: {
   informes: Informe[];
+  puedeCerrar: boolean;
 }) {
   const [items, setItems] =
     useState(informes);
@@ -55,8 +67,60 @@ export default function ListadoVulnerabilidades({
     useState<Record<number, string>>({});
   const [evidencias, setEvidencias] =
     useState<Record<number, Archivo[]>>({});
+  const [cierres, setCierres] =
+    useState<Record<number, {
+      causaRaiz: string;
+      proceso: string;
+      planAccionEai: string;
+      responsables: string;
+      fechaEjecucion: string;
+    }>>({});
   const [cerrando, setCerrando] =
     useState<number | null>(null);
+
+  function obtenerCierre(
+    informe: Informe
+  ) {
+    return (
+      cierres[informe.id] || {
+        causaRaiz:
+          informe.causaRaiz || "",
+        proceso:
+          informe.proceso || "",
+        planAccionEai:
+          informe.planAccionEai || "",
+        responsables:
+          informe.responsables || "",
+        fechaEjecucion:
+          informe.fechaEjecucion || "",
+      }
+    );
+  }
+
+  function actualizarCierre(
+    id: number,
+    campo:
+      | "causaRaiz"
+      | "proceso"
+      | "planAccionEai"
+      | "responsables"
+      | "fechaEjecucion",
+    valor: string
+  ) {
+    setCierres((actuales) => ({
+      ...actuales,
+      [id]: {
+        ...(actuales[id] || {
+          causaRaiz: "",
+          proceso: "",
+          planAccionEai: "",
+          responsables: "",
+          fechaEjecucion: "",
+        }),
+        [campo]: valor,
+      },
+    }));
+  }
 
   async function cerrarInforme(
     id: number
@@ -66,6 +130,14 @@ export default function ListadoVulnerabilidades({
         observaciones[id] || "";
       const archivos =
         evidencias[id] || [];
+      const cierre =
+        cierres[id] || {
+          causaRaiz: "",
+          proceso: "",
+          planAccionEai: "",
+          responsables: "",
+          fechaEjecucion: "",
+        };
 
       setCerrando(id);
 
@@ -83,6 +155,7 @@ export default function ListadoVulnerabilidades({
                 obs,
               evidencias:
                 archivos,
+              ...cierre,
             }),
           }
         );
@@ -106,6 +179,16 @@ export default function ListadoVulnerabilidades({
                   "CERRADO",
                 cierreObservaciones:
                   obs,
+                causaRaiz:
+                  cierre.causaRaiz,
+                proceso:
+                  cierre.proceso,
+                planAccionEai:
+                  cierre.planAccionEai,
+                responsables:
+                  cierre.responsables,
+                fechaEjecucion:
+                  cierre.fechaEjecucion,
               }
             : item
         )
@@ -140,6 +223,10 @@ export default function ListadoVulnerabilidades({
         const abierto =
           informe.estado !==
           "CERRADO";
+        const puedeGestionar =
+          abierto && puedeCerrar;
+        const cierre =
+          obtenerCierre(informe);
 
         return (
           <div
@@ -149,7 +236,7 @@ export default function ListadoVulnerabilidades({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold text-[#0F3D1F]">
-                  Analisis #{informe.id} - {informe.eai}
+                  Analisis {informe.consecutivo || `#${informe.id}`} - {informe.eai}
                 </h2>
                 <p className="text-sm text-gray-500">
                   {formatearFecha(
@@ -198,8 +285,88 @@ export default function ListadoVulnerabilidades({
               </p>
             </div>
 
-            {abierto ? (
+            {puedeGestionar ? (
               <div className="mt-4 border-t pt-4">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <textarea
+                    value={cierre.causaRaiz}
+                    onChange={(event) =>
+                      actualizarCierre(
+                        informe.id,
+                        "causaRaiz",
+                        event.target.value
+                      )
+                    }
+                    className="min-h-24 rounded-lg border p-3"
+                    placeholder="Causa raiz"
+                  />
+
+                  <select
+                    value={cierre.proceso}
+                    onChange={(event) =>
+                      actualizarCierre(
+                        informe.id,
+                        "proceso",
+                        event.target.value
+                      )
+                    }
+                    className="rounded-lg border p-3"
+                  >
+                    <option value="">
+                      Seleccione proceso
+                    </option>
+                    {procesosVulnerabilidad.map(
+                      (proceso) => (
+                        <option
+                          key={proceso}
+                          value={proceso}
+                        >
+                          {proceso}
+                        </option>
+                      )
+                    )}
+                  </select>
+
+                  <input
+                    value={cierre.responsables}
+                    onChange={(event) =>
+                      actualizarCierre(
+                        informe.id,
+                        "responsables",
+                        event.target.value
+                      )
+                    }
+                    className="rounded-lg border p-3"
+                    placeholder="Responsables"
+                  />
+
+                  <input
+                    type="date"
+                    value={cierre.fechaEjecucion}
+                    onChange={(event) =>
+                      actualizarCierre(
+                        informe.id,
+                        "fechaEjecucion",
+                        event.target.value
+                      )
+                    }
+                    className="rounded-lg border p-3"
+                  />
+                </div>
+
+                <textarea
+                  value={cierre.planAccionEai}
+                  onChange={(event) =>
+                    actualizarCierre(
+                      informe.id,
+                      "planAccionEai",
+                      event.target.value
+                    )
+                  }
+                  className="mt-3 min-h-24 w-full rounded-lg border p-3"
+                  placeholder="Plan de accion EAI"
+                />
+
                 <textarea
                   value={
                     observaciones[
@@ -215,7 +382,7 @@ export default function ListadoVulnerabilidades({
                       })
                     )
                   }
-                  className="min-h-24 w-full rounded-lg border p-3"
+                  className="mt-3 min-h-24 w-full rounded-lg border p-3"
                   placeholder="Observaciones de cierre"
                 />
 
@@ -288,11 +455,15 @@ export default function ListadoVulnerabilidades({
                     : "Cerrar analisis"}
                 </button>
               </div>
-            ) : (
+            ) : !abierto ? (
               <div className="mt-4 rounded-lg border bg-green-50 p-3 text-sm text-green-900">
                 <strong>Cierre:</strong>{" "}
                 {informe.cierreObservaciones ||
                   "Analisis cerrado"}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-lg border bg-yellow-50 p-3 text-sm text-yellow-900">
+                Pendiente de cierre por el Analista SIG asignado.
               </div>
             )}
           </div>

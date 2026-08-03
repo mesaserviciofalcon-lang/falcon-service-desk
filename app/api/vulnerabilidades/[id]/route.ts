@@ -9,9 +9,6 @@ from "@/lib/prisma";
 
 const rolesSeguridad = [
   "ADMIN",
-  "DIRECTOR_SEG",
-  "JEFE_SEG",
-  "SUPERVISOR",
 ];
 
 function puedeCerrar(
@@ -115,6 +112,26 @@ export async function PATCH(
       Array.isArray(body.evidencias)
         ? body.evidencias
         : [];
+    const causaRaiz =
+      String(
+        body.causaRaiz || ""
+      ).trim();
+    const proceso =
+      String(
+        body.proceso || ""
+      ).trim();
+    const planAccionEai =
+      String(
+        body.planAccionEai || ""
+      ).trim();
+    const responsables =
+      String(
+        body.responsables || ""
+      ).trim();
+    const fechaEjecucion =
+      String(
+        body.fechaEjecucion || ""
+      ).trim();
 
     if (!observaciones) {
       return Response.json(
@@ -153,6 +170,16 @@ export async function PATCH(
               observaciones,
             cierreEvidencias:
               evidencias,
+            causaRaiz:
+              causaRaiz || null,
+            proceso:
+              proceso || null,
+            planAccionEai:
+              planAccionEai || null,
+            responsables:
+              responsables || null,
+            fechaEjecucion:
+              fechaEjecucion || null,
             cerradoPor:
               session.user.name ||
               "Usuario",
