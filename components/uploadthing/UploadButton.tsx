@@ -20,6 +20,8 @@ export default function UploadButton({
 
   onComplete,
 
+  onCompleteMany,
+
   allowedExtensions,
 
   allowedExtensionsLabel,
@@ -441,6 +443,18 @@ export default function UploadButton({
         onClientUploadComplete={(res: any) => {
 
           if (!res) return;
+
+          if (onCompleteMany) {
+            onCompleteMany(
+              res.map((archivo: any) => ({
+                url: archivo.url,
+                nombre: archivo.name,
+                tipo: archivo.type,
+              }))
+            );
+
+            return;
+          }
 
           const archivo = res[0];
 

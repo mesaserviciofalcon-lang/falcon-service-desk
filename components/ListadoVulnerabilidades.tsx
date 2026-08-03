@@ -1,0 +1,303 @@
+"use client";
+
+import { useState }
+from "react";
+
+import toast
+from "react-hot-toast";
+
+import UploadButton
+from "@/components/uploadthing/UploadButton";
+
+type Archivo = {
+  url: string;
+  nombre: string;
+  tipo?: string;
+};
+
+type Informe = {
+  id: number;
+  eai: string;
+  fecha: string | Date;
+  actoInseguro: string;
+  vulnerabilidad: string;
+  planAccionSugerido: string;
+  estado: string;
+  supervisor: string;
+  reportadoPor?: string | null;
+  cierreObservaciones?: string | null;
+};
+
+function formatearFecha(
+  fecha: string | Date
+) {
+  return new Date(fecha)
+    .toLocaleDateString(
+      "es-CO",
+      {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        timeZone:
+          "America/Bogota",
+      }
+    );
+}
+
+export default function ListadoVulnerabilidades({
+  informes,
+}: {
+  informes: Informe[];
+}) {
+  const [items, setItems] =
+    useState(informes);
+  const [observaciones, setObservaciones] =
+    useState<Record<number, string>>({});
+  const [evidencias, setEvidencias] =
+    useState<Record<number, Archivo[]>>({});
+  const [cerrando, setCerrando] =
+    useState<number | null>(null);
+
+  async function cerrarInforme(
+    id: number
+  ) {
+    try {
+      const obs =
+        observaciones[id] || "";
+      const archivos =
+        evidencias[id] || [];
+
+      setCerrando(id);
+
+      const response =
+        await fetch(
+          `/api/vulnerabilidades/${id}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              observaciones:
+                obs,
+              evidencias:
+                archivos,
+            }),
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          "No se pudo cerrar"
+        );
+      }
+
+      setItems((actuales) =>
+        actuales.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                estado:
+                  "CERRADO",
+                cierreObservaciones:
+                  obs,
+              }
+            : item
+        )
+      );
+
+      toast.success(
+        `Analisis #${id} cerrado`
+      );
+    } catch (error: any) {
+      console.error(error);
+
+      toast.error(
+        error.message ||
+        "Error cerrando analisis"
+      );
+    } finally {
+      setCerrando(null);
+    }
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed bg-white p-6 text-sm text-gray-500">
+        No hay analisis de vulnerabilidad para mostrar.
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {items.map((informe) => {
+        const abierto =
+          informe.estado !==
+          "CERRADO";
+
+        return (
+          <div
+            key={informe.id}
+            className="rounded-xl border border-slate-200 bg-white p-5 shadow-md"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-[#0F3D1F]">
+                  Analisis #{informe.id} - {informe.eai}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {formatearFecha(
+                    informe.fecha
+                  )}
+                  {" | "}
+                  {informe.estado}
+                </p>
+              </div>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                abierto
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-green-100 text-green-800"
+              }`}>
+                {informe.estado}
+              </span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+              <p>
+                <strong>Acto inseguro:</strong>{" "}
+                {informe.actoInseguro}
+              </p>
+              <p>
+                <strong>Reportado por:</strong>{" "}
+                {informe.reportadoPor ||
+                  informe.supervisor}
+              </p>
+            </div>
+
+            <div className="mt-4 rounded-lg border bg-gray-50 p-3 text-sm">
+              <p className="font-bold">
+                Vulnerabilidad
+              </p>
+              <p className="mt-1">
+                {informe.vulnerabilidad}
+              </p>
+            </div>
+
+            <div className="mt-3 rounded-lg border bg-green-50 p-3 text-sm">
+              <p className="font-bold">
+                Plan sugerido
+              </p>
+              <p className="mt-1">
+                {informe.planAccionSugerido}
+              </p>
+            </div>
+
+            {abierto ? (
+              <div className="mt-4 border-t pt-4">
+                <textarea
+                  value={
+                    observaciones[
+                      informe.id
+                    ] || ""
+                  }
+                  onChange={(event) =>
+                    setObservaciones(
+                      (actuales) => ({
+                        ...actuales,
+                        [informe.id]:
+                          event.target.value,
+                      })
+                    )
+                  }
+                  className="min-h-24 w-full rounded-lg border p-3"
+                  placeholder="Observaciones de cierre"
+                />
+
+                <div className="mt-3 rounded-lg border border-dashed bg-gray-50 p-3">
+                  <p className="text-sm font-semibold text-gray-700">
+                    Evidencia de cierre
+                  </p>
+                  <UploadButton
+                    allowedExtensions={[
+                      "jpg",
+                      "jpeg",
+                      "png",
+                      "webp",
+                      "pdf",
+                      "xlsx",
+                      "xls",
+                    ]}
+                    allowedExtensionsLabel="imagenes, PDF o Excel"
+                    onCompleteMany={(
+                      archivos: Archivo[]
+                    ) =>
+                      setEvidencias(
+                        (actuales) => ({
+                          ...actuales,
+                          [informe.id]: [
+                            ...(actuales[
+                              informe.id
+                            ] || []),
+                            ...archivos,
+                          ],
+                        })
+                      )
+                    }
+                  />
+                </div>
+
+                {(evidencias[
+                  informe.id
+                ] || []).length > 0 && (
+                  <div className="mt-3 flex flex-col gap-2">
+                    {evidencias[
+                      informe.id
+                    ].map((archivo) => (
+                      <div
+                        key={archivo.url}
+                        className="rounded-lg border bg-gray-50 p-2 text-sm"
+                      >
+                        {archivo.nombre}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    cerrarInforme(
+                      informe.id
+                    )
+                  }
+                  disabled={
+                    cerrando ===
+                    informe.id
+                  }
+                  className="mt-4 rounded-md bg-[#0F3D1F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#14532d] disabled:bg-gray-500"
+                >
+                  {cerrando ===
+                  informe.id
+                    ? "Cerrando..."
+                    : "Cerrar analisis"}
+                </button>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-lg border bg-green-50 p-3 text-sm text-green-900">
+                <strong>Cierre:</strong>{" "}
+                {informe.cierreObservaciones ||
+                  "Analisis cerrado"}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}

@@ -27,6 +27,8 @@ import {
 
   MapPinned,
 
+  AlertTriangle,
+
 } from "lucide-react";
 
 export default function Sidebar({
@@ -179,6 +181,26 @@ export default function Sidebar({
               <TableProperties size={20} />
 
               Gestion masiva
+
+            </Link>
+          )}
+
+          {[
+            "ADMIN",
+            "DIRECTOR_SEG",
+            "JEFE_SEG",
+            "SUPERVISOR",
+            "SOLICITANTE",
+          ].includes(role) && (
+
+            <Link
+              href="/vulnerabilidades"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
+            >
+
+              <AlertTriangle size={20} />
+
+              Vulnerabilidades
 
             </Link>
           )}

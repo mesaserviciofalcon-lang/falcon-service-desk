@@ -126,6 +126,8 @@ export const config = {
 
     "/solicitudes/:path*",
 
+    "/vulnerabilidades/:path*",
+
     "/cambiar-password/:path*",
   ],
 };

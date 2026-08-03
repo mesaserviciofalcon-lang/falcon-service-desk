@@ -303,3 +303,65 @@ model PasswordResetToken {
 
   createdAt DateTime @default(now())
 }
+
+model VulnerabilidadInforme {
+  id Int @id @default(autoincrement())
+
+  eai String
+
+  fecha DateTime @default(now())
+
+  actoInseguro String
+
+  vulnerabilidad String
+
+  planAccionSugerido String
+
+  causaRaiz String?
+
+  proceso String?
+
+  planAccionEai String?
+
+  responsables String?
+
+  fechaEjecucion String?
+
+  estado String @default("ABIERTO")
+
+  supervisor String
+
+  correoSupervisor String?
+
+  reportadoPor String?
+
+  analistaSigNombre String?
+
+  analistaSigCorreo String?
+
+  gerenteNombre String?
+
+  gerenteCorreo String?
+
+  copiaCorreos String?
+
+  destinatarios String?
+
+  fotos Json?
+
+  cierreObservaciones String?
+
+  cierreEvidencias Json?
+
+  cerradoPor String?
+
+  cerradoPorCorreo String?
+
+  fechaCierre DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([eai])
+  @@index([estado])
+  @@index([fecha])
+}

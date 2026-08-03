@@ -30,17 +30,29 @@ export async function enviarCorreo({
 
   to,
 
+  cc,
+
   subject,
 
   html,
+
+  attachments,
 
 }: {
 
   to: string;
 
+  cc?: string;
+
   subject: string;
 
   html: string;
+
+  attachments?: Array<{
+    filename: string;
+    content: Buffer | string;
+    contentType?: string;
+  }>;
 
 }) {
 
@@ -51,8 +63,12 @@ export async function enviarCorreo({
 
     to,
 
+    cc,
+
     subject,
 
     html,
+
+    attachments,
   });
 }
