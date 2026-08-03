@@ -10,6 +10,9 @@ from "next-auth";
 import DetalleVulnerabilidad
 from "@/components/DetalleVulnerabilidad";
 
+import EliminarVulnerabilidadButton
+from "@/components/EliminarVulnerabilidadButton";
+
 import { authOptions }
 from "@/lib/auth";
 
@@ -119,12 +122,23 @@ export default async function VulnerabilidadDetallePage({
           </p>
         </div>
 
-        <Link
-          href="/vulnerabilidades"
-          className="rounded-lg border bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-100"
-        >
-          Volver
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {role === "ADMIN" && (
+            <EliminarVulnerabilidadButton
+              id={
+                informe.id
+              }
+              redirectTo="/vulnerabilidades"
+            />
+          )}
+
+          <Link
+            href="/vulnerabilidades"
+            className="rounded-lg border bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-100"
+          >
+            Volver
+          </Link>
+        </div>
       </div>
 
       <DetalleVulnerabilidad

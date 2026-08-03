@@ -3,6 +3,9 @@
 import Link
 from "next/link";
 
+import EliminarVulnerabilidadButton
+from "@/components/EliminarVulnerabilidadButton";
+
 type InformeResumen = {
   id: number;
   consecutivo?: string | null;
@@ -34,10 +37,12 @@ export default function ListadoVulnerabilidades({
   informes,
   pagina,
   totalPaginas,
+  puedeEliminar = false,
 }: {
   informes: InformeResumen[];
   pagina: number;
   totalPaginas: number;
+  puedeEliminar?: boolean;
 }) {
   if (informes.length === 0) {
     return (
@@ -98,12 +103,22 @@ export default function ListadoVulnerabilidades({
                   </div>
                 </div>
 
-                <Link
-                  href={`/vulnerabilidades/${informe.id}`}
-                  className="rounded-lg bg-[#0F3D1F] px-4 py-2 text-sm font-bold text-white hover:bg-[#14532d]"
-                >
-                  Ver analisis
-                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  {puedeEliminar && (
+                    <EliminarVulnerabilidadButton
+                      id={
+                        informe.id
+                      }
+                    />
+                  )}
+
+                  <Link
+                    href={`/vulnerabilidades/${informe.id}`}
+                    className="rounded-lg bg-[#0F3D1F] px-4 py-2 text-sm font-bold text-white hover:bg-[#14532d]"
+                  >
+                    Ver analisis
+                  </Link>
+                </div>
               </div>
             </div>
           );

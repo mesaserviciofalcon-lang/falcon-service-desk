@@ -1,12 +1,3 @@
-import PDFDocument
-from "pdfkit";
-
-import fs
-from "fs";
-
-import path
-from "path";
-
 type Foto = {
   url: string;
   nombre: string;
@@ -34,314 +25,296 @@ type DatosPdf = {
   fotos: Foto[];
 };
 
-function fechaCompletaBogota(
-  fecha: Date
-) {
-  return fecha.toLocaleString(
-    "es-CO",
-    {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone:
-        "America/Bogota",
-    }
-  );
+const PAGE_WIDTH = 595;
+const PAGE_HEIGHT = 842;
+const MARGIN_X = 48;
+const TOP_Y = 780;
+const BOTTOM_Y = 70;
+
+function limpiarTexto(valor?: string | number | null) {
+  return String(valor ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x20-\x7E\n]/g, "")
+    .trim();
 }
 
-function escribirBloque(
-  doc: PDFKit.PDFDocument,
+function escaparPdf(valor: string) {
+  return limpiarTexto(valor)
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)");
+}
+
+function fechaCompletaBogota(fecha: Date) {
+  return fecha.toLocaleString("es-CO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Bogota",
+  });
+}
+
+function envolverTexto(texto: string, maxCaracteres: number) {
+  const lineas: string[] = [];
+
+  for (const parrafo of limpiarTexto(texto).split("\n")) {
+    const palabras = parrafo.split(/\s+/).filter(Boolean);
+    let linea = "";
+
+    for (const palabra of palabras) {
+      const candidata = linea ? `${linea} ${palabra}` : palabra;
+
+      if (candidata.length > maxCaracteres && linea) {
+        lineas.push(linea);
+        linea = palabra;
+      } else {
+        linea = candidata;
+      }
+    }
+
+    if (linea) {
+      lineas.push(linea);
+    }
+  }
+
+  return lineas.length ? lineas : [""];
+}
+
+function textoPdf(
+  x: number,
+  y: number,
+  texto: string,
+  size = 10,
+  fuente = "F1"
+) {
+  return `BT /${fuente} ${size} Tf ${x} ${y} Td (${escaparPdf(texto)}) Tj ET\n`;
+}
+
+function rectPdf(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  opciones: {
+    fill?: string;
+    stroke?: string;
+  } = {}
+) {
+  const comandos: string[] = [];
+
+  if (opciones.fill) {
+    comandos.push(`${opciones.fill} rg`);
+  }
+
+  if (opciones.stroke) {
+    comandos.push(`${opciones.stroke} RG`);
+  }
+
+  comandos.push(`${x} ${y} ${w} ${h} re`);
+  comandos.push(opciones.fill ? "f" : "S");
+
+  return `${comandos.join("\n")}\n`;
+}
+
+function colorRgb(hex: string) {
+  const limpio = hex.replace("#", "");
+  const r = parseInt(limpio.slice(0, 2), 16) / 255;
+  const g = parseInt(limpio.slice(2, 4), 16) / 255;
+  const b = parseInt(limpio.slice(4, 6), 16) / 255;
+
+  return `${r.toFixed(3)} ${g.toFixed(3)} ${b.toFixed(3)}`;
+}
+
+function crearPagina() {
+  const comandos: string[] = [];
+
+  comandos.push("0 0 0 RG\n0.2 w\n");
+  comandos.push(rectPdf(48, 770, 499, 42, {
+    stroke: colorRgb("111111"),
+  }));
+  comandos.push("198 770 m 198 812 l S\n453 770 m 453 812 l S\n");
+  comandos.push(textoPdf(78, 792, "FALCON FARMS", 10, "F2"));
+  comandos.push(textoPdf(223, 794, "FALCON FARMS DE COLOMBIA S.A.", 10, "F2"));
+  comandos.push(textoPdf(247, 779, "ANALISIS DE VULNERABILIDAD", 9, "F2"));
+  comandos.push(textoPdf(480, 798, "Version 2", 8));
+  comandos.push(textoPdf(480, 785, "Abril 2024", 8));
+  comandos.push(textoPdf(480, 772, "Pagina", 8));
+
+  return comandos;
+}
+
+function agregarParrafo(
+  paginas: string[][],
+  cursor: {
+    y: number;
+  },
+  texto: string,
+  opciones: {
+    size?: number;
+    fuente?: string;
+    maxCaracteres?: number;
+    salto?: number;
+  } = {}
+) {
+  const size = opciones.size || 10;
+  const salto = opciones.salto || size + 4;
+  const lineas = envolverTexto(
+    texto,
+    opciones.maxCaracteres || 88
+  );
+
+  for (const linea of lineas) {
+    if (cursor.y < BOTTOM_Y) {
+      paginas.push(crearPagina());
+      cursor.y = TOP_Y - 70;
+    }
+
+    paginas[paginas.length - 1].push(
+      textoPdf(MARGIN_X, cursor.y, linea, size, opciones.fuente || "F1")
+    );
+    cursor.y -= salto;
+  }
+}
+
+function agregarBloque(
+  paginas: string[][],
+  cursor: {
+    y: number;
+  },
   titulo: string,
-  valor?: string | null,
-  alto = 95
+  valor?: string | null
 ) {
   if (!valor) {
     return;
   }
 
-  if (doc.y + alto > 760) {
-    doc.addPage();
+  const lineas = envolverTexto(valor, 82);
+  const alto = Math.max(70, lineas.length * 13 + 34);
+
+  if (cursor.y - alto < BOTTOM_Y) {
+    paginas.push(crearPagina());
+    cursor.y = TOP_Y - 70;
   }
 
-  const x = 48;
-  const ancho = 499;
-  const y = doc.y;
+  const yCaja = cursor.y - alto;
+  const pagina = paginas[paginas.length - 1];
 
-  doc
-    .rect(x, y, ancho, 16)
-    .fill("#000000");
+  pagina.push(rectPdf(MARGIN_X, cursor.y - 16, 499, 16, {
+    fill: colorRgb("000000"),
+  }));
+  pagina.push("1 1 1 rg\n");
+  pagina.push(textoPdf(MARGIN_X + 190, cursor.y - 12, titulo.toUpperCase(), 10, "F2"));
+  pagina.push("0 0 0 rg\n");
+  pagina.push(rectPdf(MARGIN_X, yCaja, 499, alto - 16, {
+    stroke: colorRgb("111111"),
+  }));
 
-  doc
-    .fillColor("#FFFFFF")
-    .font("Helvetica-Bold")
-    .fontSize(10)
-    .text(titulo.toUpperCase(), x, y + 3, {
-      width: ancho,
-      align: "center",
-    });
+  let yTexto = cursor.y - 34;
 
-  doc
-    .rect(x, y + 16, ancho, alto)
-    .stroke("#111111");
-
-  doc
-    .font("Helvetica")
-    .fontSize(10)
-    .fillColor("#111827")
-    .text(valor, x + 8, y + 26, {
-      width: ancho - 16,
-      height: alto - 12,
-      align: "justify",
-    });
-
-  doc.y = y + alto + 28;
-}
-
-function dibujarEncabezado(
-  doc: PDFKit.PDFDocument
-) {
-  const x = 48;
-  const y = 42;
-  const ancho = 499;
-  const alto = 42;
-  const logoAncho = 150;
-  const infoAncho = 94;
-
-  doc
-    .rect(x, y, ancho, alto)
-    .stroke("#111111");
-  doc
-    .moveTo(x + logoAncho, y)
-    .lineTo(x + logoAncho, y + alto)
-    .stroke();
-  doc
-    .moveTo(x + ancho - infoAncho, y)
-    .lineTo(x + ancho - infoAncho, y + alto)
-    .stroke();
-
-  const logoPath =
-    path.join(
-      process.cwd(),
-      "public",
-      "logo-falcon.png"
-    );
-
-  if (fs.existsSync(logoPath)) {
-    doc.image(logoPath, x + 30, y + 5, {
-      fit: [86, 30],
-    });
-  } else {
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(10)
-      .fillColor("#0F3D1F")
-      .text("FALCON FARMS", x + 20, y + 14, {
-        width: 110,
-        align: "center",
-      });
+  for (const linea of lineas) {
+    pagina.push(textoPdf(MARGIN_X + 10, yTexto, linea, 10));
+    yTexto -= 13;
   }
 
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(10)
-    .fillColor("#111111")
-    .text(
-      "FALCON FARMS DE COLOMBIA S.A.",
-      x + logoAncho,
-      y + 9,
-      {
-        width:
-          ancho - logoAncho - infoAncho,
-        align: "center",
-      }
-    )
-    .fontSize(9)
-    .text(
-      "ANALISIS DE VULNERABILIDAD",
-      x + logoAncho,
-      y + 24,
-      {
-        width:
-          ancho - logoAncho - infoAncho,
-        align: "center",
-      }
-    );
-
-  doc
-    .font("Helvetica")
-    .fontSize(8)
-    .text("Version 2", x + ancho - infoAncho, y + 5, {
-      width: infoAncho,
-      align: "center",
-    })
-    .text("Abril 2024", x + ancho - infoAncho, y + 18, {
-      width: infoAncho,
-      align: "center",
-    })
-    .text("Pagina 1", x + ancho - infoAncho, y + 31, {
-      width: infoAncho,
-      align: "center",
-    });
+  cursor.y = yCaja - 26;
 }
 
-async function obtenerImagen(
-  foto: Foto
-) {
-  try {
-    if (
-      !foto.tipo?.includes("image") &&
-      !foto.nombre.match(
-        /\.(jpg|jpeg|png)$/i
-      )
-    ) {
-      return null;
+export async function generarPdfVulnerabilidad(datos: DatosPdf) {
+  const paginas = [crearPagina()];
+  const cursor = {
+    y: 735,
+  };
+  const referencia = datos.consecutivo || `#${datos.id}`;
+
+  agregarParrafo(paginas, cursor, `Consecutivo: ${referencia}`);
+  agregarParrafo(paginas, cursor, fechaCompletaBogota(datos.fecha));
+  agregarParrafo(paginas, cursor, `Senores: ${datos.gerenteNombre || datos.eai}`);
+  agregarParrafo(paginas, cursor, `Ante: ${datos.analistaSigNombre || "Analista SIG"}`);
+
+  cursor.y -= 35;
+  agregarParrafo(
+    paginas,
+    cursor,
+    `Asunto: Analisis de vulnerabilidad referente a: ${datos.actoInseguro}`,
+    {
+      maxCaracteres: 80,
     }
-
-    const response =
-      await fetch(foto.url);
-
-    if (!response.ok) {
-      return null;
-    }
-
-    return Buffer.from(
-      await response.arrayBuffer()
-    );
-  } catch {
-    return null;
-  }
-}
-
-export async function generarPdfVulnerabilidad(
-  datos: DatosPdf
-) {
-  const doc =
-    new PDFDocument({
-      size: "A4",
-      margin: 48,
-      info: {
-        Title:
-          `Analisis de vulnerabilidad ${datos.id}`,
-        Author:
-          "Falcon Service Desk",
-      },
-    });
-
-  const chunks: Buffer[] = [];
-
-  doc.on(
-    "data",
-    (chunk) =>
-      chunks.push(chunk)
   );
+  cursor.y -= 6;
 
-  const terminado =
-    new Promise<Buffer>(
-      (resolve, reject) => {
-        doc.on("end", () =>
-          resolve(
-            Buffer.concat(chunks)
-          )
-        );
-        doc.on("error", reject);
-      }
-    );
-
-  dibujarEncabezado(doc);
-
-  doc.y = 100;
-  doc
-    .font("Helvetica")
-    .fontSize(10)
-    .fillColor("#111111")
-    .text(
-      `Consecutivo: ${datos.consecutivo || `#${datos.id}`}`
-    )
-    .text(
-      `${fechaCompletaBogota(datos.fecha)}`
-    )
-    .text(
-      `Senores: ${datos.gerenteNombre || datos.eai}`
-    )
-    .text(
-      `Ante: ${datos.analistaSigNombre || "Analista SIG"}`
-    )
-    .moveDown(3);
-
-  doc
-    .font("Helvetica")
-    .fontSize(10)
-    .text(
-      `Asunto: Analisis de vulnerabilidad referente a: ${datos.actoInseguro}`
-    )
-    .moveDown(0.4);
-
-  escribirBloque(
-    doc,
-    "Vulnerabilidad",
-    datos.vulnerabilidad,
-    120
-  );
-
-  escribirBloque(
-    doc,
-    "Plan de accion",
-    datos.planAccionSugerido,
-    95
-  );
-
-  escribirBloque(
-    doc,
+  agregarBloque(paginas, cursor, "Vulnerabilidad", datos.vulnerabilidad);
+  agregarBloque(paginas, cursor, "Plan de accion", datos.planAccionSugerido);
+  agregarBloque(
+    paginas,
+    cursor,
     "Informacion del reporte",
     [
       `Finca / EAI: ${datos.eai}`,
       `Reportado por: ${datos.reportadoPor || datos.supervisor}`,
       `Supervisor: ${datos.supervisor}`,
       `Estado: ${datos.estado}`,
-    ].join("\n"),
-    70
+      datos.fotos.length
+        ? `Evidencias adjuntas en plataforma: ${datos.fotos.length}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n")
   );
 
-  if (datos.fotos.length > 0) {
-    doc
-      .addPage()
-      .font("Helvetica-Bold")
-      .fontSize(14)
-      .fillColor("#0F3D1F")
-      .text("Registro fotografico")
-      .moveDown();
+  const objetos: string[] = [];
+  const pageObjectIds: number[] = [];
+  const contentObjectIds: number[] = [];
 
-    for (const foto of datos.fotos) {
-      const imagen =
-        await obtenerImagen(foto);
+  objetos.push("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj");
+  objetos.push("__PAGES__");
+  objetos.push(
+    "3 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj"
+  );
+  objetos.push(
+    "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj"
+  );
 
-      if (!imagen) {
-        continue;
-      }
+  let nextId = 5;
 
-      if (doc.y > 610) {
-        doc.addPage();
-      }
+  for (const pagina of paginas) {
+    const pageId = nextId++;
+    const contentId = nextId++;
+    const contenido = pagina.join("");
 
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(9)
-        .fillColor("#111827")
-        .text(foto.nombre)
-        .moveDown(0.4);
-
-      doc.image(imagen, {
-        fit: [480, 260],
-        align: "center",
-      });
-
-      doc.moveDown(1);
-    }
+    pageObjectIds.push(pageId);
+    contentObjectIds.push(contentId);
+    objetos.push(
+      `${pageId} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentId} 0 R >>\nendobj`
+    );
+    objetos.push(
+      `${contentId} 0 obj\n<< /Length ${Buffer.byteLength(contenido, "latin1")} >>\nstream\n${contenido}endstream\nendobj`
+    );
   }
 
-  doc.end();
+  objetos[1] =
+    `2 0 obj\n<< /Type /Pages /Kids [${pageObjectIds
+      .map((id) => `${id} 0 R`)
+      .join(" ")}] /Count ${pageObjectIds.length} >>\nendobj`;
 
-  return terminado;
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+
+  for (const objeto of objetos) {
+    offsets.push(Buffer.byteLength(pdf, "latin1"));
+    pdf += `${objeto}\n`;
+  }
+
+  const xrefOffset = Buffer.byteLength(pdf, "latin1");
+
+  pdf += `xref\n0 ${objetos.length + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+  for (const offset of offsets.slice(1)) {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  }
+  pdf += `trailer\n<< /Size ${objetos.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+  return Buffer.from(pdf, "latin1");
 }

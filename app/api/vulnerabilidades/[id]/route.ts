@@ -210,3 +210,100 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  _request: Request,
+  context: {
+    params: Promise<{
+      id: string;
+    }>;
+  }
+) {
+  const session =
+    await getServerSession(
+      authOptions
+    );
+
+  if (
+    session?.user?.role !==
+    "ADMIN"
+  ) {
+    return Response.json(
+      {
+        error:
+          "Solo ADMIN puede eliminar analisis de vulnerabilidad",
+      },
+      {
+        status: 403,
+      }
+    );
+  }
+
+  try {
+    const params =
+      await context.params;
+    const id =
+      Number(params.id);
+
+    if (!Number.isFinite(id)) {
+      return Response.json(
+        {
+          error:
+            "Analisis invalido",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const informe =
+      await prisma
+        .vulnerabilidadInforme
+        .findUnique({
+          where: {
+            id,
+          },
+          select: {
+            id: true,
+          },
+        });
+
+    if (!informe) {
+      return Response.json(
+        {
+          error:
+            "Analisis no encontrado",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    await prisma
+      .vulnerabilidadInforme
+      .delete({
+        where: {
+          id,
+        },
+      });
+
+    return Response.json({
+      ok: true,
+    });
+  } catch (error: any) {
+    console.error(error);
+
+    return Response.json(
+      {
+        error:
+          error.message ||
+          "Error eliminando analisis",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}

@@ -207,6 +207,10 @@ export default async function VulnerabilidadesPage({
         }
         pagina={pagina}
         totalPaginas={totalPaginas}
+        puedeEliminar={
+          session?.user?.role ===
+          "ADMIN"
+        }
       />
     </div>
   );
