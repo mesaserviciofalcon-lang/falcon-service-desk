@@ -1,3 +1,9 @@
+import { readFileSync }
+from "fs";
+
+import { join }
+from "path";
+
 type Foto = {
   url: string;
   nombre: string;
@@ -30,6 +36,23 @@ const PAGE_HEIGHT = 842;
 const MARGIN_X = 48;
 const TOP_Y = 780;
 const BOTTOM_Y = 70;
+const LOGO_WIDTH = 200;
+const LOGO_HEIGHT = 100;
+let logoPdfActivo = false;
+
+function obtenerLogoPdf() {
+  try {
+    return readFileSync(
+      join(
+        process.cwd(),
+        "public",
+        "fflogo-pdf.jpg"
+      )
+    );
+  } catch {
+    return null;
+  }
+}
 
 function limpiarTexto(valor?: string | number | null) {
   return String(valor ?? "")
@@ -128,7 +151,7 @@ function colorRgb(hex: string) {
   return `${r.toFixed(3)} ${g.toFixed(3)} ${b.toFixed(3)}`;
 }
 
-function crearPagina() {
+function crearPagina(conLogo = logoPdfActivo) {
   const comandos: string[] = [];
 
   comandos.push("0 0 0 RG\n0.2 w\n");
@@ -136,12 +159,17 @@ function crearPagina() {
     stroke: colorRgb("111111"),
   }));
   comandos.push("198 770 m 198 812 l S\n453 770 m 453 812 l S\n");
-  comandos.push(textoPdf(78, 792, "FALCON FARMS", 10, "F2"));
+
+  if (conLogo) {
+    comandos.push("q\n132 0 0 36 57 773 cm\n/ImLogo Do\nQ\n");
+  } else {
+    comandos.push(textoPdf(78, 792, "FALCON FARMS", 10, "F2"));
+  }
+
   comandos.push(textoPdf(223, 794, "FALCON FARMS DE COLOMBIA S.A.", 10, "F2"));
   comandos.push(textoPdf(247, 779, "ANALISIS DE VULNERABILIDAD", 9, "F2"));
   comandos.push(textoPdf(480, 798, "Version 2", 8));
   comandos.push(textoPdf(480, 785, "Abril 2024", 8));
-  comandos.push(textoPdf(480, 772, "Pagina", 8));
 
   return comandos;
 }
@@ -223,7 +251,13 @@ function agregarBloque(
 }
 
 export async function generarPdfVulnerabilidad(datos: DatosPdf) {
-  const paginas = [crearPagina()];
+  const logo =
+    obtenerLogoPdf();
+  logoPdfActivo =
+    Boolean(logo);
+  const paginas = [
+    crearPagina(),
+  ];
   const cursor = {
     y: 735,
   };
@@ -264,6 +298,17 @@ export async function generarPdfVulnerabilidad(datos: DatosPdf) {
       .join("\n")
   );
 
+  paginas.forEach((pagina, index) => {
+    pagina.push(
+      textoPdf(
+        472,
+        772,
+        `Pagina ${index + 1} de ${paginas.length}`,
+        8
+      )
+    );
+  });
+
   const objetos: string[] = [];
   const pageObjectIds: number[] = [];
   const contentObjectIds: number[] = [];
@@ -278,6 +323,14 @@ export async function generarPdfVulnerabilidad(datos: DatosPdf) {
   );
 
   let nextId = 5;
+  const logoObjectId =
+    logo ? nextId++ : null;
+
+  if (logo && logoObjectId) {
+    objetos.push(
+      `${logoObjectId} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${LOGO_WIDTH} /Height ${LOGO_HEIGHT} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logo.length} >>\nstream\n${logo.toString("latin1")}\nendstream\nendobj`
+    );
+  }
 
   for (const pagina of paginas) {
     const pageId = nextId++;
@@ -287,7 +340,11 @@ export async function generarPdfVulnerabilidad(datos: DatosPdf) {
     pageObjectIds.push(pageId);
     contentObjectIds.push(contentId);
     objetos.push(
-      `${pageId} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentId} 0 R >>\nendobj`
+      `${pageId} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> ${
+        logoObjectId
+          ? `/XObject << /ImLogo ${logoObjectId} 0 R >>`
+          : ""
+      } >> /Contents ${contentId} 0 R >>\nendobj`
     );
     objetos.push(
       `${contentId} 0 obj\n<< /Length ${Buffer.byteLength(contenido, "latin1")} >>\nstream\n${contenido}endstream\nendobj`
