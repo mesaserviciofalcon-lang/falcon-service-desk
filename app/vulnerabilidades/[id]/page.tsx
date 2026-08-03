@@ -104,6 +104,33 @@ export default async function VulnerabilidadDetallePage({
               archivo.url
           )
       : [];
+  const fotos =
+    Array.isArray(
+      informe.fotos
+    )
+      ? informe.fotos
+          .map((foto: any) => ({
+            url:
+              typeof foto?.url ===
+              "string"
+                ? foto.url
+                : "",
+            nombre:
+              typeof foto?.nombre ===
+              "string"
+                ? foto.nombre
+                : "Evidencia",
+            tipo:
+              typeof foto?.tipo ===
+              "string"
+                ? foto.tipo
+                : undefined,
+          }))
+          .filter(
+            (foto) =>
+              foto.url
+          )
+      : [];
 
   const informeSerializado = {
     id: informe.id,
@@ -124,6 +151,7 @@ export default async function VulnerabilidadDetallePage({
       informe.supervisor,
     reportadoPor:
       informe.reportadoPor,
+    fotos,
     cierreObservaciones:
       informe.cierreObservaciones,
     cierreEvidencias:

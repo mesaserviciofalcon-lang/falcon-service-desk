@@ -140,6 +140,18 @@ export async function POST(
       );
     }
 
+    if (fotos.length === 0) {
+      return Response.json(
+        {
+          error:
+            "Debe adjuntar al menos una imagen de la novedad para generar el informe",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const contactos =
       obtenerContactosVulnerabilidad(eai);
 

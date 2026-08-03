@@ -9,6 +9,9 @@ from "next/navigation";
 import toast
 from "react-hot-toast";
 
+import UploadButton
+from "@/components/uploadthing/UploadButton";
+
 import { eaiOpciones }
 from "@/lib/antecedentesCatalogos";
 
@@ -19,6 +22,12 @@ import {
   actosInsegurosVulnerabilidad,
   estadosVulnerabilidad,
 } from "@/lib/vulnerabilidades";
+
+type Archivo = {
+  url: string;
+  nombre: string;
+  tipo?: string;
+};
 
 export default function FormularioVulnerabilidad() {
   const router =
@@ -40,6 +49,8 @@ export default function FormularioVulnerabilidad() {
 
   const [enviando, setEnviando] =
     useState(false);
+  const [fotos, setFotos] =
+    useState<Archivo[]>([]);
 
   function actualizar(
     campo: keyof typeof form,
@@ -61,6 +72,14 @@ export default function FormularioVulnerabilidad() {
     }
 
     try {
+      if (fotos.length === 0) {
+        toast.error(
+          "Debe adjuntar al menos una imagen de la novedad"
+        );
+
+        return;
+      }
+
       setEnviando(true);
 
       const response =
@@ -74,6 +93,7 @@ export default function FormularioVulnerabilidad() {
             },
             body: JSON.stringify({
               ...form,
+              fotos,
             }),
           }
         );
@@ -276,6 +296,48 @@ export default function FormularioVulnerabilidad() {
         placeholder="Plan de accion sugerido por Seguridad"
         required
       />
+
+      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4">
+        <p className="text-sm font-semibold text-gray-700">
+          Imagen de la novedad
+        </p>
+        <p className="mt-1 text-xs text-gray-500">
+          Obligatoria para generar el informe PDF.
+        </p>
+        <UploadButton
+          allowedExtensions={[
+            "jpg",
+            "jpeg",
+          ]}
+          allowedExtensionsLabel="imagenes JPG o JPEG"
+          onCompleteMany={(
+            archivos: Archivo[]
+          ) =>
+            setFotos(
+              (actuales) => [
+                ...actuales,
+                ...archivos,
+              ]
+            )
+          }
+        />
+
+        {fotos.length > 0 && (
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+            {fotos.map((foto) => (
+              <a
+                key={foto.url}
+                href={foto.url}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border bg-white p-2 text-sm font-semibold text-[#0F3D1F] hover:bg-gray-50"
+              >
+                {foto.nombre}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
 
       <button
         type="submit"

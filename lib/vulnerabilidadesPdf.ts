@@ -40,6 +40,13 @@ const LOGO_WIDTH = 200;
 const LOGO_HEIGHT = 100;
 let logoPdfActivo = false;
 
+type ImagenPdf = {
+  nombre: string;
+  buffer: Buffer;
+  width: number;
+  height: number;
+};
+
 function obtenerLogoPdf() {
   try {
     return readFileSync(
@@ -151,6 +158,101 @@ function colorRgb(hex: string) {
   return `${r.toFixed(3)} ${g.toFixed(3)} ${b.toFixed(3)}`;
 }
 
+function obtenerDimensionesJpeg(buffer: Buffer) {
+  let offset = 2;
+
+  while (offset < buffer.length) {
+    if (buffer[offset] !== 0xff) {
+      offset++;
+      continue;
+    }
+
+    const marker =
+      buffer[offset + 1];
+    const length =
+      buffer.readUInt16BE(
+        offset + 2
+      );
+
+    if (
+      marker >= 0xc0 &&
+      marker <= 0xc3
+    ) {
+      return {
+        height:
+          buffer.readUInt16BE(
+            offset + 5
+          ),
+        width:
+          buffer.readUInt16BE(
+            offset + 7
+          ),
+      };
+    }
+
+    offset +=
+      2 + length;
+  }
+
+  return null;
+}
+
+async function obtenerImagenJpeg(
+  foto: Foto
+): Promise<ImagenPdf | null> {
+  try {
+    const nombre =
+      limpiarTexto(
+        foto.nombre
+      );
+    const esJpeg =
+      /\.(jpg|jpeg)$/i.test(
+        nombre
+      );
+
+    if (!esJpeg) {
+      return null;
+    }
+
+    const response =
+      await fetch(foto.url);
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const buffer =
+      Buffer.from(
+        await response.arrayBuffer()
+      );
+    const dimensiones =
+      obtenerDimensionesJpeg(
+        buffer
+      );
+
+    if (!dimensiones) {
+      return null;
+    }
+
+    return {
+      nombre:
+        nombre || "Evidencia",
+      buffer,
+      width:
+        dimensiones.width,
+      height:
+        dimensiones.height,
+    };
+  } catch (error) {
+    console.error(
+      "No se pudo leer imagen para PDF de vulnerabilidad",
+      error
+    );
+
+    return null;
+  }
+}
+
 function crearPagina(conLogo = logoPdfActivo) {
   const comandos: string[] = [];
 
@@ -250,6 +352,49 @@ function agregarBloque(
   cursor.y = yCaja - 26;
 }
 
+function agregarPaginaFotografica(
+  paginas: string[][],
+  imagen: ImagenPdf,
+  index: number
+) {
+  const pagina =
+    crearPagina();
+  const nombreImagen =
+    `ImFoto${index + 1}`;
+  const boxX = 72;
+  const boxY = 105;
+  const boxW = 451;
+  const boxH = 610;
+  const escala =
+    Math.min(
+      boxW / imagen.width,
+      boxH / imagen.height
+    );
+  const ancho =
+    imagen.width * escala;
+  const alto =
+    imagen.height * escala;
+  const x =
+    boxX + (boxW - ancho) / 2;
+  const y =
+    boxY + (boxH - alto) / 2;
+
+  pagina.push(rectPdf(48, 720, 499, 18, {
+    fill: colorRgb("000000"),
+  }));
+  pagina.push("1 1 1 rg\n");
+  pagina.push(textoPdf(228, 725, "REGISTRO FOTOGRAFICO", 10, "F2"));
+  pagina.push("0 0 0 rg\n");
+  pagina.push(rectPdf(48, 88, 499, 632, {
+    stroke: colorRgb("111111"),
+  }));
+  pagina.push(
+    `q\n${ancho.toFixed(2)} 0 0 ${alto.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm\n/${nombreImagen} Do\nQ\n`
+  );
+
+  paginas.push(pagina);
+}
+
 export async function generarPdfVulnerabilidad(datos: DatosPdf) {
   const logo =
     obtenerLogoPdf();
@@ -297,6 +442,29 @@ export async function generarPdfVulnerabilidad(datos: DatosPdf) {
       .join("\n")
   );
 
+  const imagenes =
+    (
+      await Promise.all(
+        datos.fotos.map(
+          obtenerImagenJpeg
+        )
+      )
+    ).filter(
+      (
+        imagen
+      ): imagen is ImagenPdf =>
+        Boolean(imagen)
+    );
+
+  imagenes.forEach(
+    (imagen, index) =>
+      agregarPaginaFotografica(
+        paginas,
+        imagen,
+        index
+      )
+  );
+
   paginas.forEach((pagina, index) => {
     pagina.push(
       textoPdf(
@@ -324,12 +492,33 @@ export async function generarPdfVulnerabilidad(datos: DatosPdf) {
   let nextId = 5;
   const logoObjectId =
     logo ? nextId++ : null;
+  const imagenObjectIds =
+    imagenes.map(
+      (_imagen) =>
+        nextId++
+    );
 
   if (logo && logoObjectId) {
     objetos.push(
       `${logoObjectId} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${LOGO_WIDTH} /Height ${LOGO_HEIGHT} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logo.length} >>\nstream\n${logo.toString("latin1")}\nendstream\nendobj`
     );
   }
+
+  imagenes.forEach(
+    (imagen, index) => {
+      objetos.push(
+        `${imagenObjectIds[index]} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${imagen.width} /Height ${imagen.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imagen.buffer.length} >>\nstream\n${imagen.buffer.toString("latin1")}\nendstream\nendobj`
+      );
+    }
+  );
+
+  const recursosImagenes =
+    imagenObjectIds
+      .map(
+        (id, index) =>
+          `/ImFoto${index + 1} ${id} 0 R`
+      )
+      .join(" ");
 
   for (const pagina of paginas) {
     const pageId = nextId++;
@@ -340,8 +529,13 @@ export async function generarPdfVulnerabilidad(datos: DatosPdf) {
     contentObjectIds.push(contentId);
     objetos.push(
       `${pageId} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> ${
-        logoObjectId
-          ? `/XObject << /ImLogo ${logoObjectId} 0 R >>`
+        logoObjectId ||
+        recursosImagenes
+          ? `/XObject << ${
+              logoObjectId
+                ? `/ImLogo ${logoObjectId} 0 R`
+                : ""
+            } ${recursosImagenes} >>`
           : ""
       } >> /Contents ${contentId} 0 R >>\nendobj`
     );

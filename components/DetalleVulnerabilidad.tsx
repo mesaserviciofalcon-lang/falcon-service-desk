@@ -30,6 +30,7 @@ type Informe = {
   estado: string;
   supervisor: string;
   reportadoPor?: string | null;
+  fotos?: Archivo[];
   cierreObservaciones?: string | null;
   causaRaiz?: string | null;
   proceso?: string | null;
@@ -202,6 +203,35 @@ export default function DetalleVulnerabilidad({
           {informe.planAccionSugerido}
         </p>
       </div>
+
+      {informe.fotos &&
+        informe.fotos.length > 0 && (
+        <div className="mt-3 rounded-lg border bg-gray-50 p-3 text-sm">
+          <p className="font-bold">
+            Registro fotografico de la novedad
+          </p>
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+            {informe.fotos.map((foto) => (
+              <a
+                key={foto.url}
+                href={foto.url}
+                target="_blank"
+                rel="noreferrer"
+                className="overflow-hidden rounded-lg border bg-white hover:bg-gray-50"
+              >
+                <img
+                  src={foto.url}
+                  alt={foto.nombre}
+                  className="h-40 w-full object-cover"
+                />
+                <p className="p-2 text-xs font-semibold text-[#0F3D1F]">
+                  {foto.nombre}
+                </p>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {puedeGestionar ? (
         <div className="mt-4 border-t pt-4">
