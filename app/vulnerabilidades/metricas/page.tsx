@@ -902,26 +902,20 @@ function GraficaActos({
   const altoGrafica = 260;
   const anchoGrupo =
     Math.max(
-      88,
-      actos.length * 16 + 36
+      108,
+      actos.length * 20 + 42
     );
-  const columnasPorFila = 5;
-  const filasGrupos =
-    Math.ceil(
-      porFinca.length /
-        columnasPorFila
-    );
-  const altoGrupo =
-    altoGrafica + 74;
   const altoContenedor =
     Math.max(
-      altoGrupo,
-      filasGrupos * altoGrupo +
-        Math.max(
-          0,
-          filasGrupos - 1
-        ) *
-          12
+      altoGrafica + 78,
+      338
+    );
+  const anchoMinimo =
+    Math.max(
+      1120,
+      porFinca.length *
+        (anchoGrupo + 14) +
+        80
     );
   const marcas =
     [1, 0.75, 0.5, 0.25, 0];
@@ -958,13 +952,19 @@ function GraficaActos({
         </p>
       ) : (
         <>
-          <div className="pb-3">
-            <div className="relative rounded-xl border bg-slate-950 p-5 text-white">
+          <div className="overflow-x-auto pb-3">
+            <div
+              className="relative rounded-xl border bg-slate-950 p-5 text-white"
+              style={{
+                minWidth:
+                  `${anchoMinimo}px`,
+              }}
+            >
               <div
                 className="absolute left-12 right-5 top-5"
                 style={{
                   height:
-                    altoContenedor,
+                    altoGrafica,
                 }}
               >
                 {marcas.map((marca) => (
@@ -974,7 +974,7 @@ function GraficaActos({
                     style={{
                       top:
                         (1 - marca) *
-                        altoContenedor,
+                        altoGrafica,
                     }}
                   >
                     <span className="absolute -left-10 -top-2 text-xs text-white/65">
@@ -987,7 +987,7 @@ function GraficaActos({
               </div>
 
               <div
-                className="relative ml-10 flex flex-wrap items-end justify-center gap-3"
+                className="relative ml-10 flex items-end justify-start gap-3"
                 style={{
                   height:
                     altoContenedor,

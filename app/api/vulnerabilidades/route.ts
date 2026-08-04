@@ -13,6 +13,7 @@ from "@/lib/prisma";
 import {
   formatearReferenciaVulnerabilidad,
   generarConsecutivoVulnerabilidad,
+  normalizarActoInseguroUnico,
   obtenerContactosVulnerabilidad,
   obtenerCopiasVulnerabilidad,
   vulnerabilidadCorreoTemplate,
@@ -110,7 +111,9 @@ export async function POST(
     const eai =
       texto(body.eai);
     const actoInseguro =
-      texto(body.actoInseguro);
+      normalizarActoInseguroUnico(
+        texto(body.actoInseguro)
+      );
     const vulnerabilidad =
       texto(body.vulnerabilidad);
     const planAccionSugerido =

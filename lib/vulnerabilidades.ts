@@ -9,6 +9,64 @@ export const actosInsegurosVulnerabilidad = [
   "OTROS",
 ];
 
+function normalizarTextoCatalogo(
+  valor: string
+) {
+  return valor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s*,\s*/g, ", ")
+    .trim()
+    .toUpperCase();
+}
+
+export function normalizarActoInseguroUnico(
+  valor: string
+) {
+  const limpio =
+    String(valor || "")
+      .replace(/\s+/g, " ")
+      .replace(/\s*,\s*/g, ", ")
+      .trim();
+
+  if (!limpio) {
+    return "";
+  }
+
+  const normalizado =
+    normalizarTextoCatalogo(limpio);
+
+  const aliases: Record<
+    string,
+    string
+  > = {
+    "EQUIPO SIN DISPOSITIVO DE SEGURIDAD":
+      "EQUIPOS SIN DISPOSITIVOS DE SEGURIDAD",
+    OTRO: "OTROS",
+  };
+
+  if (aliases[normalizado]) {
+    return aliases[normalizado];
+  }
+
+  const concepto =
+    actosInsegurosVulnerabilidad.find(
+      (acto) =>
+        normalizado.startsWith(
+          normalizarTextoCatalogo(acto)
+        )
+    );
+
+  if (concepto) {
+    return concepto;
+  }
+
+  return limpio
+    .split(",")[0]
+    .trim();
+}
+
 export const procesosVulnerabilidad = [
   "GESTION HUMANA",
   "MANTENIMIENTO",

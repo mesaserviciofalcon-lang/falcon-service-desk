@@ -10,6 +10,7 @@ from "@/lib/prisma";
 import {
   codigoEai,
   generarConsecutivoVulnerabilidad,
+  normalizarActoInseguroUnico,
 } from "@/lib/vulnerabilidades";
 
 type RegistroExcel = {
@@ -124,7 +125,9 @@ function mapearRegistro(
   const fecha =
     fechaDesdeExcel(row.FECHA);
   const actoInseguro =
-    texto(row["ACTO INSEGURO"]);
+    normalizarActoInseguroUnico(
+      texto(row["ACTO INSEGURO"])
+    );
   const vulnerabilidad =
     texto(row.VULNERABILIDAD);
   const planAccionSugerido =
