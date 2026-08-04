@@ -902,8 +902,26 @@ function GraficaActos({
   const altoGrafica = 260;
   const anchoGrupo =
     Math.max(
-      72,
-      actos.length * 14 + 28
+      88,
+      actos.length * 16 + 36
+    );
+  const columnasPorFila = 5;
+  const filasGrupos =
+    Math.ceil(
+      porFinca.length /
+        columnasPorFila
+    );
+  const altoGrupo =
+    altoGrafica + 74;
+  const altoContenedor =
+    Math.max(
+      altoGrupo,
+      filasGrupos * altoGrupo +
+        Math.max(
+          0,
+          filasGrupos - 1
+        ) *
+          12
     );
   const marcas =
     [1, 0.75, 0.5, 0.25, 0];
@@ -945,7 +963,8 @@ function GraficaActos({
               <div
                 className="absolute left-12 right-5 top-5"
                 style={{
-                  height: altoGrafica,
+                  height:
+                    altoContenedor,
                 }}
               >
                 {marcas.map((marca) => (
@@ -955,7 +974,7 @@ function GraficaActos({
                     style={{
                       top:
                         (1 - marca) *
-                        altoGrafica,
+                        altoContenedor,
                     }}
                   >
                     <span className="absolute -left-10 -top-2 text-xs text-white/65">
@@ -971,7 +990,7 @@ function GraficaActos({
                 className="relative ml-10 flex flex-wrap items-end justify-center gap-3"
                 style={{
                   height:
-                    altoGrafica + 88,
+                    altoContenedor,
                 }}
               >
                 {porFinca.map(
@@ -985,7 +1004,7 @@ function GraficaActos({
                       }}
                     >
                       <div
-                        className="flex items-end justify-center gap-0.5"
+                        className="flex items-end justify-center gap-1"
                         style={{
                           height:
                             altoGrafica,
@@ -1011,7 +1030,7 @@ function GraficaActos({
                             return (
                               <div
                                 key={`${finca.finca}-${acto}`}
-                                className="flex w-3 flex-col items-center justify-end"
+                                className="flex w-3.5 flex-col items-center justify-end"
                                 title={`${finca.finca} - ${acto}: ${valor}`}
                               >
                                 {valor > 0 && (
