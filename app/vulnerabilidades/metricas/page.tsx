@@ -900,6 +900,11 @@ function GraficaActos({
     );
 
   const altoGrafica = 260;
+  const anchoGrupo =
+    Math.max(
+      72,
+      actos.length * 14 + 28
+    );
   const marcas =
     [1, 0.75, 0.5, 0.25, 0];
 
@@ -935,8 +940,8 @@ function GraficaActos({
         </p>
       ) : (
         <>
-          <div className="overflow-x-auto pb-3">
-            <div className="relative min-w-[960px] rounded-xl border bg-slate-950 p-5 text-white">
+          <div className="pb-3">
+            <div className="relative rounded-xl border bg-slate-950 p-5 text-white">
               <div
                 className="absolute left-12 right-5 top-5"
                 style={{
@@ -963,20 +968,24 @@ function GraficaActos({
               </div>
 
               <div
-                className="relative ml-10 flex items-end gap-6"
+                className="relative ml-10 flex flex-wrap items-end justify-center gap-3"
                 style={{
                   height:
-                    altoGrafica + 56,
+                    altoGrafica + 88,
                 }}
               >
                 {porFinca.map(
                   (finca) => (
                     <div
                       key={finca.finca}
-                      className="flex min-w-28 flex-col items-center"
+                      className="flex flex-col items-center rounded-lg border border-white/10 bg-white/5 px-2 pb-2 pt-3 shadow-inner"
+                      style={{
+                        width:
+                          `${anchoGrupo}px`,
+                      }}
                     >
                       <div
-                        className="flex items-end justify-center gap-1"
+                        className="flex items-end justify-center gap-0.5"
                         style={{
                           height:
                             altoGrafica,
@@ -1002,11 +1011,11 @@ function GraficaActos({
                             return (
                               <div
                                 key={`${finca.finca}-${acto}`}
-                                className="flex w-4 flex-col items-center justify-end"
+                                className="flex w-3 flex-col items-center justify-end"
                                 title={`${finca.finca} - ${acto}: ${valor}`}
                               >
                                 {valor > 0 && (
-                                  <span className="mb-1 text-xs font-bold text-white/85">
+                                  <span className="mb-1 text-[10px] font-bold text-white/85">
                                     {valor}
                                   </span>
                                 )}
@@ -1028,9 +1037,14 @@ function GraficaActos({
                         )}
                       </div>
 
-                      <p className="mt-3 max-w-32 text-center text-xs font-bold uppercase text-white/80">
+                      <div className="mt-3 h-px w-full bg-white/15" />
+
+                      <p className="mt-2 max-w-24 text-center text-[11px] font-bold uppercase leading-tight text-white/85">
                         {finca.finca}
                       </p>
+                      <span className="mt-1 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/70">
+                        {finca.total}
+                      </span>
                     </div>
                   )
                 )}
@@ -1038,11 +1052,11 @@ function GraficaActos({
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {actos.map((acto) => (
               <div
                 key={acto}
-                className="flex items-center gap-2 rounded-full border bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+                className="flex items-center gap-2 rounded-lg border bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
               >
                 <span
                   className="h-3 w-3 rounded-sm"
