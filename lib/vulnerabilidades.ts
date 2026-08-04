@@ -476,20 +476,27 @@ export function recordatorioVulnerabilidadesTemplate({
     actoInseguro: string;
     vulnerabilidad: string;
     supervisor: string;
+    reportadoPor?: string | null;
   }>;
 }) {
   const filas =
-    informes.map((informe) => `
+    informes.map((informe) => {
+      const reportadoPor =
+        informe.reportadoPor ||
+        informe.supervisor;
+
+      return `
       <tr>
         <td style="border:1px solid #d1d5db;padding:8px">
           ${formatearReferenciaVulnerabilidad(informe)}
         </td>
         <td style="border:1px solid #d1d5db;padding:8px">${informe.eai}</td>
         <td style="border:1px solid #d1d5db;padding:8px">${informe.actoInseguro}</td>
-        <td style="border:1px solid #d1d5db;padding:8px">${informe.supervisor}</td>
+        <td style="border:1px solid #d1d5db;padding:8px">${reportadoPor}</td>
         <td style="border:1px solid #d1d5db;padding:8px">${informe.vulnerabilidad}</td>
       </tr>
-    `).join("");
+    `;
+    }).join("");
 
   return `
     <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.5">

@@ -116,6 +116,7 @@ export async function GET(
             actoInseguro: true,
             vulnerabilidad: true,
             supervisor: true,
+            reportadoPor: true,
             analistaSigNombre: true,
             analistaSigCorreo: true,
             gerenteCorreo: true,

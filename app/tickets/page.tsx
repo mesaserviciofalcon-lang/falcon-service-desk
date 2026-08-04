@@ -248,22 +248,6 @@ if (role === "SUPERVISOR") {
       <h1 className="text-3xl font-bold mb-6">
         Tickets
       </h1>
-{/* EXPORTAR VISITAS */}
-
-{role === "VISITA" && (
-
-  <a
-
-    href="/api/exportar-visitas"
-
-    className="bg-green-600 text-white px-4 py-2 rounded-lg inline-block mb-6"
-  >
-
-    Exportar Excel
-
-  </a>
-)}
-
 {/* EXPORTAR REPORTES ADMIN */}
 
 {role === "ADMIN" && (
