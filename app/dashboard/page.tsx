@@ -1969,7 +1969,7 @@ hace5Dias.setDate(
                 Tipo de visita
               </span>
 
-              <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="mt-3 grid grid-cols-2 gap-2">
 
                 <div>
                   <p className="text-xs text-gray-500">
@@ -1992,19 +1992,6 @@ hace5Dias.setDate(
                     <NumeroAnimado
                       valor={
                         metricasVisitasMes.mantenimiento
-                      }
-                    />
-                  </strong>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500">
-                    Sin clasificar
-                  </p>
-                  <strong className="text-2xl text-slate-700">
-                    <NumeroAnimado
-                      valor={
-                        metricasVisitasMes.sinMotivo
                       }
                     />
                   </strong>
