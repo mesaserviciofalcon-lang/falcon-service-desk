@@ -455,6 +455,24 @@ async function obtenerMetricasVisitas(
         INNER JOIN "Solicitud" s
           ON s."id" = v."solicitudId"
         WHERE s."tipo" = 'VISITA DOMICILIARIA'
+        UNION ALL
+        SELECT
+          CASE
+            WHEN upper(trim(COALESCE(h."fechaVisitaRealizada", ''))) LIKE '%NO%CONFIABLE%'
+              THEN 'NO CONFIABLE'
+            WHEN upper(trim(COALESCE(h."fechaVisitaRealizada", ''))) LIKE '%CONFIABLE%'
+              THEN 'CONFIABLE'
+            WHEN h."fechaVisitaDate" IS NOT NULL
+              THEN 'CONFIABLE'
+            ELSE upper(trim(COALESCE(h."fechaVisitaRealizada", '')))
+          END AS resultado,
+          upper(trim(COALESCE(h."motivoVisita", ''))) AS motivo,
+          COALESCE(
+            h."fechaVisitaDate",
+            h."fechaSolicitudDate",
+            h."createdAt"
+          ) AS fecha_indicador
+        FROM "VisitaHistorica" h
       )
       SELECT
         COUNT(*) AS total,
@@ -467,9 +485,11 @@ async function obtenerMetricasVisitas(
         ) AS no_confiables,
         COUNT(*) FILTER (
           WHERE motivo = 'INGRESO'
+            OR motivo LIKE 'INGRESO %'
         ) AS ingreso,
         COUNT(*) FILTER (
           WHERE motivo = 'MANTENIMIENTO'
+            OR motivo LIKE 'MANTENIMIENTO %'
         ) AS mantenimiento
       FROM visitas
       WHERE to_char(fecha_indicador, 'YYYY-MM') = ${mes}
@@ -509,28 +529,31 @@ async function obtenerMesesVisitas(
 ) {
   const resultado =
     await prisma.$queryRaw<ConteoMes[]>`
-      SELECT DISTINCT
-        to_char(
+      WITH visitas AS (
+        SELECT
           COALESCE(
             v."fechaRealizada",
             s."fechaGestion",
             s."fechaCierre",
             s."fechaCreacion"
-          ),
-          'YYYY-MM'
-        ) AS mes
-      FROM "SolicitudVisita" v
-      INNER JOIN "Solicitud" s
-        ON s."id" = v."solicitudId"
-      WHERE s."tipo" = 'VISITA DOMICILIARIA'
-        AND EXTRACT(
-          YEAR FROM COALESCE(
-            v."fechaRealizada",
-            s."fechaGestion",
-            s."fechaCierre",
-            s."fechaCreacion"
-          )
-        )::int = ${anio}
+          ) AS fecha_indicador
+        FROM "SolicitudVisita" v
+        INNER JOIN "Solicitud" s
+          ON s."id" = v."solicitudId"
+        WHERE s."tipo" = 'VISITA DOMICILIARIA'
+        UNION ALL
+        SELECT
+          COALESCE(
+            h."fechaVisitaDate",
+            h."fechaSolicitudDate",
+            h."createdAt"
+          ) AS fecha_indicador
+        FROM "VisitaHistorica" h
+      )
+      SELECT DISTINCT
+        to_char(fecha_indicador, 'YYYY-MM') AS mes
+      FROM visitas
+      WHERE EXTRACT(YEAR FROM fecha_indicador)::int = ${anio}
       ORDER BY mes DESC
     `;
 
