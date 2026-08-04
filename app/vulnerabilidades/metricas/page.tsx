@@ -790,6 +790,280 @@ function SupervisoresPorFinca({
   );
 }
 
+const coloresActos = [
+  "#2563eb",
+  "#dc2626",
+  "#16a34a",
+  "#f59e0b",
+  "#0891b2",
+  "#7c3aed",
+  "#ea580c",
+  "#0f766e",
+];
+
+function colorActo(
+  acto: string,
+  actos: string[]
+) {
+  const indice =
+    Math.max(
+      0,
+      actos.indexOf(acto)
+    ) % coloresActos.length;
+
+  return coloresActos[indice];
+}
+
+function GraficaActos({
+  filas,
+  titulo,
+  subtitulo,
+}: {
+  filas: Array<{
+    finca: string;
+    acto: string;
+    estado: string;
+    total: number;
+  }>;
+  titulo: string;
+  subtitulo: string;
+}) {
+  const actos =
+    Array.from(
+      new Set(
+        filas.map(
+          (fila) => fila.acto
+        )
+      )
+    ).sort((a, b) =>
+      a.localeCompare(b)
+    );
+
+  const porFinca =
+    Array.from(
+      filas.reduce(
+        (mapa, fila) => {
+          const actual =
+            mapa.get(fila.finca) || {
+              finca: fila.finca,
+              total: 0,
+              actos:
+                new Map<
+                  string,
+                  number
+                >(),
+            };
+
+          actual.total +=
+            fila.total;
+          actual.actos.set(
+            fila.acto,
+            (actual.actos.get(
+              fila.acto
+            ) || 0) +
+              fila.total
+          );
+
+          mapa.set(
+            fila.finca,
+            actual
+          );
+
+          return mapa;
+        },
+        new Map<
+          string,
+          {
+            finca: string;
+            total: number;
+            actos: Map<
+              string,
+              number
+            >;
+          }
+        >()
+      ).values()
+    ).sort(
+      (a, b) => b.total - a.total
+    );
+
+  const maximo =
+    Math.max(
+      1,
+      ...porFinca.flatMap((finca) =>
+        actos.map(
+          (acto) =>
+            finca.actos.get(acto) ||
+            0
+        )
+      )
+    );
+
+  const altoGrafica = 260;
+  const marcas =
+    [1, 0.75, 0.5, 0.25, 0];
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase text-slate-500">
+            Grafica
+          </p>
+          <h2 className="mt-1 text-2xl font-bold tracking-wide text-[#0F3D1F]">
+            {titulo}
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {subtitulo}
+          </p>
+        </div>
+
+        <span className="rounded-full bg-[#0F3D1F] px-4 py-2 text-sm font-bold text-white">
+          Total{" "}
+          {porFinca.reduce(
+            (sumatoria, finca) =>
+              sumatoria +
+              finca.total,
+            0
+          )}
+        </span>
+      </div>
+
+      {porFinca.length === 0 ? (
+        <p className="text-sm text-slate-500">
+          Sin datos para este año.
+        </p>
+      ) : (
+        <>
+          <div className="overflow-x-auto pb-3">
+            <div className="relative min-w-[960px] rounded-xl border bg-slate-950 p-5 text-white">
+              <div
+                className="absolute left-12 right-5 top-5"
+                style={{
+                  height: altoGrafica,
+                }}
+              >
+                {marcas.map((marca) => (
+                  <div
+                    key={marca}
+                    className="absolute left-0 right-0 border-t border-white/15"
+                    style={{
+                      top:
+                        (1 - marca) *
+                        altoGrafica,
+                    }}
+                  >
+                    <span className="absolute -left-10 -top-2 text-xs text-white/65">
+                      {Math.round(
+                        maximo * marca
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div
+                className="relative ml-10 flex items-end gap-6"
+                style={{
+                  height:
+                    altoGrafica + 56,
+                }}
+              >
+                {porFinca.map(
+                  (finca) => (
+                    <div
+                      key={finca.finca}
+                      className="flex min-w-28 flex-col items-center"
+                    >
+                      <div
+                        className="flex items-end justify-center gap-1"
+                        style={{
+                          height:
+                            altoGrafica,
+                        }}
+                      >
+                        {actos.map(
+                          (acto) => {
+                            const valor =
+                              finca.actos.get(
+                                acto
+                              ) || 0;
+
+                            const altura =
+                              valor
+                                ? Math.max(
+                                    8,
+                                    (valor /
+                                      maximo) *
+                                      altoGrafica
+                                  )
+                                : 0;
+
+                            return (
+                              <div
+                                key={`${finca.finca}-${acto}`}
+                                className="flex w-4 flex-col items-center justify-end"
+                                title={`${finca.finca} - ${acto}: ${valor}`}
+                              >
+                                {valor > 0 && (
+                                  <span className="mb-1 text-xs font-bold text-white/85">
+                                    {valor}
+                                  </span>
+                                )}
+                                <div
+                                  className="w-full rounded-t-sm shadow-lg"
+                                  style={{
+                                    height:
+                                      altura,
+                                    backgroundColor:
+                                      colorActo(
+                                        acto,
+                                        actos
+                                      ),
+                                  }}
+                                />
+                              </div>
+                            );
+                          }
+                        )}
+                      </div>
+
+                      <p className="mt-3 max-w-32 text-center text-xs font-bold uppercase text-white/80">
+                        {finca.finca}
+                      </p>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            {actos.map((acto) => (
+              <div
+                key={acto}
+                className="flex items-center gap-2 rounded-full border bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+              >
+                <span
+                  className="h-3 w-3 rounded-sm"
+                  style={{
+                    backgroundColor:
+                      colorActo(
+                        acto,
+                        actos
+                      ),
+                  }}
+                />
+                {acto}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default async function MetricasAnalisisPage({
   searchParams,
 }: {
@@ -1341,6 +1615,14 @@ export default async function MetricasAnalisisPage({
         />
       </div>
 
+      <div className="mt-4">
+        <GraficaActos
+          filas={fincaActoEstado}
+          titulo={`Actos inseguros ${etiquetaMes(mes)}`}
+          subtitulo="Barras agrupadas por finca y tipo de acto inseguro del mes seleccionado."
+        />
+      </div>
+
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
         <Tarjeta
           titulo="Historico total"
@@ -1468,6 +1750,14 @@ export default async function MetricasAnalisisPage({
           valor={cerradosAnio}
           detalle={`${calcularPorcentaje(cerradosAnio, totalAnio)} del año`}
           color="text-green-700"
+        />
+      </div>
+
+      <div className="mt-4">
+        <GraficaActos
+          filas={fincaActoEstadoAnio}
+          titulo={`Actos inseguros ${anio}`}
+          subtitulo="Barras agrupadas por finca y tipo de acto inseguro del año seleccionado."
         />
       </div>
 
