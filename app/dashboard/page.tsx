@@ -257,6 +257,7 @@ type MetricasVisitas = {
   total: number;
   confiables: number;
   noConfiables: number;
+  noRealizadas: number;
   ingreso: number;
   mantenimiento: number;
 };
@@ -278,6 +279,7 @@ const metricasVisitasVacias: MetricasVisitas = {
   total: 0,
   confiables: 0,
   noConfiables: 0,
+  noRealizadas: 0,
   ingreso: 0,
   mantenimiento: 0,
 };
@@ -437,6 +439,7 @@ async function obtenerMetricasVisitas(
         total: bigint | number;
         confiables: bigint | number;
         no_confiables: bigint | number;
+        no_realizadas: bigint | number;
         ingreso: bigint | number;
         mantenimiento: bigint | number;
       }>
@@ -484,6 +487,9 @@ async function obtenerMetricasVisitas(
           WHERE resultado LIKE '%NO%CONFIABLE%'
         ) AS no_confiables,
         COUNT(*) FILTER (
+          WHERE resultado LIKE '%NO%SE%REALIZO%'
+        ) AS no_realizadas,
+        COUNT(*) FILTER (
           WHERE motivo = 'INGRESO'
             OR motivo LIKE 'INGRESO %'
         ) AS ingreso,
@@ -512,6 +518,10 @@ async function obtenerMetricasVisitas(
     noConfiables:
       normalizarConteo(
         fila.no_confiables
+      ),
+    noRealizadas:
+      normalizarConteo(
+        fila.no_realizadas
       ),
     ingreso:
       normalizarConteo(
@@ -1736,7 +1746,7 @@ hace5Dias.setDate(
 
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
 
             <div className="min-w-0 rounded-lg border bg-green-50 p-4">
 
@@ -1764,6 +1774,22 @@ hace5Dias.setDate(
                 <NumeroAnimado
                   valor={
                     metricasVisitasMes.noConfiables
+                  }
+                />
+              </p>
+
+            </div>
+
+            <div className="min-w-0 rounded-lg border bg-slate-50 p-4">
+
+              <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
+                No se realizo
+              </span>
+
+              <p className="mt-3 break-words text-4xl font-bold leading-none text-slate-700">
+                <NumeroAnimado
+                  valor={
+                    metricasVisitasMes.noRealizadas
                   }
                 />
               </p>

@@ -172,12 +172,13 @@ export async function PATCH(
       ![
         "CONFIABLE",
         "NO CONFIABLE",
+        "NO SE REALIZO",
       ].includes(resultadoVisita)
     ) {
       return Response.json(
         {
           error:
-            "Debe seleccionar si la visita fue confiable o no confiable",
+            "Debe seleccionar el resultado de la visita",
         },
         {
           status: 400,

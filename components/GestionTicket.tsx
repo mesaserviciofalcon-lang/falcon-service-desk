@@ -136,7 +136,7 @@ export default function GestionTicket({
       !resultadoVisita
     ) {
       toast.error(
-        "Debe seleccionar si la visita fue confiable o no confiable"
+        "Debe seleccionar el resultado de la visita"
       );
       return;
     }
@@ -380,6 +380,12 @@ setTimeout(() => {
           <option value="NO CONFIABLE">
 
             NO CONFIABLE
+
+          </option>
+
+          <option value="NO SE REALIZO">
+
+            NO SE REALIZO
 
           </option>
 
