@@ -895,7 +895,9 @@ export default async function MetricasAnalisisPage({
       FROM "VulnerabilidadInforme"
       WHERE "fecha" >= ${inicio}
         AND "fecha" < ${fin}
-      GROUP BY supervisor, finca
+      GROUP BY
+        COALESCE(NULLIF("reportadoPor", ''), "supervisor", 'Sin supervisor'),
+        COALESCE(NULLIF("eai", ''), 'Sin finca')
       ORDER BY supervisor ASC, total DESC, finca ASC
     `,
     prisma
