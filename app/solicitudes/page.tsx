@@ -183,6 +183,63 @@ const [
     return;
   }
 
+  if (
+    tipo === "VISITA DOMICILIARIA"
+  ) {
+    const camposVisita = [
+      [
+        nombreCandidato,
+        "nombre del candidato",
+      ],
+      [
+        cedula,
+        "cedula",
+      ],
+      [
+        fechaExpedicion,
+        "fecha de expedicion",
+      ],
+      [
+        telefono,
+        "telefono",
+      ],
+      [
+        direccion,
+        "direccion",
+      ],
+      [
+        municipio,
+        "municipio",
+      ],
+      [
+        zona,
+        "zona",
+      ],
+      [
+        cargo,
+        "cargo",
+      ],
+      [
+        motivoVisita,
+        "motivo de la visita",
+      ],
+    ];
+
+    const campoFaltante =
+      camposVisita.find(
+        ([valor]) =>
+          !String(valor || "")
+            .trim()
+      );
+
+    if (campoFaltante) {
+      toast.error(
+        `Debe completar el campo: ${campoFaltante[1]}`
+      );
+      return;
+    }
+  }
+
   setGuardando(true);
 
     try {
@@ -542,6 +599,7 @@ setTimeout(() => {
   }
 
   className="border p-3 rounded-lg"
+  required
 >
 
   <option value="">

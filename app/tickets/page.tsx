@@ -20,9 +20,60 @@ import {
   visibleEnBandejaPorRol,
 } from "@/lib/visibilidadTickets";
 
-async function obtenerSolicitudes() {
+function obtenerWherePorRol(
+  role?: string
+) {
+  if (role === "VISITA") {
+    return {
+      tipo: "VISITA DOMICILIARIA",
+    };
+  }
+
+  if (role === "SUPERVISOR") {
+    return {
+      tipo: "ANTECEDENTES",
+      asignadoA: "SEGURIDAD",
+    };
+  }
+
+  if (role === "TECNICO") {
+    return {
+      tipo: {
+        in: [
+          "CCTV",
+          "RADIOS",
+        ],
+      },
+    };
+  }
+
+  if (
+    role === "JEFE_SEG" ||
+    role === "DIRECTOR_SEG"
+  ) {
+    return {
+      tipo: {
+        in: [
+          "CCTV",
+          "RADIOS",
+          "NOVEDAD SEGURIDAD",
+        ],
+      },
+    };
+  }
+
+  return {};
+}
+
+async function obtenerSolicitudes(
+  role?: string
+) {
 
   return prisma.solicitud.findMany({
+
+    where: obtenerWherePorRol(
+      role
+    ),
 
     include: {
 
@@ -63,7 +114,9 @@ const fincaEAI =
 
   const todasSolicitudes =
     ocultarSolicitudesHistoricas(
-      await obtenerSolicitudes()
+      await obtenerSolicitudes(
+        role
+      )
     );
 
   let solicitudes =

@@ -129,6 +129,51 @@ function obtenerMesMetricaTicket(
   );
 }
 
+function obtenerWhereDashboardPorRol(
+  role?: string
+) {
+  if (role === "VISITA") {
+    return {
+      tipo: "VISITA DOMICILIARIA",
+    };
+  }
+
+  if (role === "SUPERVISOR") {
+    return {
+      tipo: "ANTECEDENTES",
+      asignadoA: "SEGURIDAD",
+    };
+  }
+
+  if (role === "TECNICO") {
+    return {
+      tipo: {
+        in: [
+          "CCTV",
+          "RADIOS",
+        ],
+      },
+    };
+  }
+
+  if (
+    role === "JEFE_SEG" ||
+    role === "DIRECTOR_SEG"
+  ) {
+    return {
+      tipo: {
+        in: [
+          "CCTV",
+          "RADIOS",
+          "NOVEDAD SEGURIDAD",
+        ],
+      },
+    };
+  }
+
+  return {};
+}
+
 function obtenerMesAnterior(
   mes: string
 ) {
@@ -268,6 +313,11 @@ type MetricasVisitas = {
 
 type ConteoMes = {
   mes: string;
+};
+
+type ConteoVisitasMes = {
+  mes: string;
+  total: bigint | number;
 };
 
 const metricasAntecedentesVacias: MetricasAntecedentes = {
@@ -621,6 +671,52 @@ async function obtenerMesesVisitas(
   );
 }
 
+async function obtenerConteoVisitasPorMes(
+  anio: number
+) {
+  const resultado =
+    await prisma.$queryRaw<ConteoVisitasMes[]>`
+      WITH visitas AS (
+        SELECT
+          COALESCE(
+            v."fechaRealizada",
+            s."fechaGestion",
+            s."fechaCierre",
+            s."fechaCreacion"
+          ) AS fecha_indicador
+        FROM "SolicitudVisita" v
+        INNER JOIN "Solicitud" s
+          ON s."id" = v."solicitudId"
+        WHERE s."tipo" = 'VISITA DOMICILIARIA'
+        UNION ALL
+        SELECT
+          COALESCE(
+            h."fechaVisitaDate",
+            h."fechaSolicitudDate",
+            h."createdAt"
+          ) AS fecha_indicador
+        FROM "VisitaHistorica" h
+      )
+      SELECT
+        to_char(fecha_indicador, 'YYYY-MM') AS mes,
+        COUNT(*) AS total
+      FROM visitas
+      WHERE EXTRACT(YEAR FROM fecha_indicador)::int = ${anio}
+      GROUP BY mes
+      ORDER BY mes ASC
+    `;
+
+  return resultado.map(
+    (fila) => ({
+      mes: fila.mes,
+      total:
+        normalizarConteo(
+          fila.total
+        ),
+    })
+  );
+}
+
 function formatearMes(
   mes: string
 ) {
@@ -711,6 +807,11 @@ export default async function DashboardPage({
   const solicitudes =
     ocultarSolicitudesHistoricas(
       await prisma.solicitud.findMany({
+
+      where:
+        obtenerWhereDashboardPorRol(
+          role
+        ),
 
       include: {
 
@@ -1342,6 +1443,23 @@ hace5Dias.setDate(
       )
       .slice(0, 5);
 
+  const conteoVisitasMesesAnio =
+    role === "VISITA"
+      ? await obtenerConteoVisitasPorMes(
+          anioActual
+        )
+      : [];
+
+  const conteoVisitasPorMes =
+    new Map(
+      conteoVisitasMesesAnio.map(
+        (item) => [
+          item.mes,
+          item.total,
+        ]
+      )
+    );
+
   const visitasPorMesAnio =
     role === "VISITA"
       ? Array.from(
@@ -1357,12 +1475,9 @@ hace5Dias.setDate(
             return {
               mes,
               total:
-                ticketsMetricas.filter(
-                  (ticket: any) =>
-                    obtenerMesTicket(
-                      ticket.fechaCreacion
-                    ) === mes
-                ).length,
+                conteoVisitasPorMes.get(
+                  mes
+                ) || 0,
             };
           }
         )

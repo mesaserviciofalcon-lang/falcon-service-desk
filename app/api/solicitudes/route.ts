@@ -41,6 +41,53 @@ const rolesVistaTotal = [
   "TECNICO",
 ];
 
+const camposObligatoriosVisita = [
+  {
+    campo: "nombreCandidato",
+    etiqueta: "nombre del candidato",
+  },
+  {
+    campo: "cedula",
+    etiqueta: "cedula",
+  },
+  {
+    campo: "fechaExpedicion",
+    etiqueta: "fecha de expedicion",
+  },
+  {
+    campo: "telefono",
+    etiqueta: "telefono",
+  },
+  {
+    campo: "direccion",
+    etiqueta: "direccion",
+  },
+  {
+    campo: "municipio",
+    etiqueta: "municipio",
+  },
+  {
+    campo: "zona",
+    etiqueta: "zona",
+  },
+  {
+    campo: "cargo",
+    etiqueta: "cargo",
+  },
+  {
+    campo: "motivoVisita",
+    etiqueta: "motivo de la visita",
+  },
+];
+
+function valorCompleto(
+  valor: unknown
+) {
+  return String(valor || "")
+    .trim()
+    .length > 0;
+}
+
 export async function POST(
   request: Request
 ) {
@@ -79,6 +126,59 @@ export async function POST(
       session.user.fincaEAI ||
       body.fincaEAI ||
       "";
+
+    if (
+      body.tipo ===
+      "VISITA DOMICILIARIA"
+    ) {
+      const campoFaltante =
+        camposObligatoriosVisita.find(
+          ({ campo }) =>
+            !valorCompleto(
+              body[campo]
+            )
+        );
+
+      if (
+        campoFaltante ||
+        !valorCompleto(fincaSolicitud)
+      ) {
+        return Response.json(
+          {
+            error: `Debe completar todos los campos de la visita domiciliaria. Falta: ${
+              campoFaltante?.etiqueta ||
+              "finca/EAI"
+            }`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      if (
+        ![
+          "INGRESO",
+          "MANTENIMIENTO",
+        ].includes(
+          String(
+            body.motivoVisita
+          )
+            .trim()
+            .toUpperCase()
+        )
+      ) {
+        return Response.json(
+          {
+            error:
+              "El motivo de la visita debe ser INGRESO o MANTENIMIENTO",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+    }
 
     const archivoAntecedentesExcel =
       body.tipo === "ANTECEDENTES"
