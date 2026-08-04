@@ -255,11 +255,15 @@ type MetricasAntecedentes = {
 
 type MetricasVisitas = {
   total: number;
+  pendientes: number;
+  completadas: number;
   confiables: number;
   noConfiables: number;
   noRealizadas: number;
+  sinResultado: number;
   ingreso: number;
   mantenimiento: number;
+  sinMotivo: number;
 };
 
 type ConteoMes = {
@@ -277,11 +281,15 @@ const metricasAntecedentesVacias: MetricasAntecedentes = {
 
 const metricasVisitasVacias: MetricasVisitas = {
   total: 0,
+  pendientes: 0,
+  completadas: 0,
   confiables: 0,
   noConfiables: 0,
   noRealizadas: 0,
+  sinResultado: 0,
   ingreso: 0,
   mantenimiento: 0,
+  sinMotivo: 0,
 };
 
 function normalizarConteo(
@@ -437,15 +445,20 @@ async function obtenerMetricasVisitas(
     await prisma.$queryRaw<
       Array<{
         total: bigint | number;
+        pendientes: bigint | number;
+        completadas: bigint | number;
         confiables: bigint | number;
         no_confiables: bigint | number;
         no_realizadas: bigint | number;
+        sin_resultado: bigint | number;
         ingreso: bigint | number;
         mantenimiento: bigint | number;
+        sin_motivo: bigint | number;
       }>
     >`
       WITH visitas AS (
         SELECT
+          s."estado" AS estado,
           upper(trim(COALESCE(v."resultadoVisita", ''))) AS resultado,
           upper(trim(COALESCE(v."motivoVisita", ''))) AS motivo,
           COALESCE(
@@ -460,6 +473,7 @@ async function obtenerMetricasVisitas(
         WHERE s."tipo" = 'VISITA DOMICILIARIA'
         UNION ALL
         SELECT
+          'COMPLETADO' AS estado,
           CASE
             WHEN upper(trim(COALESCE(h."fechaVisitaRealizada", ''))) LIKE '%NO%CONFIABLE%'
               THEN 'NO CONFIABLE'
@@ -480,6 +494,12 @@ async function obtenerMetricasVisitas(
       SELECT
         COUNT(*) AS total,
         COUNT(*) FILTER (
+          WHERE estado <> 'COMPLETADO'
+        ) AS pendientes,
+        COUNT(*) FILTER (
+          WHERE estado = 'COMPLETADO'
+        ) AS completadas,
+        COUNT(*) FILTER (
           WHERE resultado LIKE '%CONFIABLE%'
             AND resultado NOT LIKE '%NO%CONFIABLE%'
         ) AS confiables,
@@ -490,13 +510,26 @@ async function obtenerMetricasVisitas(
           WHERE resultado LIKE '%NO%SE%REALIZO%'
         ) AS no_realizadas,
         COUNT(*) FILTER (
+          WHERE estado = 'COMPLETADO'
+            AND resultado = ''
+        ) AS sin_resultado,
+        COUNT(*) FILTER (
           WHERE motivo = 'INGRESO'
             OR motivo LIKE 'INGRESO %'
         ) AS ingreso,
         COUNT(*) FILTER (
           WHERE motivo = 'MANTENIMIENTO'
             OR motivo LIKE 'MANTENIMIENTO %'
-        ) AS mantenimiento
+        ) AS mantenimiento,
+        COUNT(*) FILTER (
+          WHERE motivo = ''
+            OR (
+              motivo <> 'INGRESO'
+              AND motivo NOT LIKE 'INGRESO %'
+              AND motivo <> 'MANTENIMIENTO'
+              AND motivo NOT LIKE 'MANTENIMIENTO %'
+            )
+        ) AS sin_motivo
       FROM visitas
       WHERE to_char(fecha_indicador, 'YYYY-MM') = ${mes}
     `;
@@ -511,6 +544,14 @@ async function obtenerMetricasVisitas(
   return {
     total:
       normalizarConteo(fila.total),
+    pendientes:
+      normalizarConteo(
+        fila.pendientes
+      ),
+    completadas:
+      normalizarConteo(
+        fila.completadas
+      ),
     confiables:
       normalizarConteo(
         fila.confiables
@@ -523,6 +564,10 @@ async function obtenerMetricasVisitas(
       normalizarConteo(
         fila.no_realizadas
       ),
+    sinResultado:
+      normalizarConteo(
+        fila.sin_resultado
+      ),
     ingreso:
       normalizarConteo(
         fila.ingreso
@@ -530,6 +575,10 @@ async function obtenerMetricasVisitas(
     mantenimiento:
       normalizarConteo(
         fila.mantenimiento
+      ),
+    sinMotivo:
+      normalizarConteo(
+        fila.sin_motivo
       ),
   };
 }
@@ -953,14 +1002,17 @@ hace5Dias.setDate(
 
     ||
 
-    role === "JEFE_SEG";
+    role === "JEFE_SEG"
+
+    ||
+
+    role === "VISITA";
 
   const puedeSeleccionarMes =
     role === "ADMIN";
 
   const aplicarFiltroMes =
-    role === "ADMIN" ||
-    usaMetricasMensualesGestor;
+    role === "SUPERVISOR";
 
   const mesIndicadores =
     puedeSeleccionarMes
@@ -981,8 +1033,18 @@ hace5Dias.setDate(
         )
       : ticketsMetricas;
 
+  const ticketsMetricasMesIndicadores =
+    ticketsMetricas.filter(
+      (ticket: any) =>
+        obtenerMesTicket(
+          ticket.fechaCreacion
+        ) === mesIndicadores
+    );
+
   const ticketsMetricasEstados =
-    aplicarFiltroMes
+    role === "ADMIN"
+      ? ticketsMetricas
+      : aplicarFiltroMes
       ? ticketsMetricas.filter(
           (ticket: any) =>
             obtenerMesMetricaTicket(
@@ -1243,7 +1305,11 @@ hace5Dias.setDate(
 
   const fincasTop =
     Object.entries(
-      ticketsMetricasFiltradas.reduce(
+      (
+        role === "VISITA"
+          ? ticketsMetricasMesIndicadores
+          : ticketsMetricasFiltradas
+      ).reduce(
         (
           acumulado: Record<string, number>,
           ticket: any
@@ -1275,6 +1341,40 @@ hace5Dias.setDate(
           b.total - a.total
       )
       .slice(0, 5);
+
+  const visitasPorMesAnio =
+    role === "VISITA"
+      ? Array.from(
+          {
+            length: 12,
+          },
+          (_, indice) => {
+            const mes =
+              `${anioActual}-${String(
+                indice + 1
+              ).padStart(2, "0")}`;
+
+            return {
+              mes,
+              total:
+                ticketsMetricas.filter(
+                  (ticket: any) =>
+                    obtenerMesTicket(
+                      ticket.fechaCreacion
+                    ) === mes
+                ).length,
+            };
+          }
+        )
+      : [];
+
+  const mayorVisitasMes =
+    Math.max(
+      ...visitasPorMesAnio.map(
+        (item) => item.total
+      ),
+      1
+    );
 
   const continuarProceso =
     metricasAntecedentesMes.continuar;
@@ -1746,85 +1846,158 @@ hace5Dias.setDate(
 
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1fr_1.4fr]">
 
-            <div className="min-w-0 rounded-lg border bg-green-50 p-4">
+            <div className="rounded-lg border bg-blue-50 p-4">
 
               <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
-                Confiables
+                Tipo de visita
               </span>
 
-              <p className="mt-3 break-words text-4xl font-bold leading-none text-green-700">
-                <NumeroAnimado
-                  valor={
-                    metricasVisitasMes.confiables
-                  }
-                />
-              </p>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+
+                <div>
+                  <p className="text-xs text-gray-500">
+                    Ingreso
+                  </p>
+                  <strong className="text-2xl text-blue-700">
+                    <NumeroAnimado
+                      valor={
+                        metricasVisitasMes.ingreso
+                      }
+                    />
+                  </strong>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">
+                    Mantenimiento
+                  </p>
+                  <strong className="text-2xl text-amber-700">
+                    <NumeroAnimado
+                      valor={
+                        metricasVisitasMes.mantenimiento
+                      }
+                    />
+                  </strong>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">
+                    Sin clasificar
+                  </p>
+                  <strong className="text-2xl text-slate-700">
+                    <NumeroAnimado
+                      valor={
+                        metricasVisitasMes.sinMotivo
+                      }
+                    />
+                  </strong>
+                </div>
+
+              </div>
 
             </div>
 
-            <div className="min-w-0 rounded-lg border bg-red-50 p-4">
+            <div className="rounded-lg border bg-slate-50 p-4">
 
               <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
-                No confiables
+                Estado operativo
               </span>
 
-              <p className="mt-3 break-words text-4xl font-bold leading-none text-red-700">
-                <NumeroAnimado
-                  valor={
-                    metricasVisitasMes.noConfiables
-                  }
-                />
-              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+
+                <div>
+                  <p className="text-xs text-gray-500">
+                    Pendientes
+                  </p>
+                  <strong className="text-2xl text-yellow-700">
+                    <NumeroAnimado
+                      valor={
+                        metricasVisitasMes.pendientes
+                      }
+                    />
+                  </strong>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500">
+                    Completadas
+                  </p>
+                  <strong className="text-2xl text-green-700">
+                    <NumeroAnimado
+                      valor={
+                        metricasVisitasMes.completadas
+                      }
+                    />
+                  </strong>
+                </div>
+
+              </div>
 
             </div>
 
-            <div className="min-w-0 rounded-lg border bg-slate-50 p-4">
+            <div className="rounded-lg border bg-green-50 p-4">
 
               <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
-                No se realizo
+                Resultado de completadas
               </span>
 
-              <p className="mt-3 break-words text-4xl font-bold leading-none text-slate-700">
-                <NumeroAnimado
-                  valor={
-                    metricasVisitasMes.noRealizadas
-                  }
-                />
-              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
 
-            </div>
+                <div>
+                  <p className="text-xs text-gray-500">
+                    Confiables
+                  </p>
+                  <strong className="text-2xl text-green-700">
+                    <NumeroAnimado
+                      valor={
+                        metricasVisitasMes.confiables
+                      }
+                    />
+                  </strong>
+                </div>
 
-            <div className="min-w-0 rounded-lg border bg-blue-50 p-4">
+                <div>
+                  <p className="text-xs text-gray-500">
+                    No confiables
+                  </p>
+                  <strong className="text-2xl text-red-700">
+                    <NumeroAnimado
+                      valor={
+                        metricasVisitasMes.noConfiables
+                      }
+                    />
+                  </strong>
+                </div>
 
-              <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
-                Ingreso
-              </span>
+                <div>
+                  <p className="text-xs text-gray-500">
+                    No se realizo
+                  </p>
+                  <strong className="text-2xl text-slate-700">
+                    <NumeroAnimado
+                      valor={
+                        metricasVisitasMes.noRealizadas
+                      }
+                    />
+                  </strong>
+                </div>
 
-              <p className="mt-3 break-words text-4xl font-bold leading-none text-blue-700">
-                <NumeroAnimado
-                  valor={
-                    metricasVisitasMes.ingreso
-                  }
-                />
-              </p>
+                <div>
+                  <p className="text-xs text-gray-500">
+                    Sin resultado
+                  </p>
+                  <strong className="text-2xl text-slate-700">
+                    <NumeroAnimado
+                      valor={
+                        metricasVisitasMes.sinResultado
+                      }
+                    />
+                  </strong>
+                </div>
 
-            </div>
-
-            <div className="min-w-0 rounded-lg border bg-amber-50 p-4">
-
-              <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
-                Mantenimiento
-              </span>
-
-              <p className="mt-3 break-words text-4xl font-bold leading-none text-amber-700">
-                <NumeroAnimado
-                  valor={
-                    metricasVisitasMes.mantenimiento
-                  }
-                />
-              </p>
+              </div>
 
             </div>
 
@@ -2003,7 +2176,7 @@ hace5Dias.setDate(
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
 
           <h2 className="text-sm font-bold uppercase text-gray-500">
-            Atención prioritaria
+            Tiempo de gestion
           </h2>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
@@ -2071,59 +2244,134 @@ hace5Dias.setDate(
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
 
-          <h2 className="text-sm font-bold uppercase text-gray-500">
-            Solicitudes por tipo
-          </h2>
+          {role === "VISITA" ? (
 
-          <div className="mt-4 flex flex-col gap-3">
+            <>
 
-            {tiposSolicitud.slice(0, 5).map(
-              (item) => (
+              <h2 className="text-sm font-bold uppercase text-gray-500">
+                Visitas por mes
+              </h2>
 
-                <div key={item.tipo}>
+              <p className="mt-1 text-xs text-gray-500">
+                Anio en curso {anioActual}
+              </p>
 
-                  <div className="mb-1 flex justify-between gap-3 text-sm">
+              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
 
-                    <span className="font-medium text-gray-700">
-                      {item.tipo}
-                    </span>
-
-                    <span className="font-bold text-gray-800">
-                      {item.total}
-                    </span>
-
-                  </div>
-
-                  <div className="h-2 rounded-full bg-gray-100">
+                {visitasPorMesAnio.map(
+                  (item) => (
 
                     <div
-                      className="h-2 rounded-full bg-[#0F7A3B]"
-                      style={{
-                        width: `${Math.max(
-                          8,
-                          (
-                            item.total /
-                            mayorTipo
-                          ) *
-                            100
-                        )}%`,
-                      }}
-                    />
+                      key={item.mes}
+                      className="rounded-lg border bg-slate-50 px-3 py-2"
+                    >
 
-                  </div>
+                      <div className="mb-1 flex items-center justify-between gap-3 text-xs">
 
-                </div>
-              )
-            )}
+                        <span className="font-semibold capitalize text-gray-600">
+                          {formatearMes(
+                            item.mes
+                          ).replace(
+                            ` de ${anioActual}`,
+                            ""
+                          )}
+                        </span>
 
-          </div>
+                        <span className="font-bold text-gray-800">
+                          {item.total}
+                        </span>
+
+                      </div>
+
+                      <div className="h-2 rounded-full bg-white">
+
+                        <div
+                          className="h-2 rounded-full bg-[#0F7A3B]"
+                          style={{
+                            width: item.total
+                              ? `${Math.max(
+                                  8,
+                                  (
+                                    item.total /
+                                    mayorVisitasMes
+                                  ) *
+                                    100
+                                )}%`
+                              : "0%",
+                          }}
+                        />
+
+                      </div>
+
+                    </div>
+                  )
+                )}
+
+              </div>
+
+            </>
+          ) : (
+
+            <>
+
+              <h2 className="text-sm font-bold uppercase text-gray-500">
+                Solicitudes por tipo
+              </h2>
+
+              <div className="mt-4 flex flex-col gap-3">
+
+                {tiposSolicitud.slice(0, 5).map(
+                  (item) => (
+
+                    <div key={item.tipo}>
+
+                      <div className="mb-1 flex justify-between gap-3 text-sm">
+
+                        <span className="font-medium text-gray-700">
+                          {item.tipo}
+                        </span>
+
+                        <span className="font-bold text-gray-800">
+                          {item.total}
+                        </span>
+
+                      </div>
+
+                      <div className="h-2 rounded-full bg-gray-100">
+
+                        <div
+                          className="h-2 rounded-full bg-[#0F7A3B]"
+                          style={{
+                            width: `${Math.max(
+                              8,
+                              (
+                                item.total /
+                                mayorTipo
+                              ) *
+                                100
+                            )}%`,
+                          }}
+                        />
+
+                      </div>
+
+                    </div>
+                  )
+                )}
+
+              </div>
+
+            </>
+          )}
 
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
 
           <h2 className="text-sm font-bold uppercase text-gray-500">
-            Fincas con más solicitudes
+            {role === "VISITA"
+              ? "Fincas con mas solicitudes del mes"
+              : "Fincas con mas solicitudes"}
           </h2>
 
           <div className="mt-4 flex flex-col gap-3">
