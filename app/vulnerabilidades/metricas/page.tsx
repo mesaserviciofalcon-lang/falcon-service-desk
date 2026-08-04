@@ -12,6 +12,7 @@ from "@/lib/prisma";
 
 type SearchParams = {
   mes?: string;
+  anio?: string;
 };
 
 function mesActualBogota() {
@@ -27,6 +28,11 @@ function mesActualBogota() {
         "America/Bogota",
     }
   );
+}
+
+function anioActualBogota() {
+  return mesActualBogota()
+    .slice(0, 4);
 }
 
 function rangoMesBogota(
@@ -73,6 +79,44 @@ function rangoMesBogota(
           month === 12
             ? 0
             : month,
+          1,
+          5,
+          0,
+          0
+        )
+      ),
+  };
+}
+
+function rangoAnioBogota(
+  anio: string
+) {
+  const year =
+    Number(anio);
+
+  if (!year) {
+    return rangoAnioBogota(
+      anioActualBogota()
+    );
+  }
+
+  return {
+    inicio:
+      new Date(
+        Date.UTC(
+          year,
+          0,
+          1,
+          5,
+          0,
+          0
+        )
+      ),
+    fin:
+      new Date(
+        Date.UTC(
+          year + 1,
+          0,
           1,
           5,
           0,
@@ -287,6 +331,8 @@ function EstadoBadge({
 function FincasActos({
   filas,
   fincas,
+  titulo = "Actos inseguros por finca",
+  subtitulo = "Relaciona cada finca con los actos reportados en el mes.",
 }: {
   filas: Array<{
     finca: string;
@@ -295,6 +341,8 @@ function FincasActos({
     total: number;
   }>;
   fincas: string[];
+  titulo?: string;
+  subtitulo?: string;
 }) {
   const agrupado =
     fincas.map((finca) => {
@@ -371,23 +419,30 @@ function FincasActos({
               cantidad,
             })
           )
-          .sort(
+        .sort(
             (a, b) =>
               b.cantidad -
               a.cantidad
           ),
       };
-    });
+    })
+    .filter(
+      (item) => item.total > 0
+    )
+    .sort(
+      (a, b) =>
+        b.total - a.total
+    );
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-[#0F3D1F]">
-            Actos inseguros por finca
+            {titulo}
           </h2>
           <p className="text-sm text-slate-500">
-            Relaciona cada finca con los actos reportados en el mes.
+            {subtitulo}
           </p>
         </div>
         <span className="text-sm font-semibold text-slate-500">
@@ -532,6 +587,10 @@ function EstadoPorFinca({
       })
       .filter(
         (item) => item.total > 0
+      )
+      .sort(
+        (a, b) =>
+          b.total - a.total
       );
 
   return (
@@ -619,7 +678,35 @@ function SupervisoresPorFinca({
             fila.supervisor
         )
       )
-    );
+    ).sort((a, b) => {
+      const totalA =
+        filas
+          .filter(
+            (fila) =>
+              fila.supervisor === a
+          )
+          .reduce(
+            (sumatoria, fila) =>
+              sumatoria +
+              fila.total,
+            0
+          );
+
+      const totalB =
+        filas
+          .filter(
+            (fila) =>
+              fila.supervisor === b
+          )
+          .reduce(
+            (sumatoria, fila) =>
+              sumatoria +
+              fila.total,
+            0
+          );
+
+      return totalB - totalA;
+    });
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
@@ -640,6 +727,11 @@ function SupervisoresPorFinca({
                   (fila) =>
                     fila.supervisor ===
                     supervisor
+                )
+                .sort(
+                  (a, b) =>
+                    b.total -
+                    a.total
                 );
 
               const total =
@@ -719,10 +811,16 @@ export default async function MetricasAnalisisPage({
     await searchParams;
   const mes =
     params.mes || mesActualBogota();
+  const anio =
+    params.anio || anioActualBogota();
   const {
     inicio,
     fin,
   } = rangoMesBogota(mes);
+  const {
+    inicio: inicioAnio,
+    fin: finAnio,
+  } = rangoAnioBogota(anio);
   const whereMes = {
     fecha: {
       gte:
@@ -731,9 +829,18 @@ export default async function MetricasAnalisisPage({
         fin,
     },
   };
+  const whereAnio = {
+    fecha: {
+      gte:
+        inicioAnio,
+      lt:
+        finAnio,
+    },
+  };
 
   const [
     mesesRaw,
+    aniosRaw,
     total,
     abiertos,
     cerrados,
@@ -744,6 +851,13 @@ export default async function MetricasAnalisisPage({
     porReportadoPor,
     porFincaActoEstado,
     porSupervisorFinca,
+    totalAnio,
+    abiertosAnio,
+    cerradosAnio,
+    porFincaActoEstadoAnio,
+    porSupervisorFincaAnio,
+    porEaiAnio,
+    porActoAnio,
     totalHistorico,
   ] = await Promise.all([
     prisma.$queryRaw<
@@ -753,8 +867,18 @@ export default async function MetricasAnalisisPage({
     >`
       SELECT to_char("fecha", 'YYYY-MM') AS mes
       FROM "VulnerabilidadInforme"
-      GROUP BY mes
+      GROUP BY 1
       ORDER BY mes DESC
+    `,
+    prisma.$queryRaw<
+      Array<{
+        anio: string;
+      }>
+    >`
+      SELECT to_char("fecha", 'YYYY') AS anio
+      FROM "VulnerabilidadInforme"
+      GROUP BY 1
+      ORDER BY anio DESC
     `,
     prisma
       .vulnerabilidadInforme
@@ -858,7 +982,8 @@ export default async function MetricasAnalisisPage({
       FROM "VulnerabilidadInforme"
       WHERE "fecha" >= ${inicio}
         AND "fecha" < ${fin}
-      GROUP BY nombre
+      GROUP BY
+        COALESCE(NULLIF("reportadoPor", ''), "supervisor")
       ORDER BY total DESC
       LIMIT 10
     `,
@@ -878,8 +1003,11 @@ export default async function MetricasAnalisisPage({
       FROM "VulnerabilidadInforme"
       WHERE "fecha" >= ${inicio}
         AND "fecha" < ${fin}
-      GROUP BY finca, acto, estado
-      ORDER BY finca ASC, total DESC, acto ASC
+      GROUP BY
+        COALESCE(NULLIF("eai", ''), 'Sin finca'),
+        COALESCE(NULLIF("actoInseguro", ''), 'Sin acto'),
+        COALESCE(NULLIF("estado", ''), 'ABIERTO')
+      ORDER BY total DESC, finca ASC, acto ASC
     `,
     prisma.$queryRaw<
       Array<{
@@ -898,46 +1026,173 @@ export default async function MetricasAnalisisPage({
       GROUP BY
         COALESCE(NULLIF("reportadoPor", ''), "supervisor", 'Sin supervisor'),
         COALESCE(NULLIF("eai", ''), 'Sin finca')
-      ORDER BY supervisor ASC, total DESC, finca ASC
+      ORDER BY total DESC, supervisor ASC, finca ASC
     `,
+    prisma
+      .vulnerabilidadInforme
+      .count({
+        where:
+          whereAnio,
+      }),
+    prisma
+      .vulnerabilidadInforme
+      .count({
+        where: {
+          ...whereAnio,
+          estado: {
+            not:
+              "CERRADO",
+          },
+        },
+      }),
+    prisma
+      .vulnerabilidadInforme
+      .count({
+        where: {
+          ...whereAnio,
+          estado:
+            "CERRADO",
+        },
+      }),
+    prisma.$queryRaw<
+      Array<{
+        finca: string | null;
+        acto: string | null;
+        estado: string | null;
+        total: bigint;
+      }>
+    >`
+      SELECT
+        COALESCE(NULLIF("eai", ''), 'Sin finca') AS finca,
+        COALESCE(NULLIF("actoInseguro", ''), 'Sin acto') AS acto,
+        COALESCE(NULLIF("estado", ''), 'ABIERTO') AS estado,
+        COUNT(*) AS total
+      FROM "VulnerabilidadInforme"
+      WHERE "fecha" >= ${inicioAnio}
+        AND "fecha" < ${finAnio}
+      GROUP BY
+        COALESCE(NULLIF("eai", ''), 'Sin finca'),
+        COALESCE(NULLIF("actoInseguro", ''), 'Sin acto'),
+        COALESCE(NULLIF("estado", ''), 'ABIERTO')
+      ORDER BY total DESC, finca ASC, acto ASC
+    `,
+    prisma.$queryRaw<
+      Array<{
+        supervisor: string | null;
+        finca: string | null;
+        total: bigint;
+      }>
+    >`
+      SELECT
+        COALESCE(NULLIF("reportadoPor", ''), "supervisor", 'Sin supervisor') AS supervisor,
+        COALESCE(NULLIF("eai", ''), 'Sin finca') AS finca,
+        COUNT(*) AS total
+      FROM "VulnerabilidadInforme"
+      WHERE "fecha" >= ${inicioAnio}
+        AND "fecha" < ${finAnio}
+      GROUP BY
+        COALESCE(NULLIF("reportadoPor", ''), "supervisor", 'Sin supervisor'),
+        COALESCE(NULLIF("eai", ''), 'Sin finca')
+      ORDER BY total DESC, supervisor ASC, finca ASC
+    `,
+    prisma
+      .vulnerabilidadInforme
+      .groupBy({
+        by: ["eai"],
+        where:
+          whereAnio,
+        _count: {
+          _all: true,
+        },
+        orderBy: {
+          _count: {
+            eai: "desc",
+          },
+        },
+      }),
+    prisma
+      .vulnerabilidadInforme
+      .groupBy({
+        by: ["actoInseguro"],
+        where:
+          whereAnio,
+        _count: {
+          _all: true,
+        },
+        orderBy: {
+          _count: {
+            actoInseguro:
+              "desc",
+          },
+        },
+      }),
     prisma
       .vulnerabilidadInforme
       .count(),
   ]);
 
+  const mapearFincaActoEstado = (
+    filas: Array<{
+      finca: string | null;
+      acto: string | null;
+      estado: string | null;
+      total: bigint;
+    }>
+  ) =>
+    filas.map((item) => ({
+      finca:
+        item.finca ||
+        "Sin finca",
+      acto:
+        item.acto ||
+        "Sin acto",
+      estado:
+        String(
+          item.estado ||
+            "ABIERTO"
+        )
+          .trim()
+          .toUpperCase(),
+      total:
+        Number(item.total),
+    }));
+
+  const mapearSupervisorFinca = (
+    filas: Array<{
+      supervisor: string | null;
+      finca: string | null;
+      total: bigint;
+    }>
+  ) =>
+    filas.map((item) => ({
+      supervisor:
+        item.supervisor ||
+        "Sin supervisor",
+      finca:
+        item.finca ||
+        "Sin finca",
+      total:
+        Number(item.total),
+    }));
+
   const fincaActoEstado =
-    porFincaActoEstado.map(
-      (item) => ({
-        finca:
-          item.finca ||
-          "Sin finca",
-        acto:
-          item.acto ||
-          "Sin acto",
-        estado:
-          String(
-            item.estado ||
-              "ABIERTO"
-          )
-            .trim()
-            .toUpperCase(),
-        total:
-          Number(item.total),
-      })
+    mapearFincaActoEstado(
+      porFincaActoEstado
     );
 
   const supervisorFinca =
-    porSupervisorFinca.map(
-      (item) => ({
-        supervisor:
-          item.supervisor ||
-          "Sin supervisor",
-        finca:
-          item.finca ||
-          "Sin finca",
-        total:
-          Number(item.total),
-      })
+    mapearSupervisorFinca(
+      porSupervisorFinca
+    );
+
+  const fincaActoEstadoAnio =
+    mapearFincaActoEstado(
+      porFincaActoEstadoAnio
+    );
+
+  const supervisorFincaAnio =
+    mapearSupervisorFinca(
+      porSupervisorFincaAnio
     );
 
   const fincas =
@@ -947,6 +1202,16 @@ export default async function MetricasAnalisisPage({
           .map((item) => item.finca)
           .concat(
             supervisorFinca.map(
+              (item) => item.finca
+            )
+          )
+          .concat(
+            fincaActoEstadoAnio.map(
+              (item) => item.finca
+            )
+          )
+          .concat(
+            supervisorFincaAnio.map(
               (item) => item.finca
             )
           )
@@ -960,6 +1225,11 @@ export default async function MetricasAnalisisPage({
       ? mesesRaw
       : [{ mes }];
 
+  const anios =
+    aniosRaw.length > 0
+      ? aniosRaw
+      : [{ anio }];
+
   return (
     <div className="min-h-screen bg-[#E8EEF2] p-8">
       <div className="mb-6">
@@ -967,7 +1237,7 @@ export default async function MetricasAnalisisPage({
           Metricas analisis
         </h1>
         <p className="mt-2 text-slate-600">
-          Indicadores mensuales de analisis de vulnerabilidad.
+          Indicadores mensuales y acumulados anuales de analisis de vulnerabilidad.
         </p>
       </div>
 
@@ -992,6 +1262,26 @@ export default async function MetricasAnalisisPage({
           </select>
         </div>
 
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-bold uppercase text-slate-500">
+            Año
+          </label>
+          <select
+            name="anio"
+            defaultValue={anio}
+            className="min-w-40 rounded-lg border p-3"
+          >
+            {anios.map((item) => (
+              <option
+                key={item.anio}
+                value={item.anio}
+              >
+                {item.anio}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <button
           type="submit"
           className="rounded-lg bg-[#0F3D1F] px-5 py-3 text-sm font-bold text-white hover:bg-[#14532d]"
@@ -999,6 +1289,15 @@ export default async function MetricasAnalisisPage({
           Ver metricas
         </button>
       </form>
+
+      <div className="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-md">
+        <p className="text-xs font-bold uppercase text-slate-500">
+          Vista mensual
+        </p>
+        <h2 className="mt-1 text-xl font-bold text-[#0F3D1F]">
+          {etiquetaMes(mes)}
+        </h2>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Tarjeta
@@ -1051,6 +1350,8 @@ export default async function MetricasAnalisisPage({
         <FincasActos
           filas={fincaActoEstado}
           fincas={fincas}
+          titulo="Actos inseguros por finca del mes"
+          subtitulo="Ordenado desde la finca con mas analisis hasta la de menor volumen."
         />
       </div>
 
@@ -1079,7 +1380,7 @@ export default async function MetricasAnalisisPage({
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
         <TablaSimple
-          titulo="Fincas con mas analisis"
+          titulo="Fincas con mas analisis del mes"
           total={total}
           filas={porEai.map(
             (item) => ({
@@ -1092,7 +1393,7 @@ export default async function MetricasAnalisisPage({
           )}
         />
         <TablaSimple
-          titulo="Actos inseguros"
+          titulo="Actos inseguros del mes"
           total={total}
           filas={porActo.map(
             (item) => ({
@@ -1105,7 +1406,7 @@ export default async function MetricasAnalisisPage({
           )}
         />
         <TablaSimple
-          titulo="Reportados por"
+          titulo="Reportados por del mes"
           total={total}
           filas={porReportadoPor.map(
             (item) => ({
@@ -1114,6 +1415,99 @@ export default async function MetricasAnalisisPage({
                 "Sin supervisor",
               total:
                 Number(item.total),
+            })
+          )}
+        />
+      </div>
+
+      <div className="mt-8 rounded-xl border border-slate-200 bg-white p-5 shadow-md">
+        <p className="text-xs font-bold uppercase text-slate-500">
+          Vista anual
+        </p>
+        <h2 className="mt-1 text-xl font-bold text-[#0F3D1F]">
+          Acumulado {anio}
+        </h2>
+        <p className="mt-2 text-sm text-slate-500">
+          Agrupa todos los analisis del año seleccionado y los ordena por mayor cantidad.
+        </p>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Tarjeta
+          titulo="Analisis del año"
+          valor={totalAnio}
+          detalle={`Acumulado ${anio}`}
+        />
+        <Tarjeta
+          titulo="Abiertos del año"
+          valor={abiertosAnio}
+          detalle={`${calcularPorcentaje(abiertosAnio, totalAnio)} del año`}
+          color="text-red-700"
+        />
+        <Tarjeta
+          titulo="Cerrados del año"
+          valor={cerradosAnio}
+          detalle={`${calcularPorcentaje(cerradosAnio, totalAnio)} del año`}
+          color="text-green-700"
+        />
+      </div>
+
+      <div className="mt-4">
+        <FincasActos
+          filas={fincaActoEstadoAnio}
+          fincas={fincas}
+          titulo="Actos inseguros por finca del año"
+          subtitulo="Acumulado anual ordenado desde la finca con mas analisis hasta la de menor volumen."
+        />
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <EstadoPorFinca
+          titulo="Abiertos del año por finca"
+          filas={fincaActoEstadoAnio}
+          fincas={fincas}
+          estado="ABIERTO"
+        />
+
+        <EstadoPorFinca
+          titulo="Cerrados del año por finca"
+          filas={fincaActoEstadoAnio}
+          fincas={fincas}
+          estado="CERRADO"
+        />
+      </div>
+
+      <div className="mt-4">
+        <SupervisoresPorFinca
+          filas={supervisorFincaAnio}
+          fincas={fincas}
+        />
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <TablaSimple
+          titulo="Fincas con mas analisis del año"
+          total={totalAnio}
+          filas={porEaiAnio.map(
+            (item) => ({
+              nombre:
+                item.eai ||
+                "Sin finca",
+              total:
+                item._count._all,
+            })
+          )}
+        />
+        <TablaSimple
+          titulo="Actos inseguros del año"
+          total={totalAnio}
+          filas={porActoAnio.map(
+            (item) => ({
+              nombre:
+                item.actoInseguro ||
+                "Sin acto",
+              total:
+                item._count._all,
             })
           )}
         />
