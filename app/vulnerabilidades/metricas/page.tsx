@@ -1230,6 +1230,10 @@ export default async function MetricasAnalisisPage({
       ? aniosRaw
       : [{ anio }];
 
+  const modoAnual =
+    Boolean(params.anio) &&
+    !params.mes;
+
   return (
     <div className="min-h-screen bg-[#E8EEF2] p-8">
       <div className="mb-6">
@@ -1241,27 +1245,37 @@ export default async function MetricasAnalisisPage({
         </p>
       </div>
 
-      <form className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-md">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold uppercase text-slate-500">
-            Mes
-          </label>
-          <select
-            name="mes"
-            defaultValue={mes}
-            className="min-w-56 rounded-lg border p-3"
-          >
-            {meses.map((item) => (
-              <option
-                key={item.mes}
-                value={item.mes}
-              >
-                {etiquetaMes(item.mes)}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="mb-6 grid grid-cols-1 gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-md xl:grid-cols-2">
+        <form className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold uppercase text-slate-500">
+              Mes
+            </label>
+            <select
+              name="mes"
+              defaultValue={mes}
+              className="min-w-56 rounded-lg border p-3"
+            >
+              {meses.map((item) => (
+                <option
+                  key={item.mes}
+                  value={item.mes}
+                >
+                  {etiquetaMes(item.mes)}
+                </option>
+              ))}
+            </select>
+          </div>
 
+        <button
+          type="submit"
+          className="rounded-lg bg-[#0F3D1F] px-5 py-3 text-sm font-bold text-white hover:bg-[#14532d]"
+        >
+          Ver mes
+        </button>
+        </form>
+
+        <form className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1">
           <label className="text-xs font-bold uppercase text-slate-500">
             Año
@@ -1286,10 +1300,12 @@ export default async function MetricasAnalisisPage({
           type="submit"
           className="rounded-lg bg-[#0F3D1F] px-5 py-3 text-sm font-bold text-white hover:bg-[#14532d]"
         >
-          Ver metricas
+          Ver año completo
         </button>
       </form>
+      </div>
 
+      <div className={modoAnual ? "hidden" : "block"}>
       <div className="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-md">
         <p className="text-xs font-bold uppercase text-slate-500">
           Vista mensual
@@ -1420,6 +1436,9 @@ export default async function MetricasAnalisisPage({
         />
       </div>
 
+      </div>
+
+      <div className={modoAnual ? "block" : "hidden"}>
       <div className="mt-8 rounded-xl border border-slate-200 bg-white p-5 shadow-md">
         <p className="text-xs font-bold uppercase text-slate-500">
           Vista anual
@@ -1511,6 +1530,7 @@ export default async function MetricasAnalisisPage({
             })
           )}
         />
+      </div>
       </div>
     </div>
   );
