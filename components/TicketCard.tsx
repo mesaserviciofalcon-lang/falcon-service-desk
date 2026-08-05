@@ -42,8 +42,11 @@ export default function TicketCard({
     );
 
   const puedeReabrir =
-    isSolicitante &&
-    isCompletado;
+    isCompletado &&
+    (
+      isSolicitante ||
+      role === "ADMIN"
+    );
 
   const puedeGestionar =
     Boolean(role) &&
@@ -747,6 +750,12 @@ export default function TicketCard({
 
           usuario={
             session?.user?.name || ""
+          }
+
+          motivo={
+            role === "ADMIN"
+              ? "Ticket reabierto por administrador"
+              : "Ticket reabierto por solicitante"
           }
 
         />

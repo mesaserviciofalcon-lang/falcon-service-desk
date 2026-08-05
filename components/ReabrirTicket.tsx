@@ -9,11 +9,16 @@ export default function ReabrirTicket({
 
   usuario,
 
+  motivo =
+    "Ticket reabierto por solicitante",
+
 }: {
 
   ticketId: number;
 
   usuario: string;
+
+  motivo?: string;
 }) {
 
   async function reabrirTicket() {
@@ -49,7 +54,7 @@ body: JSON.stringify({
   estado: "REABIERTO",
 
   observacionesTecnico:
-  "Ticket reabierto por solicitante",
+  motivo,
 
   gestionadoPor:
     usuario,

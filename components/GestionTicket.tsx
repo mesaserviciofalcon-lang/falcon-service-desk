@@ -131,6 +131,16 @@ export default function GestionTicket({
 
     if (
       role !== "SOLICITANTE" &&
+      !observaciones.trim()
+    ) {
+      toast.error(
+        "Debe registrar una observación de la gestión"
+      );
+      return;
+    }
+
+    if (
+      role !== "SOLICITANTE" &&
       esVisita &&
       estado === "COMPLETADO" &&
       !resultadoVisita

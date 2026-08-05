@@ -17,6 +17,10 @@ import { solicitantePuedeVerSolicitud }
 from "@/lib/visibilidadSolicitudes";
 
 import {
+  validarRegistroAntecedente,
+} from "@/lib/validacionAntecedentesGestion";
+
+import {
 
   ticketActualizadoTemplate,
 
@@ -152,10 +156,30 @@ export async function PATCH(
       body.gestionadoPor ||
       "SISTEMA";
 
+    const observacionesTecnico =
+      String(
+        body.observacionesTecnico || ""
+      ).trim();
+
     const estadoFinal =
       esActualizacionSolicitanteReabierto
         ? solicitudActual.estado
         : estadoSolicitado;
+
+    if (
+      esGestionValida &&
+      !observacionesTecnico
+    ) {
+      return Response.json(
+        {
+          error:
+            "Debe registrar una observación de la gestión",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
     const resultadoVisita =
       String(
@@ -186,6 +210,63 @@ export async function PATCH(
       );
     }
 
+    if (
+      solicitudActual.tipo ===
+        "ANTECEDENTES" &&
+      esGestionValida &&
+      estadoFinal === "COMPLETADO"
+    ) {
+      const registrosAntecedentes =
+        await prisma
+          .antecedenteRegistro
+          .findMany({
+            where: {
+              solicitudId: id,
+            },
+            select: {
+              identificacion: true,
+              observacion: true,
+              revisadoPor: true,
+              motivo: true,
+              observaciones: true,
+            },
+          });
+
+      if (
+        registrosAntecedentes.length ===
+        0
+      ) {
+        return Response.json(
+          {
+            error:
+              "No hay registros de antecedentes para cerrar este ticket",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      const errorAntecedente =
+        registrosAntecedentes
+          .map(
+            validarRegistroAntecedente
+          )
+          .find(Boolean);
+
+      if (errorAntecedente) {
+        return Response.json(
+          {
+            error:
+              errorAntecedente,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+    }
+
     // ACTUALIZAR TICKET
 
     const solicitud =
@@ -201,7 +282,7 @@ export async function PATCH(
             estadoFinal,
 
           observacionesTecnico:
-            body.observacionesTecnico || "",
+            observacionesTecnico,
 
           gestionadoPor:
             gestionadoPor,
@@ -257,7 +338,7 @@ export async function PATCH(
           estadoFinal,
 
         observacion:
-          body.observacionesTecnico || "",
+          observacionesTecnico,
       },
     });
 // ENVIAR CORREO CAMBIO ESTADO
@@ -288,7 +369,7 @@ if (
     gestionadoPor,
 
   observacion:
-    body.observacionesTecnico || "Sin observación",
+    observacionesTecnico || "Sin observación",
 }),
     });
 
@@ -344,7 +425,7 @@ if (
     gestionadoPor,
 
   observacion:
-    body.observacionesTecnico || "Sin observación",
+    observacionesTecnico || "Sin observación",
 }),
       });
 
