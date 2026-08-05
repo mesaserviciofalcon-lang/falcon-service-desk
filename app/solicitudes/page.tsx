@@ -184,6 +184,16 @@ const [
   }
 
   if (
+    tipo === "ANTECEDENTES" &&
+    !descripcion.trim()
+  ) {
+    toast.error(
+      "Debe registrar las observaciones de la solicitud de antecedentes"
+    );
+    return;
+  }
+
+  if (
     tipo === "VISITA DOMICILIARIA"
   ) {
     const camposVisita = [
@@ -694,6 +704,7 @@ setTimeout(() => {
       placeholder="Observaciones"
       className="border p-3 rounded-lg"
       value={descripcion}
+      required
       onChange={(e) =>
         setDescripcion(
           e.target.value

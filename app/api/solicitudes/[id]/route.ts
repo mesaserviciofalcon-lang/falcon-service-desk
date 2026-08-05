@@ -151,7 +151,7 @@ export async function PATCH(
       );
     }
 
-    const gestionadoPor =
+    let gestionadoPor =
       session.user.name ||
       body.gestionadoPor ||
       "SISTEMA";
@@ -264,6 +264,22 @@ export async function PATCH(
             status: 400,
           }
         );
+      }
+
+      const revisores =
+        Array.from(
+          new Set(
+            registrosAntecedentes
+              .map((registro) =>
+                registro.revisadoPor?.trim()
+              )
+              .filter(Boolean)
+          )
+        );
+
+      if (revisores.length > 0) {
+        gestionadoPor =
+          revisores.join(", ");
       }
     }
 

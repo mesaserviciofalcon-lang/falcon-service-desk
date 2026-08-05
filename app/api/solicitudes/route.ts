@@ -210,6 +210,21 @@ export async function POST(
       );
     }
 
+    if (
+      body.tipo === "ANTECEDENTES" &&
+      !valorCompleto(body.descripcion)
+    ) {
+      return Response.json(
+        {
+          error:
+            "Debe registrar las observaciones de la solicitud de antecedentes",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const registrosAntecedentesBase =
       body.tipo === "ANTECEDENTES"
         ? await leerRegistrosAntecedentesDesdeUrl(

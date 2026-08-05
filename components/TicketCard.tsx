@@ -62,6 +62,27 @@ export default function TicketCard({
       isCompletado
     );
 
+  const revisadoPorAntecedentes =
+    solicitud.tipo ===
+    "ANTECEDENTES"
+      ? Array.from(
+          new Set(
+            (
+              solicitud
+                .antecedentesRegistros ||
+              []
+            )
+              .map((registro: any) =>
+                String(
+                  registro.revisadoPor ||
+                    ""
+                ).trim()
+              )
+              .filter(Boolean)
+          )
+        ).join(", ")
+      : "";
+
   return (
 
     <div
@@ -809,7 +830,12 @@ export default function TicketCard({
           <div className="flex flex-col gap-3">
 
             {solicitud.gestiones.map(
-              (gestion: any) => (
+              (gestion: any) => {
+                const gestionadoPor =
+                  revisadoPorAntecedentes ||
+                  gestion.usuario;
+
+                return (
 
                 <div
                   key={gestion.id}
@@ -819,12 +845,26 @@ export default function TicketCard({
                   <p>
 
                     <strong>
-                      Usuario:
+                      Fecha de gestion:
                     </strong>
 
                     {" "}
 
-                    {gestion.usuario}
+                    {formatearFechaColombia(
+                      gestion.fecha
+                    )}
+
+                  </p>
+
+                  <p>
+
+                    <strong>
+                      Gestionado por:
+                    </strong>
+
+                    {" "}
+
+                    {gestionadoPor}
 
                   </p>
 
@@ -853,7 +893,8 @@ export default function TicketCard({
                   </p>
 
                 </div>
-              )
+                );
+              }
             )}
 
           </div>
