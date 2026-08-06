@@ -8,6 +8,7 @@ import { prisma }
 from "@/lib/prisma";
 
 import {
+  puedeEditarConsultaAntecedentes,
   puedeImportarHistoricoAntecedentes,
   puedeVerAntecedenteCompleto,
 } from "@/lib/antecedentesCatalogos";
@@ -17,6 +18,9 @@ from "@/components/ImportarHistoricoAntecedentes";
 
 import FormularioAntecedenteManual
 from "@/components/FormularioAntecedenteManual";
+
+import ConsultaAntecedentesResultados
+from "@/components/ConsultaAntecedentesResultados";
 
 export default async function AntecedentesPage({
   searchParams,
@@ -45,6 +49,11 @@ export default async function AntecedentesPage({
 
   const puedeImportarHistorico =
     puedeImportarHistoricoAntecedentes(
+      session?.user?.role
+    );
+
+  const puedeEditarConsulta =
+    puedeEditarConsultaAntecedentes(
       session?.user?.role
     );
 
@@ -167,135 +176,15 @@ export default async function AntecedentesPage({
         )}
 
         {registros.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full border text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="border p-2 text-left">
-                    Fecha solicitud
-                  </th>
-                  {puedeVerCompleto && (
-                    <th className="border p-2 text-left">
-                      Fecha respuesta
-                    </th>
-                  )}
-                  {puedeVerCompleto && (
-                    <th className="border p-2 text-left">
-                      EAI
-                    </th>
-                  )}
-                  <th className="border p-2 text-left">
-                    Identificacion
-                  </th>
-                  <th className="border p-2 text-left">
-                    Nombres y apellidos
-                  </th>
-                  {puedeVerCompleto && (
-                    <th className="border p-2 text-left">
-                      Tipo documento
-                    </th>
-                  )}
-                  <th className="border p-2 text-left">
-                    Fecha expedicion
-                  </th>
-                  <th className="border p-2 text-left">
-                    Observacion
-                  </th>
-                  {puedeVerCompleto && (
-                    <>
-                      <th className="border p-2 text-left">
-                        Revisado por
-                      </th>
-                      <th className="border p-2 text-left">
-                        Motivo
-                      </th>
-                      <th className="border p-2 text-left">
-                        Autorizacion
-                      </th>
-                      <th className="border p-2 text-left">
-                        Observaciones
-                      </th>
-                      <th className="border p-2 text-left">
-                        Ticket
-                      </th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-
-              <tbody>
-                {registros.map((registro) => (
-                  <tr key={registro.id}>
-                    <td className="border p-2">
-                      {registro.fechaSolicitud || ""}
-                    </td>
-                    {puedeVerCompleto && (
-                      <td className="border p-2">
-                        {registro.fechaRespuesta || ""}
-                      </td>
-                    )}
-                    {puedeVerCompleto && (
-                      <td className="border p-2">
-                        {registro.eai || ""}
-                      </td>
-                    )}
-                    <td className="border p-2">
-                      {registro.identificacion}
-                    </td>
-                    <td className="border p-2">
-                      {registro.nombresApellidos || ""}
-                    </td>
-                    {puedeVerCompleto && (
-                      <td className="border p-2">
-                        {registro.tipoDocumento || ""}
-                      </td>
-                    )}
-                    <td className="border p-2">
-                      {
-                        registro
-                          .fechaExpedicionDocumento ||
-                        ""
-                      }
-                    </td>
-                    <td className="border p-2">
-                      {registro.observacion || ""}
-                    </td>
-                    {puedeVerCompleto && (
-                      <>
-                        <td className="border p-2">
-                          {registro.revisadoPor || ""}
-                        </td>
-                        <td className="border p-2">
-                          {registro.motivo || ""}
-                        </td>
-                        <td className="border p-2">
-                          {registro.autorizacion || ""}
-                        </td>
-                        <td className="border p-2">
-                          {registro.observaciones || ""}
-                        </td>
-                        <td className="border p-2">
-                          {registro.solicitud
-                            .antecedente
-                            ?.fincaEAI ===
-                          "HISTORICO"
-                            ? "Historico"
-                            : (
-                              <a
-                                href={`/tickets/${registro.solicitudId}`}
-                                className="text-blue-600 underline"
-                              >
-                                #{registro.solicitudId}
-                              </a>
-                            )}
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ConsultaAntecedentesResultados
+            registros={registros}
+            puedeEditar={
+              puedeEditarConsulta
+            }
+            puedeVerCompleto={
+              puedeVerCompleto
+            }
+          />
         )}
       </div>
     </div>

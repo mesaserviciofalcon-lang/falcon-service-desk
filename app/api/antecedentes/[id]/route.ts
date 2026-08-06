@@ -8,23 +8,15 @@ import { prisma }
 from "@/lib/prisma";
 
 import {
-  puedeVerAntecedenteCompleto,
+  puedeEditarConsultaAntecedentes,
 } from "@/lib/antecedentesCatalogos";
 
 import { obtenerFechaActualColombiaISO }
 from "@/lib/fecha";
 
-const OBSERVACION_NO_TENER_EN_CUENTA =
-  "LA PERSONA NO DEBE SER TENIDA EN CUENTA";
-
-function valorDiligenciado(
-  valor: unknown
-) {
-  return (
-    typeof valor === "string" &&
-    valor.trim().length > 0
-  );
-}
+import {
+  validarRegistroAntecedente,
+} from "@/lib/validacionAntecedentesGestion";
 
 export async function PATCH(
   request: Request,
@@ -40,7 +32,7 @@ export async function PATCH(
     );
 
   if (
-    !puedeVerAntecedenteCompleto(
+    !puedeEditarConsultaAntecedentes(
       session?.user?.role
     )
   ) {
@@ -65,73 +57,21 @@ export async function PATCH(
     const body =
       await request.json();
 
-    if (
-      !valorDiligenciado(
-        body.observacion
-      )
-    ) {
+    const errorValidacion =
+      validarRegistroAntecedente(
+        body
+      );
+
+    if (errorValidacion) {
       return Response.json(
         {
           error:
-            "Debe seleccionar una observacion",
+            errorValidacion,
         },
         {
           status: 400,
         }
       );
-    }
-
-    if (
-      !valorDiligenciado(
-        body.revisadoPor
-      )
-    ) {
-      return Response.json(
-        {
-          error:
-            "Debe seleccionar quien reviso",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    if (
-      body.observacion ===
-      OBSERVACION_NO_TENER_EN_CUENTA
-    ) {
-      if (
-        !valorDiligenciado(
-          body.motivo
-        )
-      ) {
-        return Response.json(
-          {
-            error:
-              "Debe seleccionar un motivo",
-          },
-          {
-            status: 400,
-          }
-        );
-      }
-
-      if (
-        !valorDiligenciado(
-          body.observaciones
-        )
-      ) {
-        return Response.json(
-          {
-            error:
-              "Debe diligenciar observaciones",
-          },
-          {
-            status: 400,
-          }
-        );
-      }
     }
 
     const registro =
@@ -169,6 +109,69 @@ export async function PATCH(
         error:
           error.message ||
           "Error actualizando antecedente",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  context: {
+    params: Promise<{
+      id: string;
+    }>;
+  }
+) {
+  const session =
+    await getServerSession(
+      authOptions
+    );
+
+  if (
+    !puedeEditarConsultaAntecedentes(
+      session?.user?.role
+    )
+  ) {
+    return Response.json(
+      {
+        error:
+          "No tiene permiso para eliminar antecedentes",
+      },
+      {
+        status: 403,
+      }
+    );
+  }
+
+  try {
+    const params =
+      await context.params;
+
+    const id =
+      Number(params.id);
+
+    await prisma
+      .antecedenteRegistro
+      .delete({
+        where: {
+          id,
+        },
+      });
+
+    return Response.json({
+      ok: true,
+    });
+  } catch (error: any) {
+    console.error(error);
+
+    return Response.json(
+      {
+        error:
+          error.message ||
+          "Error eliminando antecedente",
       },
       {
         status: 500,

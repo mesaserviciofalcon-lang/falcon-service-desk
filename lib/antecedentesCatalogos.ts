@@ -80,3 +80,18 @@ export function puedeImportarHistoricoAntecedentes(
 ) {
   return role === "ADMIN";
 }
+
+export const rolesEditarConsultaAntecedentes = [
+  "ADMIN",
+  "DIRECTOR_SEG",
+  "JEFE_SEG",
+];
+
+export function puedeEditarConsultaAntecedentes(
+  role?: string | null
+) {
+  return Boolean(
+    role &&
+    rolesEditarConsultaAntecedentes.includes(role)
+  );
+}
