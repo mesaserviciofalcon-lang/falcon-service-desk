@@ -15,8 +15,8 @@ import {
 } from "@/lib/antecedentesCatalogos";
 
 import {
-  OBSERVACION_DOCUMENTO_NO_CORRESPONDE,
-  OBSERVACION_NO_TENER_EN_CUENTA,
+  esObservacionCriticaAntecedente,
+  esObservacionDocumentoNoCorresponde,
   validarRegistroAntecedente,
 } from "@/lib/validacionAntecedentesGestion";
 
@@ -40,15 +40,17 @@ function claseFilaPorObservacion(
   observacion?: string | null
 ) {
   if (
-    observacion ===
-    OBSERVACION_NO_TENER_EN_CUENTA
+    esObservacionCriticaAntecedente(
+      observacion
+    )
   ) {
     return "align-top bg-yellow-300 text-red-800";
   }
 
   if (
-    observacion ===
-    OBSERVACION_DOCUMENTO_NO_CORRESPONDE
+    esObservacionDocumentoNoCorresponde(
+      observacion
+    )
   ) {
     return "align-top bg-green-300 text-black";
   }
@@ -105,6 +107,41 @@ function formatearFechaTabla(
   }
 
   return texto;
+}
+
+function fechaParaInput(
+  valor?: string | null
+) {
+  if (!valor) {
+    return "";
+  }
+
+  const texto =
+    valor.trim();
+
+  const partes =
+    texto.match(
+      /^(\d{4})-(\d{1,2})-(\d{1,2})$/
+    );
+
+  if (partes) {
+    return `${partes[1]}-${partes[2].padStart(2, "0")}-${partes[3].padStart(2, "0")}`;
+  }
+
+  const partesLocal =
+    texto.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+    );
+
+  if (partesLocal) {
+    return `${partesLocal[3]}-${partesLocal[2].padStart(2, "0")}-${partesLocal[1].padStart(2, "0")}`;
+  }
+
+  return "";
+}
+
+function soloNumeros(valor: string) {
+  return valor.replace(/\D/g, "");
 }
 
 function SelectCampo({
@@ -344,8 +381,15 @@ export default function AntecedentesTicketTable({
           <tbody>
             {filas.map((fila) => {
               const requiereMotivo =
-                fila.observacion ===
-                OBSERVACION_NO_TENER_EN_CUENTA;
+                esObservacionCriticaAntecedente(
+                  fila.observacion
+                );
+
+              const puedeCorregirDocumento =
+                puedeVerCompleto &&
+                esObservacionDocumentoNoCorresponde(
+                  fila.observacion
+                );
 
               return (
               <tr
@@ -387,12 +431,58 @@ export default function AntecedentesTicketTable({
                   {fila.tipoDocumento || ""}
                 </td>
                 <td className="w-36 border p-2">
-                  {fila.identificacion}
+                  {puedeCorregirDocumento ? (
+                    <div className="flex flex-col gap-1">
+                      <input
+                        type="text"
+                        value={fila.identificacion}
+                        onChange={(event) =>
+                          actualizarFila(
+                            fila.id,
+                            "identificacion",
+                            soloNumeros(
+                              event.target.value
+                            )
+                          )
+                        }
+                        className="w-full rounded-md border p-2 text-sm"
+                        placeholder="Nueva identificacion"
+                      />
+                      <span className="text-[11px] font-semibold text-green-900">
+                        Editable por correccion
+                      </span>
+                    </div>
+                  ) : (
+                    fila.identificacion
+                  )}
                 </td>
                 <td className="w-40 border p-2">
-                  {formatearFechaTabla(
-                    fila
-                      .fechaExpedicionDocumento
+                  {puedeCorregirDocumento ? (
+                    <div className="flex flex-col gap-1">
+                      <input
+                        type="date"
+                        value={fechaParaInput(
+                          fila
+                            .fechaExpedicionDocumento
+                        )}
+                        onChange={(event) =>
+                          actualizarFila(
+                            fila.id,
+                            "fechaExpedicionDocumento",
+                            event.target.value
+                          )
+                        }
+                        className="w-full rounded-md border p-2 text-sm"
+                      />
+                      <span className="text-[11px] font-semibold text-green-900">
+                        Se habilita reenvio
+                      </span>
+                    </div>
+                  ) : (
+                    formatearFechaTabla(
+                      fila
+                        .fechaExpedicionDocumento
+                    )
                   )}
                 </td>
                 <td className="w-72 border p-2">

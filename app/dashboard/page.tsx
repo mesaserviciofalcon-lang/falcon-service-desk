@@ -27,8 +27,8 @@ import {
 } from "@/lib/visibilidadTickets";
 
 import {
-  OBSERVACION_DOCUMENTO_NO_CORRESPONDE,
-  OBSERVACION_NO_TENER_EN_CUENTA,
+  esObservacionDocumentoNoCorresponde,
+  esObservacionNoTenerEnCuenta,
 } from "@/lib/validacionAntecedentesGestion";
 
 const OBSERVACION_CONTINUAR =
@@ -62,31 +62,16 @@ function esConceptoContinuar(
 function esConceptoNoTenerEnCuenta(
   observacion?: string | null
 ) {
-  return (
-    normalizarTexto(observacion) ===
-    normalizarTexto(
-      OBSERVACION_NO_TENER_EN_CUENTA
-    )
+  return esObservacionNoTenerEnCuenta(
+    observacion
   );
 }
 
 function esConceptoDocumentoNoCorresponde(
   observacion?: string | null
 ) {
-  const valor =
-    normalizarTexto(observacion);
-
-  return (
-    valor ===
-      normalizarTexto(
-        OBSERVACION_DOCUMENTO_NO_CORRESPONDE
-      ) ||
-    valor.includes(
-      "NO CORRESPONDE CON EL NOMBRE"
-    ) ||
-    valor.includes(
-      "NO COINCIDE CON EL NOMBRE"
-    )
+  return esObservacionDocumentoNoCorresponde(
+    observacion
   );
 }
 
@@ -409,6 +394,7 @@ async function obtenerMetricasAntecedentes(
           WHERE
             upper(trim("observacion")) LIKE '%NO CORRESPONDE CON EL NOMBRE%'
             OR upper(trim("observacion")) LIKE '%NO COINCIDE CON EL NOMBRE%'
+            OR upper(trim("observacion")) LIKE '%NO COINCIDEN DATOS DEL DOCUMENTO%'
         ) AS documento_no_corresponde,
         COUNT(*) FILTER (
           WHERE "tipoDocumento" = 'CC'
@@ -1829,7 +1815,7 @@ hace5Dias.setDate(
               <div className="min-w-0 rounded-lg border bg-emerald-50 p-4">
 
                 <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
-                  Documento no corresponde
+                  No coinciden datos del documento
                 </span>
 
                 <p className="mt-3 break-words text-4xl font-bold leading-none text-emerald-800">

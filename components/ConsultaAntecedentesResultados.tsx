@@ -12,8 +12,8 @@ import {
 } from "@/lib/antecedentesCatalogos";
 
 import {
-  OBSERVACION_DOCUMENTO_NO_CORRESPONDE,
-  OBSERVACION_NO_TENER_EN_CUENTA,
+  esObservacionCriticaAntecedente,
+  esObservacionDocumentoNoCorresponde,
   validarRegistroAntecedente,
 } from "@/lib/validacionAntecedentesGestion";
 
@@ -43,15 +43,17 @@ function claseFilaPorObservacion(
   observacion?: string | null
 ) {
   if (
-    observacion ===
-    OBSERVACION_NO_TENER_EN_CUENTA
+    esObservacionCriticaAntecedente(
+      observacion
+    )
   ) {
     return "bg-yellow-300 text-red-800";
   }
 
   if (
-    observacion ===
-    OBSERVACION_DOCUMENTO_NO_CORRESPONDE
+    esObservacionDocumentoNoCorresponde(
+      observacion
+    )
   ) {
     return "bg-green-300 text-black";
   }

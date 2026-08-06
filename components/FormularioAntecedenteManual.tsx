@@ -19,7 +19,7 @@ import {
 } from "@/lib/antecedentesCatalogos";
 
 import {
-  OBSERVACION_NO_TENER_EN_CUENTA,
+  esObservacionCriticaAntecedente,
 } from "@/lib/validacionAntecedentesGestion";
 
 import { obtenerFechaActualColombiaISO }
@@ -148,8 +148,9 @@ export default function FormularioAntecedenteManual() {
     useState(estadoInicial);
 
   const requiereDetalle =
-    form.observacion ===
-    OBSERVACION_NO_TENER_EN_CUENTA;
+    esObservacionCriticaAntecedente(
+      form.observacion
+    );
 
   function actualizar(
     name: string,

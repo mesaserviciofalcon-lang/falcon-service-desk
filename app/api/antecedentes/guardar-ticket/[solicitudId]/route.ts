@@ -12,11 +12,59 @@ import {
 } from "@/lib/antecedentesCatalogos";
 
 import {
+  esObservacionDocumentoNoCorresponde,
   validarRegistroAntecedente,
 } from "@/lib/validacionAntecedentesGestion";
 
 import { obtenerFechaActualColombiaISO }
 from "@/lib/fecha";
+
+function textoPlano(valor: unknown) {
+  return String(valor || "").trim();
+}
+
+function normalizarIdentificacion(
+  valor: unknown
+) {
+  return textoPlano(valor).replace(
+    /\D/g,
+    ""
+  );
+}
+
+function normalizarFechaDocumento(
+  valor: unknown
+) {
+  const texto =
+    textoPlano(valor);
+
+  const partesIso =
+    texto.match(
+      /^(\d{4})-(\d{1,2})-(\d{1,2})$/
+    );
+
+  if (partesIso) {
+    return `${partesIso[1]}-${partesIso[2].padStart(2, "0")}-${partesIso[3].padStart(2, "0")}`;
+  }
+
+  const partesLocal =
+    texto.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+    );
+
+  if (partesLocal) {
+    return `${partesLocal[3]}-${partesLocal[2].padStart(2, "0")}-${partesLocal[1].padStart(2, "0")}`;
+  }
+
+  return texto;
+}
+
+type RegistroPreparado = {
+  registro: any;
+  nuevaIdentificacion: string;
+  nuevaFechaExpedicion: string | null;
+  cambioDocumento: boolean;
+};
 
 export async function PATCH(
   request: Request,
@@ -101,17 +149,24 @@ export async function PATCH(
     const registrosExistentes =
       await prisma
         .antecedenteRegistro
-        .count({
+        .findMany({
           where: {
             solicitudId,
             id: {
               in: ids,
             },
           },
+          select: {
+            id: true,
+            solicitudId: true,
+            identificacion: true,
+            fechaExpedicionDocumento: true,
+            observacion: true,
+          },
         });
 
     if (
-      registrosExistentes !==
+      registrosExistentes.length !==
       registros.length
     ) {
       return Response.json(
@@ -125,33 +180,188 @@ export async function PATCH(
       );
     }
 
+    const existentesPorId =
+      new Map(
+        registrosExistentes.map(
+          (registro) => [
+            registro.id,
+            registro,
+          ]
+        )
+      );
+
+    const registrosPreparados: RegistroPreparado[] =
+      registros.map((registro: any) => {
+        const existente =
+          existentesPorId.get(
+            registro.id
+          );
+
+        if (!existente) {
+          throw new Error(
+            "Hay registros que no pertenecen a este ticket"
+          );
+        }
+
+        const nuevaIdentificacion =
+          normalizarIdentificacion(
+            registro.identificacion
+          ) ||
+          existente.identificacion;
+
+        const nuevaFechaExpedicion =
+          normalizarFechaDocumento(
+            registro.fechaExpedicionDocumento
+          ) ||
+          existente.fechaExpedicionDocumento ||
+          null;
+
+        const cambioDocumento =
+          nuevaIdentificacion !==
+            existente.identificacion ||
+          nuevaFechaExpedicion !==
+            (existente.fechaExpedicionDocumento ||
+              null);
+
+        const puedeCorregirDocumento =
+          esObservacionDocumentoNoCorresponde(
+            registro.observacion
+          ) ||
+          esObservacionDocumentoNoCorresponde(
+            existente.observacion
+          );
+
+        if (
+          cambioDocumento &&
+          !puedeCorregirDocumento
+        ) {
+          throw new Error(
+            `Solo se puede modificar identificacion o fecha de expedicion cuando la observacion sea NO COINCIDEN DATOS DEL DOCUMENTO`
+          );
+        }
+
+        if (
+          cambioDocumento &&
+          (!nuevaIdentificacion ||
+            !nuevaFechaExpedicion)
+        ) {
+          throw new Error(
+            `La correccion documental debe tener identificacion y fecha de expedicion`
+          );
+        }
+
+        return {
+          registro,
+          nuevaIdentificacion,
+          nuevaFechaExpedicion,
+          cambioDocumento,
+        };
+      });
+
+    const documentos =
+      new Set<string>();
+
+    for (const preparado of registrosPreparados) {
+      const llave =
+        preparado.nuevaIdentificacion;
+
+      if (documentos.has(llave)) {
+        return Response.json(
+          {
+            error:
+              `La identificacion ${llave} queda duplicada en el ticket. Ajuste el documento antes de guardar.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      documentos.add(llave);
+    }
+
     await prisma.$transaction(
-      registros.map((registro: any) =>
+      registrosPreparados.map((preparado: RegistroPreparado) =>
         prisma.antecedenteRegistro.update({
           where: {
-            id: registro.id,
+            id: preparado.registro.id,
           },
           data: {
             fechaRespuesta:
               obtenerFechaActualColombiaISO(),
+            identificacion:
+              preparado.nuevaIdentificacion,
+            fechaExpedicionDocumento:
+              preparado.nuevaFechaExpedicion,
             observacion:
-              registro.observacion ||
+              preparado.cambioDocumento
+                ? null
+                : preparado.registro.observacion ||
               null,
             revisadoPor:
-              registro.revisadoPor ||
+              preparado.cambioDocumento
+                ? null
+                : preparado.registro.revisadoPor ||
               null,
             motivo:
-              registro.motivo || null,
+              preparado.cambioDocumento
+                ? null
+                : preparado.registro.motivo || null,
             autorizacion:
-              registro.autorizacion ||
+              preparado.cambioDocumento
+                ? null
+                : preparado.registro.autorizacion ||
               null,
             observaciones:
-              registro.observaciones ||
+              preparado.cambioDocumento
+                ? null
+                : preparado.registro.observaciones ||
               null,
+            tusdatosBatchId:
+              preparado.cambioDocumento
+                ? null
+                : undefined,
+            tusdatosJobId:
+              preparado.cambioDocumento
+                ? null
+                : undefined,
+            tusdatosBatchNumber:
+              preparado.cambioDocumento
+                ? null
+                : undefined,
+            tusdatosEstado:
+              preparado.cambioDocumento
+                ? null
+                : undefined,
+            tusdatosEnviadoAt:
+              preparado.cambioDocumento
+                ? null
+                : undefined,
           },
         })
       )
     );
+
+    if (
+      registrosPreparados.some(
+        (registro: RegistroPreparado) =>
+          registro.cambioDocumento
+      )
+    ) {
+      await prisma.gestionTicket.create({
+        data: {
+          solicitudId,
+          usuario:
+            session?.user?.name ||
+            session?.user?.email ||
+            "Supervisor",
+          estado:
+            "REABIERTO",
+          observacion:
+            "Se corrigio informacion documental y quedo disponible para nueva consulta en TusDatos.",
+        },
+      });
+    }
 
     const actualizados =
       await prisma
