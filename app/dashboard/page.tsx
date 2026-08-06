@@ -1854,6 +1854,34 @@ hace5Dias.setDate(
 
               </div>
 
+              <div className="min-w-0 rounded-lg border bg-green-50 p-4">
+
+                <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
+                  Verificacion anual sin hallazgos
+                </span>
+
+                <p className="mt-3 break-words text-4xl font-bold leading-none text-green-700">
+                  <NumeroAnimado
+                    valor={verificacionAnualSinHallazgos}
+                  />
+                </p>
+
+              </div>
+
+              <div className="min-w-0 rounded-lg border bg-yellow-100 p-4">
+
+                <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
+                  Verificacion anual con hallazgos
+                </span>
+
+                <p className="mt-3 break-words text-4xl font-bold leading-none text-red-700">
+                  <NumeroAnimado
+                    valor={verificacionAnualConHallazgos}
+                  />
+                </p>
+
+              </div>
+
             </div>
 
           </div>
@@ -2010,34 +2038,6 @@ hace5Dias.setDate(
                     />
                   </strong>
                 </div>
-
-              </div>
-
-              <div className="min-w-0 rounded-lg border bg-green-50 p-4">
-
-                <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
-                  Verificacion anual sin hallazgos
-                </span>
-
-                <p className="mt-3 break-words text-4xl font-bold leading-none text-green-700">
-                  <NumeroAnimado
-                    valor={verificacionAnualSinHallazgos}
-                  />
-                </p>
-
-              </div>
-
-              <div className="min-w-0 rounded-lg border bg-yellow-100 p-4">
-
-                <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
-                  Verificacion anual con hallazgos
-                </span>
-
-                <p className="mt-3 break-words text-4xl font-bold leading-none text-red-700">
-                  <NumeroAnimado
-                    valor={verificacionAnualConHallazgos}
-                  />
-                </p>
 
               </div>
 
