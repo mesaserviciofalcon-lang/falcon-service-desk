@@ -279,6 +279,8 @@ type MetricasAntecedentes = {
   continuar: number;
   noTenerEnCuenta: number;
   documentoNoCorresponde: number;
+  verificacionAnualSinHallazgos: number;
+  verificacionAnualConHallazgos: number;
   nacionales: number;
   extranjeros: number;
 };
@@ -310,6 +312,8 @@ const metricasAntecedentesVacias: MetricasAntecedentes = {
   continuar: 0,
   noTenerEnCuenta: 0,
   documentoNoCorresponde: 0,
+  verificacionAnualSinHallazgos: 0,
+  verificacionAnualConHallazgos: 0,
   nacionales: 0,
   extranjeros: 0,
 };
@@ -344,6 +348,8 @@ async function obtenerMetricasAntecedentes(
         continuar: bigint | number;
         no_tener_en_cuenta: bigint | number;
         documento_no_corresponde: bigint | number;
+        verificacion_anual_sin_hallazgos: bigint | number;
+        verificacion_anual_con_hallazgos: bigint | number;
         nacionales: bigint | number;
         extranjeros: bigint | number;
       }>
@@ -397,6 +403,12 @@ async function obtenerMetricasAntecedentes(
             OR upper(trim("observacion")) LIKE '%NO COINCIDEN DATOS DEL DOCUMENTO%'
         ) AS documento_no_corresponde,
         COUNT(*) FILTER (
+          WHERE upper(trim("observacion")) = 'VERIFICACIÓN ANUAL NO PRESENTA HALLAZGOS'
+        ) AS verificacion_anual_sin_hallazgos,
+        COUNT(*) FILTER (
+          WHERE upper(trim("observacion")) = 'VERIFICACIÓN ANUAL PRESENTA HALLAZGOS'
+        ) AS verificacion_anual_con_hallazgos,
+        COUNT(*) FILTER (
           WHERE "tipoDocumento" = 'CC'
         ) AS nacionales,
         COUNT(*) FILTER (
@@ -424,6 +436,14 @@ async function obtenerMetricasAntecedentes(
     documentoNoCorresponde:
       normalizarConteo(
         fila.documento_no_corresponde
+      ),
+    verificacionAnualSinHallazgos:
+      normalizarConteo(
+        fila.verificacion_anual_sin_hallazgos
+      ),
+    verificacionAnualConHallazgos:
+      normalizarConteo(
+        fila.verificacion_anual_con_hallazgos
       ),
     nacionales:
       normalizarConteo(
@@ -1486,6 +1506,14 @@ hace5Dias.setDate(
   const documentoNoCorresponde =
     metricasAntecedentesMes.documentoNoCorresponde;
 
+  const verificacionAnualSinHallazgos =
+    metricasAntecedentesMes
+      .verificacionAnualSinHallazgos;
+
+  const verificacionAnualConHallazgos =
+    metricasAntecedentesMes
+      .verificacionAnualConHallazgos;
+
   const nacionales =
     metricasAntecedentesMes.nacionales;
 
@@ -1782,7 +1810,7 @@ hace5Dias.setDate(
               Conceptos de antecedentes
             </h2>
 
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
 
               <div className="min-w-0 rounded-lg border bg-green-50 p-4">
 
@@ -1982,6 +2010,34 @@ hace5Dias.setDate(
                     />
                   </strong>
                 </div>
+
+              </div>
+
+              <div className="min-w-0 rounded-lg border bg-green-50 p-4">
+
+                <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
+                  Verificacion anual sin hallazgos
+                </span>
+
+                <p className="mt-3 break-words text-4xl font-bold leading-none text-green-700">
+                  <NumeroAnimado
+                    valor={verificacionAnualSinHallazgos}
+                  />
+                </p>
+
+              </div>
+
+              <div className="min-w-0 rounded-lg border bg-yellow-100 p-4">
+
+                <span className="block text-xs font-semibold uppercase leading-5 text-gray-500">
+                  Verificacion anual con hallazgos
+                </span>
+
+                <p className="mt-3 break-words text-4xl font-bold leading-none text-red-700">
+                  <NumeroAnimado
+                    valor={verificacionAnualConHallazgos}
+                  />
+                </p>
 
               </div>
 
