@@ -10,6 +10,7 @@ import {
   autorizacionAntecedenteOpciones,
   motivoAntecedenteOpciones,
   observacionAntecedenteOpciones,
+  puedeEditarAntecedenteSinRestriccion,
   puedeVerAntecedenteCompleto,
   revisadoPorOpciones,
 } from "@/lib/antecedentesCatalogos";
@@ -181,12 +182,17 @@ export default function AntecedentesTicketTable({
   registros,
   role,
   solicitudId,
+  ticketEstado,
 }: {
   registros: Registro[];
   role?: string | null;
   solicitudId: number;
+  ticketEstado?: string | null;
 }) {
   const [filas, setFilas] =
+    useState(registros);
+
+  const [filasOriginales] =
     useState(registros);
 
   const [
@@ -201,6 +207,29 @@ export default function AntecedentesTicketTable({
 
   const puedeVerCompleto =
     puedeVerAntecedenteCompleto(role);
+
+  const puedeEditarSinRestriccion =
+    puedeEditarAntecedenteSinRestriccion(
+      role
+    );
+
+  const esTicketReabierto =
+    String(ticketEstado || "")
+      .trim()
+      .toUpperCase() === "REABIERTO";
+
+  const debeRestringirReabierto =
+    esTicketReabierto &&
+    puedeVerCompleto &&
+    !puedeEditarSinRestriccion;
+
+  const originalesPorId =
+    new Map(
+      filasOriginales.map((fila) => [
+        fila.id,
+        fila,
+      ])
+    );
 
   function actualizarFila(
     id: number,
@@ -391,6 +420,37 @@ export default function AntecedentesTicketTable({
                   fila.observacion
                 );
 
+              const original =
+                originalesPorId.get(fila.id);
+
+              const documentoCorregido =
+                Boolean(
+                  original &&
+                  (
+                    fila.identificacion !==
+                      original.identificacion ||
+                    fila.fechaExpedicionDocumento !==
+                      original
+                        .fechaExpedicionDocumento
+                  )
+                );
+
+              const filaPendienteGestion =
+                !String(
+                  fila.observacion || ""
+                ).trim();
+
+              const puedeGestionarFila =
+                puedeVerCompleto &&
+                (
+                  !debeRestringirReabierto ||
+                  filaPendienteGestion ||
+                  (
+                    puedeCorregirDocumento &&
+                    documentoCorregido
+                  )
+                );
+
               return (
               <tr
                 key={fila.id}
@@ -486,7 +546,7 @@ export default function AntecedentesTicketTable({
                   )}
                 </td>
                 <td className="w-72 border p-2">
-                  {puedeVerCompleto ? (
+                  {puedeGestionarFila ? (
                     <div className="flex flex-col gap-1">
                     <SelectCampo
                       value={fila.observacion}
@@ -513,6 +573,7 @@ export default function AntecedentesTicketTable({
                 {puedeVerCompleto && (
                   <>
                     <td className="w-56 border p-2">
+                      {puedeGestionarFila ? (
                       <div className="flex flex-col gap-1">
                       <SelectCampo
                         value={fila.revisadoPor}
@@ -529,8 +590,12 @@ export default function AntecedentesTicketTable({
                         Obligatorio
                       </span>
                       </div>
+                      ) : (
+                        fila.revisadoPor || ""
+                      )}
                     </td>
                     <td className="w-44 border p-2">
+                      {puedeGestionarFila ? (
                       <div className="flex flex-col gap-1">
                       <SelectCampo
                         value={fila.motivo}
@@ -551,8 +616,12 @@ export default function AntecedentesTicketTable({
                         </span>
                       )}
                       </div>
+                      ) : (
+                        fila.motivo || ""
+                      )}
                     </td>
                     <td className="w-40 border p-2">
+                      {puedeGestionarFila ? (
                       <SelectCampo
                         value={fila.autorizacion}
                         options={
@@ -566,8 +635,12 @@ export default function AntecedentesTicketTable({
                           )
                         }
                       />
+                      ) : (
+                        fila.autorizacion || ""
+                      )}
                     </td>
                     <td className="w-72 border p-2">
+                      {puedeGestionarFila ? (
                       <div className="flex flex-col gap-1">
                       <textarea
                         value={
@@ -589,6 +662,9 @@ export default function AntecedentesTicketTable({
                         </span>
                       )}
                       </div>
+                      ) : (
+                        fila.observaciones || ""
+                      )}
                     </td>
                   </>
                 )}

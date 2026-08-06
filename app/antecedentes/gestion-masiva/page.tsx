@@ -191,6 +191,7 @@ export default async function GestionMasivaAntecedentesPage() {
       <GestionMasivaAntecedentes
         tickets={tickets}
         registros={registros}
+        role={session?.user?.role || ""}
       />
     </div>
   );

@@ -13,6 +13,7 @@ import {
   autorizacionAntecedenteOpciones,
   motivoAntecedenteOpciones,
   observacionAntecedenteOpciones,
+  puedeEditarAntecedenteSinRestriccion,
   revisadoPorOpciones,
 } from "@/lib/antecedentesCatalogos";
 
@@ -199,14 +200,19 @@ function SelectCampo({
 export default function GestionMasivaAntecedentes({
   tickets,
   registros,
+  role,
 }: {
   tickets: TicketMasivo[];
   registros: RegistroMasivo[];
+  role?: string | null;
 }) {
   const [ticketsSeleccionados, setTicketsSeleccionados] =
     useState<number[]>([]);
 
   const [filas, setFilas] =
+    useState(registros);
+
+  const [filasOriginales] =
     useState(registros);
 
   const [guardando, setGuardando] =
@@ -217,6 +223,19 @@ export default function GestionMasivaAntecedentes({
 
   const [tablaExpandida, setTablaExpandida] =
     useState(false);
+
+  const puedeEditarSinRestriccion =
+    puedeEditarAntecedenteSinRestriccion(
+      role
+    );
+
+  const originalesPorId =
+    new Map(
+      filasOriginales.map((fila) => [
+        fila.id,
+        fila,
+      ])
+    );
 
   const filasVisibles =
     useMemo(
@@ -817,6 +836,46 @@ export default function GestionMasivaAntecedentes({
                           fila.observacion
                         );
 
+                      const original =
+                        originalesPorId.get(
+                          fila.id
+                        );
+
+                      const documentoCorregido =
+                        Boolean(
+                          original &&
+                          (
+                            fila.identificacion !==
+                              original.identificacion ||
+                            fila
+                              .fechaExpedicionDocumento !==
+                              original
+                                .fechaExpedicionDocumento
+                          )
+                        );
+
+                      const filaPendienteGestion =
+                        !String(
+                          fila.observacion || ""
+                        ).trim();
+
+                      const ticketReabierto =
+                        String(
+                          fila.ticketEstado || ""
+                        )
+                          .trim()
+                          .toUpperCase() ===
+                        "REABIERTO";
+
+                      const puedeGestionarFila =
+                        !ticketReabierto ||
+                        puedeEditarSinRestriccion ||
+                        filaPendienteGestion ||
+                        (
+                          puedeCorregirDocumento &&
+                          documentoCorregido
+                        );
+
                       return (
                         <tr
                           key={fila.id}
@@ -918,7 +977,8 @@ export default function GestionMasivaAntecedentes({
                           </td>
                           <td className="w-72 border p-2">
                             <div className="flex flex-col gap-1">
-                              <SelectCampo
+                              {puedeGestionarFila ? (
+                                <SelectCampo
                                 value={fila.observacion}
                                 options={observacionAntecedenteOpciones}
                                 onChange={(value) =>
@@ -929,14 +989,23 @@ export default function GestionMasivaAntecedentes({
                                   )
                                 }
                               />
-                              <span className="text-xs font-semibold">
-                                Obligatorio
-                              </span>
+                              ) : (
+                                <span>
+                                  {fila.observacion ||
+                                    ""}
+                                </span>
+                              )}
+                              {puedeGestionarFila && (
+                                <span className="text-xs font-semibold">
+                                  Obligatorio
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td className="w-56 border p-2">
                             <div className="flex flex-col gap-1">
-                              <SelectCampo
+                              {puedeGestionarFila ? (
+                                <SelectCampo
                                 value={fila.revisadoPor}
                                 options={revisadoPorOpciones}
                                 onChange={(value) =>
@@ -947,14 +1016,23 @@ export default function GestionMasivaAntecedentes({
                                   )
                                 }
                               />
-                              <span className="text-xs font-semibold">
-                                Obligatorio
-                              </span>
+                              ) : (
+                                <span>
+                                  {fila.revisadoPor ||
+                                    ""}
+                                </span>
+                              )}
+                              {puedeGestionarFila && (
+                                <span className="text-xs font-semibold">
+                                  Obligatorio
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td className="w-44 border p-2">
                             <div className="flex flex-col gap-1">
-                              <SelectCampo
+                              {puedeGestionarFila ? (
+                                <SelectCampo
                                 value={fila.motivo}
                                 options={motivoAntecedenteOpciones}
                                 onChange={(value) =>
@@ -965,7 +1043,13 @@ export default function GestionMasivaAntecedentes({
                                   )
                                 }
                               />
-                              {requiereMotivo && (
+                              ) : (
+                                <span>
+                                  {fila.motivo ||
+                                    ""}
+                                </span>
+                              )}
+                              {puedeGestionarFila && requiereMotivo && (
                                 <span className="text-xs font-semibold">
                                   Obligatorio
                                 </span>
@@ -973,7 +1057,8 @@ export default function GestionMasivaAntecedentes({
                             </div>
                           </td>
                           <td className="w-40 border p-2">
-                            <SelectCampo
+                            {puedeGestionarFila ? (
+                              <SelectCampo
                               value={fila.autorizacion}
                               options={autorizacionAntecedenteOpciones}
                               onChange={(value) =>
@@ -984,10 +1069,14 @@ export default function GestionMasivaAntecedentes({
                                 )
                               }
                             />
+                            ) : (
+                              fila.autorizacion || ""
+                            )}
                           </td>
                           <td className="w-72 border p-2">
                             <div className="flex flex-col gap-1">
-                              <textarea
+                              {puedeGestionarFila ? (
+                                <textarea
                                 value={fila.observaciones || ""}
                                 onChange={(event) =>
                                   actualizarFila(
@@ -999,7 +1088,13 @@ export default function GestionMasivaAntecedentes({
                                 className="h-20 w-full resize-none rounded-md border p-2 text-sm"
                                 placeholder="Observaciones internas"
                               />
-                              {requiereMotivo && (
+                              ) : (
+                                <span>
+                                  {fila.observaciones ||
+                                    ""}
+                                </span>
+                              )}
+                              {puedeGestionarFila && requiereMotivo && (
                                 <span className="text-xs font-semibold">
                                   Obligatorio
                                 </span>

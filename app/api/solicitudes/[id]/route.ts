@@ -152,8 +152,8 @@ export async function PATCH(
     }
 
     let gestionadoPor =
-      session.user.name ||
       body.gestionadoPor ||
+      session.user.name ||
       "SISTEMA";
 
     const observacionesTecnico =

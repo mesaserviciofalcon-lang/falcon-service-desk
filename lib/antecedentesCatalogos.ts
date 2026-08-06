@@ -96,11 +96,28 @@ export const rolesEditarConsultaAntecedentes = [
   "JEFE_SEG",
 ];
 
+export const rolesEdicionAmpliaAntecedentes = [
+  "ADMIN",
+  "DIRECTOR_SEG",
+  "JEFE_SEG",
+  "COORDINADOR",
+  "COORDINADOR_SEG",
+];
+
 export function puedeEditarConsultaAntecedentes(
   role?: string | null
 ) {
   return Boolean(
     role &&
     rolesEditarConsultaAntecedentes.includes(role)
+  );
+}
+
+export function puedeEditarAntecedenteSinRestriccion(
+  role?: string | null
+) {
+  return Boolean(
+    role &&
+    rolesEdicionAmpliaAntecedentes.includes(role)
   );
 }

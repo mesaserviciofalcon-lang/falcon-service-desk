@@ -570,17 +570,21 @@ export default function TicketCard({
 
         <AntecedentesTicketTable
 
-          registros={
-            solicitud
-              .antecedentesRegistros ||
-            []
-          }
+            registros={
+              solicitud
+                .antecedentesRegistros ||
+              []
+            }
 
-          role={role}
+            role={role}
 
-          solicitudId={
-            solicitud.id
-          }
+            ticketEstado={
+              solicitud.estado
+            }
+
+            solicitudId={
+              solicitud.id
+            }
 
         />
       )}
@@ -770,7 +774,9 @@ export default function TicketCard({
           }
 
           usuario={
-            session?.user?.name || ""
+            session?.user?.name ||
+            session?.user?.email ||
+            ""
           }
 
           motivo={

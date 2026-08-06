@@ -8,6 +8,7 @@ import { prisma }
 from "@/lib/prisma";
 
 import {
+  puedeEditarAntecedenteSinRestriccion,
   puedeVerAntecedenteCompleto,
 } from "@/lib/antecedentesCatalogos";
 
@@ -61,6 +62,11 @@ function normalizarFechaDocumento(
 
 type RegistroPreparado = {
   registro: any;
+  observacion: string | null;
+  revisadoPor: string | null;
+  motivo: string | null;
+  autorizacion: string | null;
+  observaciones: string | null;
   nuevaIdentificacion: string;
   nuevaFechaExpedicion: string | null;
   cambioDocumento: boolean;
@@ -104,6 +110,11 @@ export async function PATCH(
 
     const body =
       await request.json();
+
+    const edicionSinRestriccion =
+      puedeEditarAntecedenteSinRestriccion(
+        session?.user?.role
+      );
 
     const registros =
       Array.isArray(body.registros)
@@ -162,6 +173,15 @@ export async function PATCH(
             identificacion: true,
             fechaExpedicionDocumento: true,
             observacion: true,
+            revisadoPor: true,
+            motivo: true,
+            autorizacion: true,
+            observaciones: true,
+            solicitud: {
+              select: {
+                estado: true,
+              },
+            },
           },
         });
 
@@ -231,6 +251,24 @@ export async function PATCH(
             existente.observacion
           );
 
+        const ticketReabierto =
+          String(
+            existente.solicitud.estado || ""
+          )
+            .trim()
+            .toUpperCase() === "REABIERTO";
+
+        const filaPendienteGestion =
+          !String(
+            existente.observacion || ""
+          ).trim();
+
+        const restringirFila =
+          ticketReabierto &&
+          !edicionSinRestriccion &&
+          !filaPendienteGestion &&
+          !puedeCorregirDocumento;
+
         if (
           cambioDocumento &&
           !puedeCorregirDocumento
@@ -252,6 +290,26 @@ export async function PATCH(
 
         return {
           registro,
+          observacion:
+            restringirFila
+              ? existente.observacion
+              : registro.observacion || null,
+          revisadoPor:
+            restringirFila
+              ? existente.revisadoPor
+              : registro.revisadoPor || null,
+          motivo:
+            restringirFila
+              ? existente.motivo
+              : registro.motivo || null,
+          autorizacion:
+            restringirFila
+              ? existente.autorizacion
+              : registro.autorizacion || null,
+          observaciones:
+            restringirFila
+              ? existente.observaciones
+              : registro.observaciones || null,
           nuevaIdentificacion,
           nuevaFechaExpedicion,
           cambioDocumento,
@@ -296,27 +354,23 @@ export async function PATCH(
             observacion:
               preparado.cambioDocumento
                 ? null
-                : preparado.registro.observacion ||
-              null,
+                : preparado.observacion,
             revisadoPor:
               preparado.cambioDocumento
                 ? null
-                : preparado.registro.revisadoPor ||
-              null,
+                : preparado.revisadoPor,
             motivo:
               preparado.cambioDocumento
                 ? null
-                : preparado.registro.motivo || null,
+                : preparado.motivo,
             autorizacion:
               preparado.cambioDocumento
                 ? null
-                : preparado.registro.autorizacion ||
-              null,
+                : preparado.autorizacion,
             observaciones:
               preparado.cambioDocumento
                 ? null
-                : preparado.registro.observaciones ||
-              null,
+                : preparado.observaciones,
             tusdatosBatchId:
               preparado.cambioDocumento
                 ? null
