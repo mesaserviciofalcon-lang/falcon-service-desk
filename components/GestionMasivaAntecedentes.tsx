@@ -767,12 +767,18 @@ export default function GestionMasivaAntecedentes({
             Seleccione uno o varios tickets para ver la tabla consolidada.
           </div>
         ) : (
-          <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border bg-white">
+          <div
+            className={
+              tablaExpandida
+                ? "fixed inset-0 z-50 flex flex-col overflow-hidden bg-white p-4"
+                : "w-full min-w-0 max-w-[calc(100vw-22rem)] overflow-hidden rounded-xl border bg-white max-lg:max-w-[calc(100vw-2rem)]"
+            }
+          >
             <div
               className={
                 tablaExpandida
-                  ? "max-h-[82vh] w-full max-w-full overflow-auto"
-                  : "max-h-[50vh] w-full max-w-full overflow-auto"
+                  ? "min-h-0 flex-1 w-full overflow-auto rounded-xl border"
+                  : "max-h-[50vh] w-full overflow-auto"
               }
             >
               <div className="w-[2100px] max-w-none">
@@ -1120,8 +1126,8 @@ export default function GestionMasivaAntecedentes({
                 className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-100"
               >
                 {tablaExpandida
-                  ? "Contraer tabla"
-                  : "Expandir tabla"}
+                  ? "Cerrar ventana"
+                  : "Abrir tabla completa"}
               </button>
 
               <button
