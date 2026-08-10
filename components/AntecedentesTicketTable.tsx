@@ -336,12 +336,18 @@ export default function AntecedentesTicketTable({
         </a>
       </div>
 
-      <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border bg-white">
+      <div
+        className={
+          tablaExpandida
+            ? "fixed inset-0 z-50 flex flex-col overflow-hidden bg-white p-4"
+            : "w-full min-w-0 max-w-[calc(100vw-22rem)] overflow-hidden rounded-xl border bg-white max-lg:max-w-[calc(100vw-2rem)]"
+        }
+      >
         <div
           className={
             tablaExpandida
-              ? "max-h-[82vh] w-full max-w-full overflow-auto"
-              : "max-h-[42vh] w-full max-w-full overflow-auto"
+              ? "min-h-0 flex-1 w-full overflow-auto rounded-xl border"
+              : "max-h-[42vh] w-full overflow-auto"
           }
         >
         <div
