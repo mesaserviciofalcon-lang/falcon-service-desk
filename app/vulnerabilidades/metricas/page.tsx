@@ -1,3 +1,6 @@
+import Link
+from "next/link";
+
 import { redirect }
 from "next/navigation";
 
@@ -331,6 +334,7 @@ function EstadoBadge({
 function FincasActos({
   filas,
   fincas,
+  detalles = [],
   titulo = "Actos inseguros por finca",
   subtitulo = "Relaciona cada finca con los actos reportados en el mes.",
 }: {
@@ -340,10 +344,39 @@ function FincasActos({
     estado: string;
     total: number;
   }>;
+  detalles?: Array<{
+    id: number;
+    consecutivo: string | null;
+    finca: string;
+    fecha: Date;
+    acto: string;
+    estado: string;
+    vulnerabilidad: string;
+    reportadoPor: string;
+  }>;
   fincas: string[];
   titulo?: string;
   subtitulo?: string;
 }) {
+  const detallesPorActo =
+    detalles.reduce(
+      (mapa, detalle) => {
+        const llave =
+          `${detalle.finca}||${detalle.acto}`;
+        const actuales =
+          mapa.get(llave) || [];
+
+        actuales.push(detalle);
+        mapa.set(llave, actuales);
+
+        return mapa;
+      },
+      new Map<
+        string,
+        typeof detalles
+      >()
+    );
+
   const agrupado =
     fincas.map((finca) => {
       const registros =
@@ -503,21 +536,94 @@ function FincasActos({
 
                 <div className="mt-4 flex flex-col gap-2">
                   {item.actos.map(
-                    (acto) => (
-                      <div
-                        key={acto.acto}
-                        className="rounded-lg border border-white/70 bg-white/75 p-3"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-sm font-semibold text-slate-700">
-                            {acto.acto}
-                          </span>
-                          <span className="text-sm font-bold text-slate-900">
-                            {acto.cantidad}
-                          </span>
-                        </div>
-                      </div>
-                    )
+                    (acto) => {
+                      const analisis =
+                        detallesPorActo.get(
+                          `${item.finca}||${acto.acto}`
+                        ) || [];
+
+                      return (
+                        <details
+                          key={acto.acto}
+                          className="rounded-lg border border-white/70 bg-white/75 p-3"
+                        >
+                          <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                            <span className="text-sm font-semibold text-slate-700">
+                              {acto.acto}
+                            </span>
+                            <span className="text-sm font-bold text-slate-900">
+                              {acto.cantidad}
+                            </span>
+                          </summary>
+
+                          <div className="mt-3 flex flex-col gap-2 border-t border-slate-200 pt-3">
+                            {analisis.length ===
+                            0 ? (
+                              <p className="text-xs text-slate-500">
+                                Sin detalle disponible.
+                              </p>
+                            ) : (
+                              analisis.map(
+                                (detalle) => (
+                                  <div
+                                    key={
+                                      detalle.id
+                                    }
+                                    className="rounded-lg border border-slate-200 bg-white p-3"
+                                  >
+                                    <div className="flex flex-wrap items-start justify-between gap-2">
+                                      <div>
+                                        <p className="text-sm font-bold text-[#0F3D1F]">
+                                          {detalle.consecutivo ||
+                                            `Analisis #${detalle.id}`}
+                                        </p>
+                                        <p className="text-xs text-slate-500">
+                                          {detalle.fecha.toLocaleDateString(
+                                            "es-CO",
+                                            {
+                                              day:
+                                                "2-digit",
+                                              month:
+                                                "2-digit",
+                                              year:
+                                                "numeric",
+                                              timeZone:
+                                                "America/Bogota",
+                                            }
+                                          )}{" "}
+                                          | Reportado por:{" "}
+                                          {
+                                            detalle.reportadoPor
+                                          }
+                                        </p>
+                                      </div>
+                                      <EstadoBadge
+                                        estado={
+                                          detalle.estado
+                                        }
+                                      />
+                                    </div>
+
+                                    <p className="mt-2 text-sm text-slate-700">
+                                      {
+                                        detalle.vulnerabilidad
+                                      }
+                                    </p>
+
+                                    <Link
+                                      href={`/vulnerabilidades/${detalle.id}`}
+                                      className="mt-3 inline-flex rounded-lg bg-[#0F3D1F] px-3 py-2 text-xs font-bold text-white hover:bg-[#0b2d17]"
+                                    >
+                                      Ver analisis
+                                    </Link>
+                                  </div>
+                                )
+                              )
+                            )}
+                          </div>
+                        </details>
+                      );
+                    }
                   )}
                 </div>
               </div>
@@ -1158,11 +1264,13 @@ export default async function MetricasAnalisisPage({
     porReportadoPor,
     porFincaActoEstado,
     porSupervisorFinca,
+    detallesMes,
     totalAnio,
     abiertosAnio,
     cerradosAnio,
     porFincaActoEstadoAnio,
     porSupervisorFincaAnio,
+    detallesAnio,
     porEaiAnio,
     porActoAnio,
     totalHistorico,
@@ -1337,6 +1445,31 @@ export default async function MetricasAnalisisPage({
     `,
     prisma
       .vulnerabilidadInforme
+      .findMany({
+        where:
+          whereMes,
+        select: {
+          id: true,
+          consecutivo: true,
+          eai: true,
+          fecha: true,
+          actoInseguro: true,
+          estado: true,
+          vulnerabilidad: true,
+          reportadoPor: true,
+          supervisor: true,
+        },
+        orderBy: [
+          {
+            fecha: "desc",
+          },
+          {
+            id: "desc",
+          },
+        ],
+      }),
+    prisma
+      .vulnerabilidadInforme
       .count({
         where:
           whereAnio,
@@ -1402,6 +1535,31 @@ export default async function MetricasAnalisisPage({
         COALESCE(NULLIF("eai", ''), 'Sin finca')
       ORDER BY total DESC, supervisor ASC, finca ASC
     `,
+    prisma
+      .vulnerabilidadInforme
+      .findMany({
+        where:
+          whereAnio,
+        select: {
+          id: true,
+          consecutivo: true,
+          eai: true,
+          fecha: true,
+          actoInseguro: true,
+          estado: true,
+          vulnerabilidad: true,
+          reportadoPor: true,
+          supervisor: true,
+        },
+        orderBy: [
+          {
+            fecha: "desc",
+          },
+          {
+            id: "desc",
+          },
+        ],
+      }),
     prisma
       .vulnerabilidadInforme
       .groupBy({
@@ -1482,6 +1640,47 @@ export default async function MetricasAnalisisPage({
         Number(item.total),
     }));
 
+  const mapearDetalles = (
+    filas: Array<{
+      id: number;
+      consecutivo: string | null;
+      eai: string;
+      fecha: Date;
+      actoInseguro: string;
+      estado: string;
+      vulnerabilidad: string;
+      reportadoPor: string | null;
+      supervisor: string;
+    }>
+  ) =>
+    filas.map((item) => ({
+      id:
+        item.id,
+      consecutivo:
+        item.consecutivo,
+      finca:
+        item.eai ||
+        "Sin finca",
+      fecha:
+        item.fecha,
+      acto:
+        item.actoInseguro ||
+        "Sin acto",
+      estado:
+        String(
+          item.estado ||
+            "ABIERTO"
+        )
+          .trim()
+          .toUpperCase(),
+      vulnerabilidad:
+        item.vulnerabilidad,
+      reportadoPor:
+        item.reportadoPor ||
+        item.supervisor ||
+        "Sin supervisor",
+    }));
+
   const fincaActoEstado =
     mapearFincaActoEstado(
       porFincaActoEstado
@@ -1492,6 +1691,11 @@ export default async function MetricasAnalisisPage({
       porSupervisorFinca
     );
 
+  const detallesFincaActo =
+    mapearDetalles(
+      detallesMes
+    );
+
   const fincaActoEstadoAnio =
     mapearFincaActoEstado(
       porFincaActoEstadoAnio
@@ -1500,6 +1704,11 @@ export default async function MetricasAnalisisPage({
   const supervisorFincaAnio =
     mapearSupervisorFinca(
       porSupervisorFincaAnio
+    );
+
+  const detallesFincaActoAnio =
+    mapearDetalles(
+      detallesAnio
     );
 
   const fincas =
@@ -1681,6 +1890,7 @@ export default async function MetricasAnalisisPage({
         <FincasActos
           filas={fincaActoEstado}
           fincas={fincas}
+          detalles={detallesFincaActo}
           titulo="Actos inseguros por finca del mes"
           subtitulo="Ordenado desde la finca con mas analisis hasta la de menor volumen."
         />
@@ -1798,6 +2008,7 @@ export default async function MetricasAnalisisPage({
         <FincasActos
           filas={fincaActoEstadoAnio}
           fincas={fincas}
+          detalles={detallesFincaActoAnio}
           titulo="Actos inseguros por finca del año"
           subtitulo="Acumulado anual ordenado desde la finca con mas analisis hasta la de menor volumen."
         />
