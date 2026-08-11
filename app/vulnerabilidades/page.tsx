@@ -381,6 +381,9 @@ export default async function VulnerabilidadesPage({
         }
         pagina={pagina}
         totalPaginas={totalPaginas}
+        puedeAgregarObservacion={
+          puedeCrear
+        }
         puedeEliminar={
           session?.user?.role ===
           "ADMIN"

@@ -363,8 +363,31 @@ model VulnerabilidadInforme {
 
   createdAt DateTime @default(now())
 
+  observacionesSeguimiento VulnerabilidadObservacion[]
+
   @@index([eai])
   @@index([consecutivo])
   @@index([estado])
   @@index([fecha])
+}
+
+model VulnerabilidadObservacion {
+  id Int @id @default(autoincrement())
+
+  informeId Int
+
+  observacion String
+
+  supervisor String
+
+  usuarioNombre String?
+
+  usuarioCorreo String?
+
+  createdAt DateTime @default(now())
+
+  informe VulnerabilidadInforme @relation(fields: [informeId], references: [id], onDelete: Cascade)
+
+  @@index([informeId])
+  @@index([createdAt])
 }

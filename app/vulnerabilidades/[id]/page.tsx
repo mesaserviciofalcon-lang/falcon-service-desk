@@ -62,6 +62,14 @@ export default async function VulnerabilidadDetallePage({
           id:
             Number(id),
         },
+        include: {
+          observacionesSeguimiento: {
+            orderBy: {
+              createdAt:
+                "desc",
+            },
+          },
+        },
       });
 
   if (!informe) {
@@ -166,6 +174,23 @@ export default async function VulnerabilidadDetallePage({
       informe.responsables,
     fechaEjecucion:
       informe.fechaEjecucion,
+    observacionesSeguimiento:
+      informe
+        .observacionesSeguimiento
+        .map((observacion) => ({
+          id:
+            observacion.id,
+          observacion:
+            observacion.observacion,
+          supervisor:
+            observacion.supervisor,
+          usuarioNombre:
+            observacion.usuarioNombre,
+          usuarioCorreo:
+            observacion.usuarioCorreo,
+          createdAt:
+            observacion.createdAt.toISOString(),
+        })),
   };
 
   return (
@@ -205,6 +230,11 @@ export default async function VulnerabilidadDetallePage({
         }
         puedeCerrar={
           role === "SOLICITANTE"
+        }
+        puedeAgregarObservacion={
+          rolesSeguridad.includes(
+            role
+          )
         }
       />
     </div>

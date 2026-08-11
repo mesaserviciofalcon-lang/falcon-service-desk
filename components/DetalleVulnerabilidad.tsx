@@ -9,6 +9,9 @@ from "react-hot-toast";
 import UploadButton
 from "@/components/uploadthing/UploadButton";
 
+import { revisadoPorOpciones }
+from "@/lib/antecedentesCatalogos";
+
 import {
   procesosVulnerabilidad,
 } from "@/lib/vulnerabilidades";
@@ -38,6 +41,14 @@ type Informe = {
   responsables?: string | null;
   fechaEjecucion?: string | null;
   cierreEvidencias?: Archivo[];
+  observacionesSeguimiento?: Array<{
+    id: number;
+    observacion: string;
+    supervisor: string;
+    usuarioNombre?: string | null;
+    usuarioCorreo?: string | null;
+    createdAt: string;
+  }>;
 };
 
 function formatearFecha(
@@ -56,12 +67,32 @@ function formatearFecha(
     );
 }
 
+function formatearFechaHora(
+  fecha: string | Date
+) {
+  return new Date(fecha)
+    .toLocaleString(
+      "es-CO",
+      {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone:
+          "America/Bogota",
+      }
+    );
+}
+
 export default function DetalleVulnerabilidad({
   informe,
   puedeCerrar,
+  puedeAgregarObservacion,
 }: {
   informe: Informe;
   puedeCerrar: boolean;
+  puedeAgregarObservacion: boolean;
 }) {
   const [observaciones, setObservaciones] =
     useState("");
@@ -73,6 +104,29 @@ export default function DetalleVulnerabilidad({
     useState(
       informe.estado === "CERRADO"
     );
+  const [
+    observacionesSeguimiento,
+    setObservacionesSeguimiento,
+  ] = useState(
+    informe.observacionesSeguimiento ||
+      []
+  );
+  const [
+    observacionSeguimiento,
+    setObservacionSeguimiento,
+  ] = useState("");
+  const [
+    supervisorSeguimiento,
+    setSupervisorSeguimiento,
+  ] = useState(
+    informe.reportadoPor ||
+      informe.supervisor ||
+      ""
+  );
+  const [
+    guardandoObservacion,
+    setGuardandoObservacion,
+  ] = useState(false);
   const [cierre, setCierre] =
     useState({
       causaRaiz:
@@ -150,6 +204,103 @@ export default function DetalleVulnerabilidad({
 
   const puedeGestionar =
     !cerrado && puedeCerrar;
+  const puedeRegistrarSeguimiento =
+    !cerrado &&
+    puedeAgregarObservacion;
+
+  async function agregarObservacionSeguimiento() {
+    try {
+      if (guardandoObservacion) {
+        return;
+      }
+
+      if (
+        !supervisorSeguimiento.trim()
+      ) {
+        toast.error(
+          "Seleccione el supervisor que agrega la observacion"
+        );
+        return;
+      }
+
+      if (
+        !observacionSeguimiento.trim()
+      ) {
+        toast.error(
+          "Escriba la observacion de seguimiento"
+        );
+        return;
+      }
+
+      setGuardandoObservacion(true);
+
+      const response =
+        await fetch(
+          `/api/vulnerabilidades/${informe.id}/observaciones`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              supervisor:
+                supervisorSeguimiento,
+              observacion:
+                observacionSeguimiento,
+            }),
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          "No se pudo agregar la observacion"
+        );
+      }
+
+      setObservacionesSeguimiento(
+        (actuales) => [
+          {
+            id:
+              data.observacion.id,
+            observacion:
+              data.observacion
+                .observacion,
+            supervisor:
+              data.observacion
+                .supervisor,
+            usuarioNombre:
+              data.observacion
+                .usuarioNombre,
+            usuarioCorreo:
+              data.observacion
+                .usuarioCorreo,
+            createdAt:
+              data.observacion
+                .createdAt,
+          },
+          ...actuales,
+        ]
+      );
+      setObservacionSeguimiento("");
+
+      toast.success(
+        "Observacion agregada correctamente"
+      );
+    } catch (error: any) {
+      console.error(error);
+      toast.error(
+        error.message ||
+        "Error agregando observacion"
+      );
+    } finally {
+      setGuardandoObservacion(false);
+    }
+  }
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-md">
@@ -232,6 +383,126 @@ export default function DetalleVulnerabilidad({
           </div>
         </div>
       )}
+
+      <div
+        id="observaciones"
+        className="mt-4 rounded-lg border bg-slate-50 p-4 text-sm"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-bold text-[#0F3D1F]">
+              Observaciones de seguimiento
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Registre novedades adicionales mientras el analisis permanezca abierto.
+            </p>
+          </div>
+        </div>
+
+        {puedeRegistrarSeguimiento && (
+          <div className="mt-3 rounded-lg border bg-white p-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <select
+                value={
+                  supervisorSeguimiento
+                }
+                onChange={(event) =>
+                  setSupervisorSeguimiento(
+                    event.target.value
+                  )
+                }
+                className="rounded-lg border p-3"
+              >
+                <option value="">
+                  Seleccione supervisor
+                </option>
+                {revisadoPorOpciones.map(
+                  (supervisor) => (
+                    <option
+                      key={supervisor}
+                      value={supervisor}
+                    >
+                      {supervisor}
+                    </option>
+                  )
+                )}
+              </select>
+
+              <textarea
+                value={
+                  observacionSeguimiento
+                }
+                onChange={(event) =>
+                  setObservacionSeguimiento(
+                    event.target.value
+                  )
+                }
+                className="min-h-24 rounded-lg border p-3 md:col-span-2"
+                placeholder="Observacion de seguimiento"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={
+                agregarObservacionSeguimiento
+              }
+              disabled={
+                guardandoObservacion
+              }
+              className="mt-3 rounded-lg bg-[#0F3D1F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#14532d] disabled:bg-gray-500"
+            >
+              {guardandoObservacion
+                ? "Guardando..."
+                : "Agregar observacion"}
+            </button>
+          </div>
+        )}
+
+        {observacionesSeguimiento.length ===
+        0 ? (
+          <p className="mt-3 rounded-lg border border-dashed bg-white p-3 text-slate-500">
+            Sin observaciones de seguimiento registradas.
+          </p>
+        ) : (
+          <div className="mt-3 flex flex-col gap-3">
+            {observacionesSeguimiento.map(
+              (observacion) => (
+                <div
+                  key={observacion.id}
+                  className="rounded-lg border bg-white p-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-bold text-[#0F3D1F]">
+                      {
+                        observacion.supervisor
+                      }
+                    </p>
+                    <p className="text-xs font-semibold text-slate-500">
+                      {formatearFechaHora(
+                        observacion.createdAt
+                      )}
+                    </p>
+                  </div>
+                  <p className="mt-2 whitespace-pre-wrap text-slate-700">
+                    {
+                      observacion.observacion
+                    }
+                  </p>
+                  {(observacion.usuarioNombre ||
+                    observacion.usuarioCorreo) && (
+                    <p className="mt-2 text-xs text-slate-500">
+                      Registrado en plataforma por:{" "}
+                      {observacion.usuarioNombre ||
+                        observacion.usuarioCorreo}
+                    </p>
+                  )}
+                </div>
+              )
+            )}
+          </div>
+        )}
+      </div>
 
       {puedeGestionar ? (
         <div className="mt-4 border-t pt-4">

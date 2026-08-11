@@ -38,12 +38,14 @@ export default function ListadoVulnerabilidades({
   pagina,
   totalPaginas,
   puedeEliminar = false,
+  puedeAgregarObservacion = false,
   parametroPagina = "pagina",
 }: {
   informes: InformeResumen[];
   pagina: number;
   totalPaginas: number;
   puedeEliminar?: boolean;
+  puedeAgregarObservacion?: boolean;
   parametroPagina?: string;
 }) {
   if (informes.length === 0) {
@@ -112,6 +114,16 @@ export default function ListadoVulnerabilidades({
                         informe.id
                       }
                     />
+                  )}
+
+                  {abierto &&
+                    puedeAgregarObservacion && (
+                    <Link
+                      href={`/vulnerabilidades/${informe.id}#observaciones`}
+                      className="rounded-lg border border-[#0F3D1F] bg-white px-4 py-2 text-sm font-bold text-[#0F3D1F] hover:bg-green-50"
+                    >
+                      Agregar observacion
+                    </Link>
                   )}
 
                   <Link
