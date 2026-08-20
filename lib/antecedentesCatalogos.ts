@@ -27,6 +27,38 @@ export const tipoDocumentoOpciones = [
   "CC",
 ];
 
+export function obtenerErrorIdentificacion(
+  tipoDocumento: unknown,
+  identificacion: unknown
+) {
+  const tipo =
+    String(tipoDocumento ?? "")
+      .trim()
+      .toUpperCase();
+
+  const documento =
+    String(identificacion ?? "")
+      .trim();
+
+  if (!/^\d+$/.test(documento)) {
+    return "IDENTIFICACION debe contener solo numeros. No use puntos, comas, espacios ni separadores de miles.";
+  }
+
+  const longitudCcValida =
+    (documento.length >= 6 &&
+      documento.length <= 8) ||
+    documento.length === 10;
+
+  if (
+    tipo === "CC" &&
+    !longitudCcValida
+  ) {
+    return "IDENTIFICACION para CC debe tener 6, 7, 8 o 10 digitos. No se permiten cedulas de 9 ni de 11 o mas digitos.";
+  }
+
+  return null;
+}
+
 export const observacionAntecedenteOpciones = [
   "CONTINUAR CON EL PROCESO",
   OBSERVACION_VERIFICACION_ANUAL_SIN_HALLAZGOS,

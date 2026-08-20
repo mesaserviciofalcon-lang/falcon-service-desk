@@ -8,6 +8,7 @@ import { prisma }
 from "@/lib/prisma";
 
 import {
+  obtenerErrorIdentificacion,
   puedeVerAntecedenteCompleto,
 } from "@/lib/antecedentesCatalogos";
 
@@ -18,6 +19,9 @@ const DOCUMENTOS_PERMITIDOS =
     "PP",
     "PPT",
   ]);
+
+class ErrorValidacionTusdatos
+  extends Error {}
 
 function normalizarFechaTusdatos(
   valor?: string | null
@@ -349,7 +353,7 @@ export async function POST(
           !typedoc ||
           !expeditionDate
         ) {
-          throw new Error(
+          throw new ErrorValidacionTusdatos(
             `El registro ${registro.id} tiene datos incompletos para Tusdatos`
           );
         }
@@ -359,16 +363,20 @@ export async function POST(
             typedoc
           )
         ) {
-          throw new Error(
+          throw new ErrorValidacionTusdatos(
             `El tipo de documento ${typedoc} no esta permitido para Tusdatos`
           );
         }
 
-        if (
-          !/^\d+$/.test(doc)
-        ) {
-          throw new Error(
-            `La identificacion ${doc} solo debe contener numeros`
+        const errorIdentificacion =
+          obtenerErrorIdentificacion(
+            typedoc,
+            doc
+          );
+
+        if (errorIdentificacion) {
+          throw new ErrorValidacionTusdatos(
+            `La identificacion ${doc} no es valida. ${errorIdentificacion}`
           );
         }
 
@@ -380,7 +388,7 @@ export async function POST(
             llave
           )
         ) {
-          throw new Error(
+          throw new ErrorValidacionTusdatos(
             `La identificacion ${doc} esta duplicada en el lote`
           );
         }
@@ -543,7 +551,11 @@ export async function POST(
           "Error enviando consulta a Tusdatos",
       },
       {
-        status: 500,
+        status:
+          error instanceof
+            ErrorValidacionTusdatos
+            ? 400
+            : 500,
       }
     );
   }

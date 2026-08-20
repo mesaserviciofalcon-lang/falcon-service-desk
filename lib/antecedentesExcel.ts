@@ -13,6 +13,7 @@ from "@/lib/fecha";
 
 import {
   eaiOpciones,
+  obtenerErrorIdentificacion,
   tipoDocumentoOpciones,
 } from "@/lib/antecedentesCatalogos";
 
@@ -489,15 +490,17 @@ function validarTipoDatosSolicitud(
         )
       );
 
-    if (
-      !/^\d+$/.test(
+    const errorIdentificacion =
+      obtenerErrorIdentificacion(
+        tipoDocumento,
         identificacion
-      )
-    ) {
+      );
+
+    if (errorIdentificacion) {
       lanzarErrorCelda(
         numeroFila,
         indiceIdentificacion,
-        "IDENTIFICACION debe contener solo numeros. No use puntos, comas, espacios ni separadores de miles."
+        errorIdentificacion
       );
     }
 

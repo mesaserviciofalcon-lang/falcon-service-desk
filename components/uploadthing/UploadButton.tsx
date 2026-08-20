@@ -4,6 +4,10 @@ import {
   generateUploadButton,
 } from "@uploadthing/react";
 
+import {
+  obtenerErrorIdentificacion,
+} from "@/lib/antecedentesCatalogos";
+
 const UploadButtonBase =
   generateUploadButton();
 
@@ -356,6 +360,24 @@ export default function UploadButton({
                     })
                   );
 
+                const indiceTipoDocumento =
+                  requiredHeaders.findIndex(
+                    (header: string) =>
+                      normalizarTexto(
+                        header
+                      ) ===
+                      "TIPO DE DOCUMENTO"
+                  );
+
+                const indiceIdentificacion =
+                  requiredHeaders.findIndex(
+                    (header: string) =>
+                      normalizarTexto(
+                        header
+                      ) ===
+                      "IDENTIFICACION"
+                  );
+
                 for (
                   let fila = range.s.r + 1;
                   fila <= range.e.r;
@@ -423,6 +445,43 @@ export default function UploadButton({
                     );
 
                     return [];
+                  }
+
+                  if (
+                    indiceTipoDocumento >= 0 &&
+                    indiceIdentificacion >= 0
+                  ) {
+                    const tipoDocumento =
+                      sheet[
+                        XLSX.utils
+                          .encode_cell({
+                            r: fila,
+                            c: indiceTipoDocumento,
+                          })
+                      ]?.v;
+
+                    const identificacion =
+                      sheet[
+                        XLSX.utils
+                          .encode_cell({
+                            r: fila,
+                            c: indiceIdentificacion,
+                          })
+                      ]?.v;
+
+                    const errorIdentificacion =
+                      obtenerErrorIdentificacion(
+                        tipoDocumento,
+                        identificacion
+                      );
+
+                    if (errorIdentificacion) {
+                      alert(
+                        `No fue posible subir este archivo. Fila ${fila + 1}, columna ${XLSX.utils.encode_col(indiceIdentificacion)}: ${errorIdentificacion}`
+                      );
+
+                      return [];
+                    }
                   }
                 }
               }
