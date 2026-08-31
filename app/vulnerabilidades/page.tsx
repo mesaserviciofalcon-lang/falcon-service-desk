@@ -68,6 +68,10 @@ export default async function VulnerabilidadesPage({
     session?.user?.role || "";
   const cargo =
     session?.user?.cargo || "";
+  const fincaEAI =
+    String(session?.user?.fincaEAI || "")
+      .trim()
+      .toUpperCase();
 
   if (!puedeVerVulnerabilidades(role, cargo)) {
     redirect("/dashboard");
@@ -144,17 +148,23 @@ export default async function VulnerabilidadesPage({
       cargo
     )
   ) {
-    const email =
-      session?.user?.email || "";
+    const filtroEai = fincaEAI
+      ? {
+          eai: {
+            equals: fincaEAI,
+            mode: "insensitive" as const,
+          },
+        }
+      : {
+          id: -1,
+        };
     const wherePendientes = {
-      analistaSigCorreo:
-        email,
+      ...filtroEai,
       estado:
         "ABIERTO",
     };
     const whereCerrados = {
-      analistaSigCorreo:
-        email,
+      ...filtroEai,
       estado:
         "CERRADO",
     };
@@ -239,16 +249,16 @@ export default async function VulnerabilidadesPage({
             Analisis de vulnerabilidades
           </h1>
           <p className="mt-2 text-gray-600">
-            Consulte y gestione los analisis asignados por seguridad.
+            Consulte los análisis históricos y pendientes de su EAI. Solo puede gestionar los que estén asignados a su correo.
           </p>
         </div>
 
         <div className="mb-4">
           <h2 className="text-xl font-bold text-[#0F3D1F]">
-            Mis analisis pendientes
+            Analisis pendientes de mi EAI
           </h2>
           <p className="mt-1 text-sm text-gray-600">
-            Cierre los analisis asignados y adjunte la evidencia correspondiente.
+            Abra un análisis para consultar su detalle. El cierre se habilita únicamente al analista asignado.
           </p>
         </div>
 

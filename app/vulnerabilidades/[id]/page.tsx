@@ -47,6 +47,22 @@ function esAnalistaAsignado(
   );
 }
 
+function esAnalistaDeLaMismaEai(
+  eai: string,
+  role: string,
+  cargo: string,
+  fincaEAI: string
+) {
+  return (
+    puedeGestionarVulnerabilidadesAsignadas(
+      role,
+      cargo
+    ) &&
+    String(eai || "").trim().toUpperCase() ===
+      String(fincaEAI || "").trim().toUpperCase()
+  );
+}
+
 export default async function VulnerabilidadDetallePage({
   params,
 }: {
@@ -65,6 +81,8 @@ export default async function VulnerabilidadDetallePage({
     session?.user?.email || "";
   const cargo =
     session?.user?.cargo || "";
+  const fincaEAI =
+    session?.user?.fincaEAI || "";
 
   if (!puedeVerVulnerabilidades(role, cargo)) {
     redirect("/dashboard");
@@ -98,11 +116,11 @@ export default async function VulnerabilidadDetallePage({
 
   const puedeVer =
     rolesSeguridad.includes(role) ||
-    esAnalistaAsignado(
-      informe.analistaSigCorreo,
+    esAnalistaDeLaMismaEai(
+      informe.eai,
       role,
       cargo,
-      email
+      fincaEAI
     );
 
   if (!puedeVer) {
