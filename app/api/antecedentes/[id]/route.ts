@@ -57,9 +57,25 @@ export async function PATCH(
     const body =
       await request.json();
 
+    const revisadoPorSesion =
+      session?.user?.role === "SUPERVISOR"
+        ? (
+            session.user.name ||
+            session.user.email ||
+            "Supervisor"
+          ).trim()
+        : null;
+
+    const registroActualizado = {
+      ...body,
+      revisadoPor:
+        revisadoPorSesion ||
+        body.revisadoPor,
+    };
+
     const errorValidacion =
       validarRegistroAntecedente(
-        body
+        registroActualizado
       );
 
     if (errorValidacion) {
@@ -85,15 +101,15 @@ export async function PATCH(
           fechaRespuesta:
             obtenerFechaActualColombiaISO(),
           observacion:
-            body.observacion || null,
+            registroActualizado.observacion || null,
           revisadoPor:
-            body.revisadoPor || null,
+            registroActualizado.revisadoPor || null,
           motivo:
-            body.motivo || null,
+            registroActualizado.motivo || null,
           autorizacion:
-            body.autorizacion || null,
+            registroActualizado.autorizacion || null,
           observaciones:
-            body.observaciones || null,
+            registroActualizado.observaciones || null,
         },
       });
 

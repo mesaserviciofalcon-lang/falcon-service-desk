@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { useSession } from "next-auth/react";
+
 import toast from "react-hot-toast";
 
 import {
@@ -102,6 +104,14 @@ export default function ConsultaAntecedentesResultados({
   puedeEditar: boolean;
   puedeVerCompleto: boolean;
 }) {
+  const { data: session } = useSession();
+  const revisadoPorAutomatico =
+    session?.user?.name ||
+    session?.user?.email ||
+    "";
+  const esSupervisor =
+    session?.user?.role === "SUPERVISOR";
+
   const [filas, setFilas] =
     useState(registros);
   const [procesandoId, setProcesandoId] =
@@ -129,7 +139,13 @@ export default function ConsultaAntecedentesResultados({
   ) {
     const errorValidacion =
       validarRegistroAntecedente(
-        registro
+        {
+          ...registro,
+          revisadoPor:
+            esSupervisor
+              ? revisadoPorAutomatico
+              : registro.revisadoPor,
+        }
       );
 
     if (errorValidacion) {
@@ -383,7 +399,13 @@ export default function ConsultaAntecedentesResultados({
               {puedeVerCompleto && (
                 <>
                   <td className="min-w-56 border p-2">
-                    {puedeEditar ? (
+                    {puedeEditar && esSupervisor ? (
+                      <input
+                        value={revisadoPorAutomatico}
+                        readOnly
+                        className="w-full rounded border bg-slate-100 p-2"
+                      />
+                    ) : puedeEditar ? (
                       <SelectCampo
                         value={registro.revisadoPor}
                         options={revisadoPorOpciones}

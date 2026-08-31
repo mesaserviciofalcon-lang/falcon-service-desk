@@ -6,6 +6,9 @@ from "next-auth";
 import { authOptions }
 from "@/lib/auth";
 
+import { puedeConsultarVisitas }
+from "@/lib/permisosVisitas";
+
 import * as XLSX
 from "xlsx";
 
@@ -44,8 +47,9 @@ export async function GET() {
       );
 
     if (
-      session?.user?.role !== "ADMIN" &&
-      session?.user?.role !== "VISITA"
+      !puedeConsultarVisitas(
+        session?.user?.cargo
+      )
     ) {
       return Response.json(
         {

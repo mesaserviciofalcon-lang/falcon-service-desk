@@ -215,6 +215,78 @@ export function ticketCreadoTemplate({
 
 `;
 }
+
+export function recordatorioTicketsPendientesTemplate({
+  titulo,
+  destinatario,
+  tickets,
+  diasLimite = 8,
+}: {
+  titulo: string;
+  destinatario: string;
+  diasLimite?: number;
+  tickets: Array<{
+    id: number;
+    eai?: string | null;
+    solicitante: string;
+    estado: string;
+    fechaCreacion: Date | string;
+    diasPendiente: number;
+  }>;
+}) {
+  const ticketMasAntiguo = tickets.reduce(
+    (masAntiguo, ticket) =>
+      ticket.diasPendiente > masAntiguo.diasPendiente
+        ? ticket
+        : masAntiguo
+  );
+
+  const filas = tickets
+    .map(
+      (ticket) => `
+        <tr>
+          <td style="border:1px solid #d1d5db;padding:8px">
+            <a href="${getTicketUrl(ticket.id)}" style="color:#0b5cab;font-weight:700">#${ticket.id}</a>
+          </td>
+          <td style="border:1px solid #d1d5db;padding:8px">${ticket.eai || "Sin EAI"}</td>
+          <td style="border:1px solid #d1d5db;padding:8px">${ticket.solicitante}</td>
+          <td style="border:1px solid #d1d5db;padding:8px">${ticket.estado}</td>
+          <td style="border:1px solid #d1d5db;padding:8px;text-align:center">${ticket.diasPendiente}</td>
+        </tr>
+      `
+    )
+    .join("");
+
+  return `
+    <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.5">
+      <h2 style="color:#0F3D1F">${titulo}</h2>
+      <p>Buen dia${destinatario ? `, ${destinatario}` : ""}.</p>
+      <p>
+        Tiene ${tickets.length} ticket(s) que llevan mas de ${diasLimite} dias sin cierre.
+        El mas antiguo es el ticket
+        <a href="${getTicketUrl(ticketMasAntiguo.id)}">#${ticketMasAntiguo.id}</a>,
+        con ${ticketMasAntiguo.diasPendiente} dias pendiente(s).
+      </p>
+      <table style="border-collapse:collapse;width:100%;font-size:13px">
+        <thead>
+          <tr style="background:#0F3D1F;color:#ffffff">
+            <th style="border:1px solid #0F3D1F;padding:8px;text-align:left">Ticket</th>
+            <th style="border:1px solid #0F3D1F;padding:8px;text-align:left">EAI/Finca</th>
+            <th style="border:1px solid #0F3D1F;padding:8px;text-align:left">Solicitante</th>
+            <th style="border:1px solid #0F3D1F;padding:8px;text-align:left">Estado</th>
+            <th style="border:1px solid #0F3D1F;padding:8px;text-align:center">Dias pendientes</th>
+          </tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <p>Haga clic en cada ticket para ingresar y realizar la gestion pendiente.</p>
+      <hr />
+      <p style="font-size:12px;color:#64748b">
+        Falcon Service Desk - Security Department
+      </p>
+    </div>
+  `;
+}
 export function ticketAsignadoTemplate({
 
   ticket,

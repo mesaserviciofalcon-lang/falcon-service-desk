@@ -10,10 +10,8 @@ from "@/lib/auth";
 import { prisma }
 from "@/lib/prisma";
 
-const rolesConsultaVisitas = [
-  "ADMIN",
-  "VISITA",
-];
+import { puedeConsultarVisitas }
+from "@/lib/permisosVisitas";
 
 function formatearFechaSoloDia(
   fecha?: Date | string | null
@@ -67,8 +65,8 @@ export default async function VisitasPage({
     );
 
   if (
-    !rolesConsultaVisitas.includes(
-      session?.user?.role || ""
+    !puedeConsultarVisitas(
+      session?.user?.cargo
     )
   ) {
     redirect("/dashboard");

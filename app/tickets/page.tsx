@@ -20,6 +20,10 @@ import {
   visibleEnBandejaPorRol,
 } from "@/lib/visibilidadTickets";
 
+import {
+  tecnicoPuedeGestionarCctv,
+} from "@/lib/cctvEjecucion";
+
 function obtenerWherePorRol(
   role?: string
 ) {
@@ -38,12 +42,7 @@ function obtenerWherePorRol(
 
   if (role === "TECNICO") {
     return {
-      tipo: {
-        in: [
-          "CCTV",
-          "RADIOS",
-        ],
-      },
+      tipo: "CCTV",
     };
   }
 
@@ -154,31 +153,24 @@ const fincaEAI =
 
           role === "DIRECTOR_SEG";
 
-        return (
-
-          (
-            solicitud.tipo ===
-              "CCTV"
-
-            ||
-
-            solicitud.tipo ===
-              "RADIOS"
-
-            ||
-
-            (
-
-              esSeguridad
-
-              &&
-
-              solicitud.tipo ===
-                "NOVEDAD SEGURIDAD"
-            )
-          )
-
-        );
+        return role === "TECNICO"
+          ? solicitud.tipo === "CCTV" &&
+            tecnicoPuedeGestionarCctv({
+              rol: role,
+              correo: email,
+              eai:
+                solicitud.cctv?.fincaEAI,
+              estado: solicitud.estado,
+            })
+          : (
+              solicitud.tipo === "CCTV" ||
+              solicitud.tipo === "RADIOS" ||
+              (
+                esSeguridad &&
+                solicitud.tipo ===
+                  "NOVEDAD SEGURIDAD"
+              )
+            );
       }
     );
 }

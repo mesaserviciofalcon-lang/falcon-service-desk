@@ -77,6 +77,21 @@ export default withAuth(
       );
     }
 
+    if (
+      role === "TECNICO" &&
+      (
+        pathname.includes("/solicitudes") ||
+        pathname.includes("/antecedentes")
+      )
+    ) {
+      return NextResponse.redirect(
+        new URL(
+          "/dashboard",
+          req.url
+        )
+      );
+    }
+
     // SUPERVISOR
 
     if (

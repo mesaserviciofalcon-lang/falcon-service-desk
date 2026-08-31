@@ -1,6 +1,9 @@
 import ReabrirTicket
 from "@/components/ReabrirTicket";
 
+import AprobarEjecucionCctv
+from "@/components/AprobarEjecucionCctv";
+
 import GestionTicket
 from "@/components/GestionTicket";
 
@@ -12,6 +15,12 @@ from "@/components/EliminarTicketButton";
 
 import { formatearFechaColombia }
 from "@/lib/fecha";
+
+import {
+  esCctvAprobadoParaGestion,
+  puedeAprobarEjecucionCctv,
+  tecnicoPuedeGestionarCctv,
+} from "@/lib/cctvEjecucion";
 
 export default function TicketCard({
 
@@ -31,6 +40,11 @@ export default function TicketCard({
   const estado =
     solicitud.estado;
 
+  const estadoNormalizado =
+    String(estado || "")
+      .trim()
+      .toUpperCase();
+
   const isCompletado =
     [
       "COMPLETADO",
@@ -48,11 +62,28 @@ export default function TicketCard({
       role === "ADMIN"
     );
 
+  const tecnicoPuedeGestionar =
+    tecnicoPuedeGestionarCctv({
+      rol: role,
+      correo: session?.user?.email,
+      eai: solicitud.cctv?.fincaEAI,
+      estado,
+    });
+
   const puedeGestionar =
     Boolean(role) &&
     (
-      !isSolicitante ||
-      estado === "REABIERTO"
+      role === "TECNICO"
+        ? tecnicoPuedeGestionar
+        : !isSolicitante ||
+          estado === "REABIERTO"
+    );
+
+  const puedeAprobarCctv =
+    solicitud.tipo === "CCTV" &&
+    puedeAprobarEjecucionCctv(role) &&
+    ["PENDIENTE", "REABIERTO"].includes(
+      estadoNormalizado
     );
 
   const puedeVerTablaAntecedentes =
@@ -112,6 +143,14 @@ export default function TicketCard({
             }
           />
 
+        </div>
+      )}
+
+      {puedeAprobarCctv && (
+        <div className="mt-4 flex justify-end">
+          <AprobarEjecucionCctv
+            ticketId={solicitud.id}
+          />
         </div>
       )}
 
@@ -214,6 +253,16 @@ export default function TicketCard({
 
         </div>
       )}
+
+      {role === "TECNICO" &&
+        solicitud.tipo === "CCTV" &&
+        !esCctvAprobadoParaGestion(
+          solicitud.estado
+        ) && (
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            Este ticket esta pendiente de aprobacion para ejecucion.
+          </div>
+        )}
 
       {/* VISITA */}
 

@@ -9,6 +9,10 @@ from "react";
 import toast
 from "react-hot-toast";
 
+import {
+  cargosUsuario,
+} from "@/lib/permisosUsuarios";
+
 const roles = [
   "ADMIN",
   "SOLICITANTE",
@@ -40,6 +44,7 @@ type Usuario = {
   nombre: string;
   email: string;
   rol: string;
+  cargo?: string | null;
   fincaEAI?: string | null;
   activo: boolean;
 };
@@ -49,6 +54,7 @@ const usuarioVacio = {
   email: "",
   password: "",
   rol: "SOLICITANTE",
+  cargo: "",
   fincaEAI: "",
   activo: true,
 };
@@ -82,6 +88,7 @@ export default function GestionUsuarios({
     setFormEdicion({
       ...usuario,
       password: "",
+      cargo: usuario.cargo || "",
       fincaEAI:
         usuario.fincaEAI || "",
     });
@@ -350,6 +357,29 @@ export default function GestionUsuarios({
           </select>
 
           <select
+            value={nuevo.cargo}
+            onChange={(event) =>
+              setNuevo({
+                ...nuevo,
+                cargo: event.target.value,
+              })
+            }
+            className="rounded-lg border p-3"
+          >
+            <option value="">
+              Sin cargo
+            </option>
+            {cargosUsuario.map((cargo) => (
+              <option
+                key={cargo}
+                value={cargo}
+              >
+                {cargo}
+              </option>
+            ))}
+          </select>
+
+          <select
             value={nuevo.fincaEAI}
             onChange={(event) =>
               setNuevo({
@@ -398,6 +428,9 @@ export default function GestionUsuarios({
                 </th>
                 <th className="border p-2 text-left">
                   Rol
+                </th>
+                <th className="border p-2 text-left">
+                  Cargo
                 </th>
                 <th className="border p-2 text-left">
                   Finca
@@ -482,6 +515,36 @@ export default function GestionUsuarios({
                         </select>
                       ) : (
                         usuario.rol
+                      )}
+                    </td>
+                    <td className="border p-2">
+                      {editando ? (
+                        <select
+                          value={
+                            formEdicion.cargo || ""
+                          }
+                          onChange={(event) =>
+                            setFormEdicion({
+                              ...formEdicion,
+                              cargo: event.target.value,
+                            })
+                          }
+                          className="rounded border p-2"
+                        >
+                          <option value="">
+                            Sin cargo
+                          </option>
+                          {cargosUsuario.map((cargo) => (
+                            <option
+                              key={cargo}
+                              value={cargo}
+                            >
+                              {cargo}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        usuario.cargo || "Sin cargo"
                       )}
                     </td>
                     <td className="border p-2">

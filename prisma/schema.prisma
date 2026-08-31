@@ -208,6 +208,8 @@ model Usuario {
 
   rol String
 
+  cargo String?
+
   fincaEAI String?
 
   activo Boolean @default(true)

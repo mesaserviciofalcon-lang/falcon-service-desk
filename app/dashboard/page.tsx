@@ -27,6 +27,10 @@ import {
 } from "@/lib/visibilidadTickets";
 
 import {
+  tecnicoPuedeGestionarCctv,
+} from "@/lib/cctvEjecucion";
+
+import {
   esObservacionDocumentoNoCorresponde,
   esObservacionNoTenerEnCuenta,
 } from "@/lib/validacionAntecedentesGestion";
@@ -132,12 +136,7 @@ function obtenerWhereDashboardPorRol(
 
   if (role === "TECNICO") {
     return {
-      tipo: {
-        in: [
-          "CCTV",
-          "RADIOS",
-        ],
-      },
+      tipo: "CCTV",
     };
   }
 
@@ -929,30 +928,25 @@ hace5Dias.setDate(
           role === "DIRECTOR_SEG";
 
         return (
-
           (
-
-            s.tipo === "CCTV"
-
-            ||
-
-            s.tipo === "RADIOS"
-
-            ||
-
-            (
-
-              esSeguridad
-
-              &&
-
-              s.tipo ===
-                "NOVEDAD SEGURIDAD"
-            )
-          )
-
-          &&
-
+            role === "TECNICO"
+              ? s.tipo === "CCTV" &&
+                tecnicoPuedeGestionarCctv({
+                  rol: role,
+                  correo: email,
+                  eai: s.cctv?.fincaEAI,
+                  estado: s.estado,
+                })
+              : (
+                  s.tipo === "CCTV" ||
+                  s.tipo === "RADIOS" ||
+                  (
+                    esSeguridad &&
+                    s.tipo ===
+                      "NOVEDAD SEGURIDAD"
+                  )
+                )
+          ) &&
           visible
         );
       }

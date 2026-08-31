@@ -17,6 +17,10 @@ import { solicitantePuedeVerSolicitud }
 from "@/lib/visibilidadSolicitudes";
 
 import {
+  tecnicoPuedeGestionarCctv,
+} from "@/lib/cctvEjecucion";
+
+import {
   validarRegistroAntecedente,
 } from "@/lib/validacionAntecedentesGestion";
 
@@ -82,6 +86,7 @@ export async function PATCH(
         include: {
           antecedente: true,
           visita: true,
+          cctv: true,
         },
       });
 
@@ -105,6 +110,19 @@ export async function PATCH(
         session.user.role || ""
       );
 
+    const tecnicoPuedeGestionar =
+      tecnicoPuedeGestionarCctv({
+        rol: session.user.role,
+        correo: session.user.email,
+        eai:
+          solicitudActual.cctv?.fincaEAI,
+        estado: solicitudActual.estado,
+      });
+
+    const esGestorNoTecnico =
+      esGestor &&
+      session.user.role !== "TECNICO";
+
     const esReaperturaValida =
       estadoSolicitado === "REABIERTO" &&
       solicitudActual.estado ===
@@ -116,7 +134,10 @@ export async function PATCH(
       );
 
     const esGestionValida =
-      esGestor &&
+      (
+        esGestorNoTecnico ||
+        tecnicoPuedeGestionar
+      ) &&
       [
         "EN PROCESO",
         "COMPLETADO",

@@ -84,8 +84,8 @@ export async function POST(
       ).trim();
     const supervisor =
       String(
-        body.supervisor ||
-          session.user.name ||
+        session.user.name ||
+          session.user.email ||
           ""
       ).trim();
 
@@ -93,7 +93,7 @@ export async function POST(
       return Response.json(
         {
           error:
-            "Debe seleccionar el supervisor que registra la observacion",
+            "No fue posible identificar al usuario que registra la observacion",
         },
         {
           status: 400,

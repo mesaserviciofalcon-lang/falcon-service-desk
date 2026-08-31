@@ -3,14 +3,14 @@
 import { useState }
 from "react";
 
+import { useSession }
+from "next-auth/react";
+
 import toast
 from "react-hot-toast";
 
 import UploadButton
 from "@/components/uploadthing/UploadButton";
-
-import { revisadoPorOpciones }
-from "@/lib/antecedentesCatalogos";
 
 import {
   procesosVulnerabilidad,
@@ -94,6 +94,13 @@ export default function DetalleVulnerabilidad({
   puedeCerrar: boolean;
   puedeAgregarObservacion: boolean;
 }) {
+  const { data: session } =
+    useSession();
+
+  const supervisorAutomatico =
+    session?.user?.name ||
+    session?.user?.email ||
+    "";
   const [observaciones, setObservaciones] =
     useState("");
   const [evidencias, setEvidencias] =
@@ -115,14 +122,6 @@ export default function DetalleVulnerabilidad({
     observacionSeguimiento,
     setObservacionSeguimiento,
   ] = useState("");
-  const [
-    supervisorSeguimiento,
-    setSupervisorSeguimiento,
-  ] = useState(
-    informe.reportadoPor ||
-      informe.supervisor ||
-      ""
-  );
   const [
     guardandoObservacion,
     setGuardandoObservacion,
@@ -215,10 +214,10 @@ export default function DetalleVulnerabilidad({
       }
 
       if (
-        !supervisorSeguimiento.trim()
+        !supervisorAutomatico.trim()
       ) {
         toast.error(
-          "Seleccione el supervisor que agrega la observacion"
+          "No fue posible identificar al usuario que agrega la observacion"
         );
         return;
       }
@@ -244,8 +243,6 @@ export default function DetalleVulnerabilidad({
                 "application/json",
             },
             body: JSON.stringify({
-              supervisor:
-                supervisorSeguimiento,
               observacion:
                 observacionSeguimiento,
             }),
@@ -402,31 +399,11 @@ export default function DetalleVulnerabilidad({
         {puedeRegistrarSeguimiento && (
           <div className="mt-3 rounded-lg border bg-white p-3">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <select
-                value={
-                  supervisorSeguimiento
-                }
-                onChange={(event) =>
-                  setSupervisorSeguimiento(
-                    event.target.value
-                  )
-                }
-                className="rounded-lg border p-3"
-              >
-                <option value="">
-                  Seleccione supervisor
-                </option>
-                {revisadoPorOpciones.map(
-                  (supervisor) => (
-                    <option
-                      key={supervisor}
-                      value={supervisor}
-                    >
-                      {supervisor}
-                    </option>
-                  )
-                )}
-              </select>
+              <input
+                value={supervisorAutomatico}
+                readOnly
+                className="rounded-lg border bg-slate-100 p-3"
+              />
 
               <textarea
                 value={

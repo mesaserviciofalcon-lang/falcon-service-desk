@@ -10,6 +10,11 @@ from "@/lib/auth";
 import { prisma }
 from "@/lib/prisma";
 
+import {
+  cargosUsuario,
+  normalizarCargoUsuario,
+} from "@/lib/permisosUsuarios";
+
 async function validarAdmin() {
   const session =
     await getServerSession(
@@ -59,6 +64,27 @@ export async function PATCH(
     const body =
       await request.json();
 
+    const cargo =
+      normalizarCargoUsuario(
+        body.cargo
+      );
+
+    if (
+      cargo &&
+      !cargosUsuario.includes(
+        cargo as (typeof cargosUsuario)[number]
+      )
+    ) {
+      return Response.json(
+        {
+          error: "Cargo no valido",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const data: any = {
       nombre: body.nombre,
       email:
@@ -66,6 +92,7 @@ export async function PATCH(
           ?.trim()
           .toLowerCase(),
       rol: body.rol,
+      cargo: cargo || null,
       fincaEAI:
         body.fincaEAI || null,
       activo:
@@ -94,6 +121,7 @@ export async function PATCH(
           nombre: true,
           email: true,
           rol: true,
+          cargo: true,
           fincaEAI: true,
           activo: true,
           createdAt: true,

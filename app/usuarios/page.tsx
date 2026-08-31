@@ -38,6 +38,7 @@ export default async function UsuariosPage() {
         nombre: true,
         email: true,
         rol: true,
+        cargo: true,
         fincaEAI: true,
         activo: true,
       },

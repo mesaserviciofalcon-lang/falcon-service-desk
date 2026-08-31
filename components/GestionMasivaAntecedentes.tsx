@@ -3,6 +3,9 @@
 import { useMemo, useState }
 from "react";
 
+import { useSession }
+from "next-auth/react";
+
 import Link
 from "next/link";
 
@@ -206,6 +209,13 @@ export default function GestionMasivaAntecedentes({
   registros: RegistroMasivo[];
   role?: string | null;
 }) {
+  const { data: session } =
+    useSession();
+
+  const revisadoPorAutomatico =
+    session?.user?.name ||
+    session?.user?.email ||
+    "";
   const [ticketsSeleccionados, setTicketsSeleccionados] =
     useState<number[]>([]);
 
@@ -542,7 +552,15 @@ export default function GestionMasivaAntecedentes({
 
       const errorValidacion =
         filasVisibles
-          .map(validarRegistroAntecedente)
+          .map((fila) =>
+            validarRegistroAntecedente({
+              ...fila,
+              revisadoPor:
+                role === "SUPERVISOR"
+                  ? revisadoPorAutomatico
+                  : fila.revisadoPor,
+            })
+          )
           .find(Boolean);
 
       if (errorValidacion) {
@@ -983,7 +1001,13 @@ export default function GestionMasivaAntecedentes({
                           </td>
                           <td className="w-72 border p-2">
                             <div className="flex flex-col gap-1">
-                              {puedeGestionarFila ? (
+                              {puedeGestionarFila && role === "SUPERVISOR" ? (
+                                <input
+                                  value={revisadoPorAutomatico}
+                                  readOnly
+                                  className="w-full rounded border bg-slate-100 p-2"
+                                />
+                              ) : puedeGestionarFila ? (
                                 <SelectCampo
                                 value={fila.observacion}
                                 options={observacionAntecedenteOpciones}

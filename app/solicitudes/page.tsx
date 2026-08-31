@@ -20,6 +20,10 @@ import {
 }
 from "@/lib/antecedentesPlantilla";
 
+import {
+  tiposPermitidosParaCrearSolicitud,
+} from "@/lib/visibilidadSolicitudes";
+
 export default function SolicitudesPage() {
 
   const router =
@@ -27,6 +31,15 @@ export default function SolicitudesPage() {
 
   const { data: session } =
     useSession();
+
+  const tiposPermitidos =
+    tiposPermitidosParaCrearSolicitud(
+      session?.user?.email
+    );
+
+  const puedeCrearTipo = (tipoSolicitud: string) =>
+    !tiposPermitidos ||
+    tiposPermitidos.includes(tipoSolicitud);
 
   const [tipo, setTipo] =
     useState("");
@@ -428,21 +441,29 @@ setTimeout(() => {
             SOPORTE CCTV
           </option>
 
-          <option value="RADIOS">
-            SOPORTE RADIOS
-          </option>
+          {puedeCrearTipo("RADIOS") && (
+            <option value="RADIOS">
+              SOPORTE RADIOS
+            </option>
+          )}
 
-          <option value="VISITA DOMICILIARIA">
-            VISITA DOMICILIARIA
-          </option>
+          {puedeCrearTipo("VISITA DOMICILIARIA") && (
+            <option value="VISITA DOMICILIARIA">
+              VISITA DOMICILIARIA
+            </option>
+          )}
 
-          <option value="ANTECEDENTES">
-  ESTUDIO DE ANTECEDENTES
-</option>
+          {puedeCrearTipo("ANTECEDENTES") && (
+            <option value="ANTECEDENTES">
+              ESTUDIO DE ANTECEDENTES
+            </option>
+          )}
 
-<option value="NOVEDAD SEGURIDAD">
-  NOVEDAD SEGURIDAD
-</option>
+          {puedeCrearTipo("NOVEDAD SEGURIDAD") && (
+            <option value="NOVEDAD SEGURIDAD">
+              NOVEDAD SEGURIDAD
+            </option>
+          )}
 
         </select>
 

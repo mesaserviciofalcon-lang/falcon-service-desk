@@ -3,6 +3,9 @@
 import { useState }
 from "react";
 
+import { useSession }
+from "next-auth/react";
+
 import { useRouter }
 from "next/navigation";
 
@@ -14,7 +17,6 @@ import {
   eaiOpciones,
   motivoAntecedenteManualOpciones,
   observacionAntecedenteOpciones,
-  revisadoPorOpciones,
   tipoDocumentoOpciones,
 } from "@/lib/antecedentesCatalogos";
 
@@ -125,6 +127,13 @@ function SelectCampo({
 }
 
 export default function FormularioAntecedenteManual() {
+  const { data: session } =
+    useSession();
+
+  const revisadoPorAutomatico =
+    session?.user?.name ||
+    session?.user?.email ||
+    "";
   const router =
     useRouter();
 
@@ -445,14 +454,14 @@ export default function FormularioAntecedenteManual() {
               onChange={actualizar}
             />
 
-            <SelectCampo
-              label="Revisado por"
-              name="revisadoPor"
-              value={form.revisadoPor}
-              options={revisadoPorOpciones}
-              required
-              onChange={actualizar}
-            />
+            <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">
+              Revisado por
+              <input
+                value={revisadoPorAutomatico}
+                readOnly
+                className="rounded-lg border border-slate-300 bg-slate-100 p-2.5 font-normal"
+              />
+            </label>
 
             <SelectCampo
               label="Motivo"

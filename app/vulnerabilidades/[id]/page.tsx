@@ -19,6 +19,11 @@ from "@/lib/auth";
 import { prisma }
 from "@/lib/prisma";
 
+import {
+  puedeGestionarVulnerabilidadesAsignadas,
+  puedeVerVulnerabilidades,
+} from "@/lib/permisosUsuarios";
+
 const rolesSeguridad = [
   "ADMIN",
   "DIRECTOR_SEG",
@@ -42,11 +47,10 @@ export default async function VulnerabilidadDetallePage({
     session?.user?.role || "";
   const email =
     session?.user?.email || "";
+  const cargo =
+    session?.user?.cargo || "";
 
-  if (
-    !rolesSeguridad.includes(role) &&
-    role !== "SOLICITANTE"
-  ) {
+  if (!puedeVerVulnerabilidades(role, cargo)) {
     redirect("/dashboard");
   }
 
@@ -78,8 +82,13 @@ export default async function VulnerabilidadDetallePage({
 
   const puedeVer =
     rolesSeguridad.includes(role) ||
-    informe.analistaSigCorreo ===
-      email;
+    (
+      puedeGestionarVulnerabilidadesAsignadas(
+        role,
+        cargo
+      ) &&
+      informe.analistaSigCorreo === email
+    );
 
   if (!puedeVer) {
     redirect("/dashboard");
@@ -229,7 +238,10 @@ export default async function VulnerabilidadDetallePage({
           informeSerializado
         }
         puedeCerrar={
-          role === "SOLICITANTE"
+          puedeGestionarVulnerabilidadesAsignadas(
+            role,
+            cargo
+          )
         }
         puedeAgregarObservacion={
           rolesSeguridad.includes(

@@ -3,6 +3,9 @@
 import { useState }
 from "react";
 
+import { useSession }
+from "next-auth/react";
+
 import toast
 from "react-hot-toast";
 
@@ -189,6 +192,13 @@ export default function AntecedentesTicketTable({
   solicitudId: number;
   ticketEstado?: string | null;
 }) {
+  const { data: session } =
+    useSession();
+
+  const revisadoPorAutomatico =
+    session?.user?.name ||
+    session?.user?.email ||
+    "";
   const [filas, setFilas] =
     useState(registros);
 
@@ -252,7 +262,15 @@ export default function AntecedentesTicketTable({
     try {
       const errorValidacion =
         filas
-          .map(validarRegistroAntecedente)
+          .map((fila) =>
+            validarRegistroAntecedente({
+              ...fila,
+              revisadoPor:
+                role === "SUPERVISOR"
+                  ? revisadoPorAutomatico
+                  : fila.revisadoPor,
+            })
+          )
           .find(Boolean);
 
       if (errorValidacion) {
@@ -579,7 +597,13 @@ export default function AntecedentesTicketTable({
                 {puedeVerCompleto && (
                   <>
                     <td className="w-56 border p-2">
-                      {puedeGestionarFila ? (
+                      {puedeGestionarFila && role === "SUPERVISOR" ? (
+                      <input
+                        value={revisadoPorAutomatico}
+                        readOnly
+                        className="w-full rounded border bg-slate-100 p-2"
+                      />
+                      ) : puedeGestionarFila ? (
                       <div className="flex flex-col gap-1">
                       <SelectCampo
                         value={fila.revisadoPor}

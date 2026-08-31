@@ -16,13 +16,10 @@ from "@/lib/auth";
 import { prisma }
 from "@/lib/prisma";
 
-const rolesPermitidos = [
-  "ADMIN",
-  "DIRECTOR_SEG",
-  "JEFE_SEG",
-  "SUPERVISOR",
-  "SOLICITANTE",
-];
+import {
+  puedeGestionarVulnerabilidadesAsignadas,
+  puedeVerVulnerabilidades,
+} from "@/lib/permisosUsuarios";
 
 const rolesCreacion = [
   "ADMIN",
@@ -67,18 +64,17 @@ export default async function VulnerabilidadesPage({
       authOptions
     );
 
-  if (
-    !rolesPermitidos.includes(
-      session?.user?.role || ""
-    )
-  ) {
+  const role =
+    session?.user?.role || "";
+  const cargo =
+    session?.user?.cargo || "";
+
+  if (!puedeVerVulnerabilidades(role, cargo)) {
     redirect("/dashboard");
   }
 
   const puedeCrear =
-    rolesCreacion.includes(
-      session?.user?.role || ""
-    );
+    rolesCreacion.includes(role);
   const params =
     await searchParams;
   const pagina =
@@ -142,7 +138,12 @@ export default async function VulnerabilidadesPage({
     }));
   }
 
-  if (!puedeCrear) {
+  if (
+    puedeGestionarVulnerabilidadesAsignadas(
+      role,
+      cargo
+    )
+  ) {
     const email =
       session?.user?.email || "";
     const wherePendientes = {
@@ -385,8 +386,7 @@ export default async function VulnerabilidadesPage({
           puedeCrear
         }
         puedeEliminar={
-          session?.user?.role ===
-          "ADMIN"
+          role === "ADMIN"
         }
       />
     </div>

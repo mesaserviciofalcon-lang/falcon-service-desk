@@ -3,6 +3,9 @@
 import { useState }
 from "react";
 
+import { useSession }
+from "next-auth/react";
+
 import { useRouter }
 from "next/navigation";
 
@@ -13,9 +16,6 @@ import UploadButton
 from "@/components/uploadthing/UploadButton";
 
 import { eaiOpciones }
-from "@/lib/antecedentesCatalogos";
-
-import { revisadoPorOpciones }
 from "@/lib/antecedentesCatalogos";
 
 import {
@@ -30,6 +30,13 @@ type Archivo = {
 };
 
 export default function FormularioVulnerabilidad() {
+  const { data: session } =
+    useSession();
+
+  const reportadoPorAutomatico =
+    session?.user?.name ||
+    session?.user?.email ||
+    "";
   const router =
     useRouter();
 
@@ -213,31 +220,11 @@ export default function FormularioVulnerabilidad() {
         <label className="text-sm font-semibold text-gray-600">
           Persona que realizo el reporte
         </label>
-        <select
-          value={form.reportadoPor}
-          onChange={(event) =>
-            actualizar(
-              "reportadoPor",
-              event.target.value
-            )
-          }
-          className="rounded-lg border p-3"
-          required
-        >
-          <option value="">
-            Seleccione
-          </option>
-          {revisadoPorOpciones.map(
-            (supervisor) => (
-              <option
-                key={supervisor}
-                value={supervisor}
-              >
-                {supervisor}
-              </option>
-            )
-          )}
-        </select>
+        <input
+          value={reportadoPorAutomatico}
+          readOnly
+          className="rounded-lg border bg-slate-100 p-3"
+        />
       </div>
 
       <div className="flex flex-col gap-1">

@@ -10,6 +10,11 @@ from "@/lib/auth";
 import { prisma }
 from "@/lib/prisma";
 
+import {
+  cargosUsuario,
+  normalizarCargoUsuario,
+} from "@/lib/permisosUsuarios";
+
 async function validarAdmin() {
   const session =
     await getServerSession(
@@ -48,6 +53,11 @@ export async function POST(
     const body =
       await request.json();
 
+    const cargo =
+      normalizarCargoUsuario(
+        body.cargo
+      );
+
     if (
       !body.nombre ||
       !body.email ||
@@ -58,6 +68,22 @@ export async function POST(
         {
           error:
             "Nombre, correo, contraseña y rol son obligatorios",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      cargo &&
+      !cargosUsuario.includes(
+        cargo as (typeof cargosUsuario)[number]
+      )
+    ) {
+      return Response.json(
+        {
+          error: "Cargo no valido",
         },
         {
           status: 400,
@@ -82,6 +108,7 @@ export async function POST(
               .toLowerCase(),
           password,
           rol: body.rol,
+          cargo: cargo || null,
           fincaEAI:
             body.fincaEAI || null,
           activo:
@@ -93,6 +120,7 @@ export async function POST(
           nombre: true,
           email: true,
           rol: true,
+          cargo: true,
           fincaEAI: true,
           activo: true,
           createdAt: true,

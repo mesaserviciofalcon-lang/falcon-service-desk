@@ -88,6 +88,9 @@ NextAuthOptions = {
           role:
             usuario.rol,
 
+          cargo:
+            usuario.cargo,
+
           fincaEAI:
             usuario.fincaEAI,
         };
@@ -111,6 +114,9 @@ NextAuthOptions = {
         token.role =
           (user as any).role;
 
+        token.cargo =
+          (user as any).cargo;
+
         token.id =
           user.id;
 
@@ -130,6 +136,9 @@ NextAuthOptions = {
 
         session.user.role =
           token.role as string;
+
+        session.user.cargo =
+          token.cargo as string;
 
         session.user.id =
           token.id as string;

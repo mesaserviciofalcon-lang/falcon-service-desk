@@ -27,6 +27,10 @@ import {
   obtenerUltimaVisitaHistorica,
 } from "@/lib/visitasHistoricas";
 
+import {
+  tecnicoPuedeGestionarCctv,
+} from "@/lib/cctvEjecucion";
+
 export default async function TicketDetalle({
 
   params,
@@ -117,6 +121,25 @@ export default async function TicketDetalle({
 
         No tiene permiso para ver este ticket
 
+      </div>
+    );
+  }
+
+  if (
+    session?.user?.role === "TECNICO" &&
+    !(
+      solicitud.tipo === "CCTV" &&
+      tecnicoPuedeGestionarCctv({
+        rol: session.user.role,
+        correo: session.user.email,
+        eai: solicitud.cctv?.fincaEAI,
+        estado: solicitud.estado,
+      })
+    )
+  ) {
+    return (
+      <div className="p-8">
+        No tiene permiso para ver este ticket.
       </div>
     );
   }

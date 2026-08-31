@@ -32,6 +32,17 @@ from "@/lib/autocompletarAntecedentes";
 import { solicitantePuedeVerSolicitud }
 from "@/lib/visibilidadSolicitudes";
 
+import { puedeCrearTipoSolicitud }
+from "@/lib/visibilidadSolicitudes";
+
+import {
+  tecnicoPuedeGestionarCctv,
+} from "@/lib/cctvEjecucion";
+
+import {
+  esMismoLoteAntecedentes,
+} from "@/lib/antecedentesDuplicados";
+
 const rolesVistaTotal = [
   "ADMIN",
   "DIRECTOR_SEG",
@@ -110,8 +121,37 @@ export async function POST(
       );
     }
 
+    if (session.user.role === "TECNICO") {
+      return Response.json(
+        {
+          error:
+            "Los tecnicos solo pueden gestionar tickets CCTV aprobados",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
     const body =
       await request.json();
+
+    if (
+      !puedeCrearTipoSolicitud(
+        session.user.email,
+        String(body.tipo || "")
+      )
+    ) {
+      return Response.json(
+        {
+          error:
+            "Solo tiene permitido crear solicitudes de soporte CCTV",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
 
     const solicitanteSolicitud =
       session.user.name ||
@@ -239,6 +279,57 @@ export async function POST(
             registrosAntecedentesBase
           )
         : [];
+
+    if (
+      body.tipo === "ANTECEDENTES" &&
+      registrosAntecedentes.length > 0
+    ) {
+      const ticketsAbiertosMismaFinca =
+        await prisma.solicitud.findMany({
+          where: {
+            tipo: "ANTECEDENTES",
+            estado: {
+              notIn: [
+                "COMPLETADO",
+                "CERRADO",
+              ],
+            },
+            antecedente: {
+              fincaEAI: fincaSolicitud,
+            },
+          },
+          select: {
+            id: true,
+            antecedentesRegistros: {
+              select: {
+                identificacion: true,
+                fechaExpedicionDocumento: true,
+              },
+            },
+          },
+        });
+
+      const ticketDuplicado =
+        ticketsAbiertosMismaFinca.find(
+          (ticket) =>
+            esMismoLoteAntecedentes(
+              registrosAntecedentes,
+              ticket.antecedentesRegistros
+            )
+        );
+
+      if (ticketDuplicado) {
+        return Response.json(
+          {
+            error:
+              `Este archivo ya fue cargado en el ticket #${ticketDuplicado.id} y todavia esta pendiente de respuesta. Espere a que finalice antes de volver a cargarlo.`,
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+    }
 
     let asignadoA = "";
 
@@ -699,13 +790,26 @@ export async function GET() {
       })
       );
 
+    const role =
+      session.user.role || "";
     const tieneVistaTotal =
-      rolesVistaTotal.includes(
-        session.user.role || ""
-      );
+      rolesVistaTotal.includes(role) &&
+      role !== "TECNICO";
 
     const solicitudesVisibles =
-      tieneVistaTotal
+      role === "TECNICO"
+        ? solicitudes.filter(
+            (solicitud) =>
+              solicitud.tipo === "CCTV" &&
+              tecnicoPuedeGestionarCctv({
+                rol: role,
+                correo: session.user.email,
+                eai:
+                  solicitud.cctv?.fincaEAI,
+                estado: solicitud.estado,
+              })
+          )
+        : tieneVistaTotal
         ? solicitudes
         : solicitudes.filter(
             (solicitud) =>

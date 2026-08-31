@@ -16,6 +16,10 @@ import {
   obtenerCopiasVulnerabilidad,
 } from "@/lib/vulnerabilidades";
 
+import {
+  puedeGestionarVulnerabilidadesAsignadas,
+} from "@/lib/permisosUsuarios";
+
 const rolesSeguridad = [
   "ADMIN",
 ];
@@ -30,10 +34,18 @@ function puedeCerrar(
     session?.user?.role || "";
   const email =
     session?.user?.email || "";
+  const cargo =
+    session?.user?.cargo || "";
 
   return (
     rolesSeguridad.includes(role) ||
-    informe.analistaSigCorreo === email
+    (
+      puedeGestionarVulnerabilidadesAsignadas(
+        role,
+        cargo
+      ) &&
+      informe.analistaSigCorreo === email
+    )
   );
 }
 

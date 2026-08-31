@@ -106,6 +106,15 @@ export async function PATCH(
         session?.user?.role
       );
 
+    const revisadoPorSesion =
+      session?.user?.role === "SUPERVISOR"
+        ? (
+            session.user.name ||
+            session.user.email ||
+            "Supervisor"
+          ).trim()
+        : null;
+
     const registros =
       Array.isArray(body.registros)
         ? body.registros
@@ -126,7 +135,12 @@ export async function PATCH(
     for (const registro of registros) {
       const errorValidacion =
         validarRegistroAntecedente(
-          registro
+          {
+            ...registro,
+            revisadoPor:
+              revisadoPorSesion ||
+              registro.revisadoPor,
+          }
         );
 
       if (errorValidacion) {
@@ -299,7 +313,8 @@ export async function PATCH(
           revisadoPor:
             restringirFila
               ? existente.revisadoPor
-              : registro.revisadoPor || null,
+              : revisadoPorSesion ||
+                registro.revisadoPor || null,
           motivo:
             restringirFila
               ? existente.motivo

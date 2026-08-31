@@ -13,7 +13,6 @@ import {
   motivoAntecedenteManualOpciones,
   observacionAntecedenteOpciones,
   puedeVerAntecedenteCompleto,
-  revisadoPorOpciones,
   tipoDocumentoOpciones,
 } from "@/lib/antecedentesCatalogos";
 
@@ -149,6 +148,11 @@ export async function POST(
     const fechaActual =
       obtenerFechaActualColombiaISO();
 
+    const revisadoPorSesion =
+      session?.user?.name ||
+      session?.user?.email ||
+      "Supervisor";
+
     const registro = {
       fechaSolicitud:
         texto(body.fechaSolicitud) ||
@@ -175,7 +179,7 @@ export async function POST(
       observacion:
         texto(body.observacion),
       revisadoPor:
-        texto(body.revisadoPor),
+        revisadoPorSesion,
       motivo:
         texto(body.motivo),
       autorizacion:
@@ -230,11 +234,6 @@ export async function POST(
         registro.observacion,
         observacionAntecedenteOpciones,
         "observacion"
-      ),
-      validarOpcion(
-        registro.revisadoPor,
-        revisadoPorOpciones,
-        "revisado por"
       ),
       validarOpcion(
         registro.motivo,

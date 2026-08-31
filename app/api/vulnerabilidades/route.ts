@@ -123,7 +123,11 @@ export async function POST(
         ? body.fotos
         : [];
     const reportadoPor =
-      texto(body.reportadoPor);
+      texto(
+        usuarioSesion.name ||
+        usuarioSesion.email ||
+        "Supervisor"
+      );
 
     if (
       !eai ||

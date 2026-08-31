@@ -33,13 +33,24 @@ import {
 
 } from "lucide-react";
 
+import {
+  puedeVerVulnerabilidades,
+} from "@/lib/permisosUsuarios";
+
+import { puedeConsultarVisitas }
+from "@/lib/permisosVisitas";
+
 export default function Sidebar({
 
   role,
 
+  cargo,
+
 }: {
 
   role: string;
+
+  cargo?: string;
 
 }) {
 
@@ -108,18 +119,20 @@ export default function Sidebar({
 
           {/* SOLICITUDES */}
 
-          <Link
+          {role !== "TECNICO" && (
+            <Link
 
-            href="/solicitudes"
+              href="/solicitudes"
 
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
-          >
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
+            >
 
-            <ClipboardList size={20} />
+              <ClipboardList size={20} />
 
-            Solicitudes
+              Solicitudes
 
-          </Link>
+            </Link>
+          )}
 
           {/* TICKETS */}
 
@@ -136,23 +149,22 @@ export default function Sidebar({
 
           </Link>
 
-          <Link
+          {role !== "TECNICO" && (
+            <Link
 
-            href="/antecedentes"
+              href="/antecedentes"
 
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
-          >
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
+            >
 
-            <ShieldCheck size={20} />
+              <ShieldCheck size={20} />
 
-            Antecedentes
+              Antecedentes
 
-          </Link>
+            </Link>
+          )}
 
-          {[
-            "ADMIN",
-            "VISITA",
-          ].includes(role) && (
+          {puedeConsultarVisitas(cargo) && (
 
             <Link
 
@@ -187,13 +199,10 @@ export default function Sidebar({
             </Link>
           )}
 
-          {[
-            "ADMIN",
-            "DIRECTOR_SEG",
-            "JEFE_SEG",
-            "SUPERVISOR",
-            "SOLICITANTE",
-          ].includes(role) && (
+          {puedeVerVulnerabilidades(
+            role,
+            cargo
+          ) && (
 
             <Link
               href="/vulnerabilidades"
