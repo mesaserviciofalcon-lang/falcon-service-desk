@@ -163,6 +163,9 @@ export async function POST(
 
         password:
           nuevaPasswordHash,
+
+        debeCambiarPassword:
+          false,
       },
     });
 

@@ -6,6 +6,9 @@ import {
 
 } from "react";
 
+import { signOut }
+from "next-auth/react";
+
 export default function CambiarPasswordPage() {
 
   const [
@@ -96,7 +99,7 @@ export default function CambiarPasswordPage() {
       }
 
       alert(
-        "Contraseña actualizada"
+        "Contraseña actualizada. Inicie sesión nuevamente con su nueva contraseña."
       );
 
       setActual("");
@@ -104,6 +107,10 @@ export default function CambiarPasswordPage() {
       setNueva("");
 
       setConfirmar("");
+
+      await signOut({
+        callbackUrl: "/login",
+      });
 
     } catch (error: any) {
 

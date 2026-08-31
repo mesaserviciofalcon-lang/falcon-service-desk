@@ -35,6 +35,23 @@ export default withAuth(
     const role =
       token.role as string;
 
+    const debeCambiarPassword =
+      token.debeCambiarPassword === true;
+
+    if (
+      debeCambiarPassword &&
+      !pathname.startsWith(
+        "/cambiar-password"
+      )
+    ) {
+      return NextResponse.redirect(
+        new URL(
+          "/cambiar-password",
+          req.url
+        )
+      );
+    }
+
     if (
 
       pathname.includes(

@@ -183,6 +183,7 @@ async function main() {
             ...data,
             email: usuario.email,
             password: passwordHash!,
+            debeCambiarPassword: true,
           },
         });
       }

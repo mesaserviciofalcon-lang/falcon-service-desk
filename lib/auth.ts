@@ -93,6 +93,9 @@ NextAuthOptions = {
 
           fincaEAI:
             usuario.fincaEAI,
+
+          debeCambiarPassword:
+            usuario.debeCambiarPassword,
         };
       },
     }),
@@ -122,6 +125,9 @@ NextAuthOptions = {
 
         token.fincaEAI =
           (user as any).fincaEAI;
+
+        token.debeCambiarPassword =
+          (user as any).debeCambiarPassword;
       }
 
       return token;
@@ -145,6 +151,9 @@ NextAuthOptions = {
 
         session.user.fincaEAI =
           token.fincaEAI as string;
+
+        session.user.debeCambiarPassword =
+          token.debeCambiarPassword as boolean;
       }
 
       return session;

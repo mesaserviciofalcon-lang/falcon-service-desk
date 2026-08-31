@@ -113,6 +113,8 @@ export async function POST(
             body.fincaEAI || null,
           activo:
             body.activo ?? true,
+          debeCambiarPassword:
+            true,
         },
 
         select: {
@@ -123,6 +125,7 @@ export async function POST(
           cargo: true,
           fincaEAI: true,
           activo: true,
+          debeCambiarPassword: true,
           createdAt: true,
         },
       });

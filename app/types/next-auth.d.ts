@@ -16,6 +16,8 @@ declare module "next-auth" {
 
       cargo?: string;
 
+      debeCambiarPassword?: boolean;
+
       fincaEAI?: string;
 
     } & DefaultSession["user"];
@@ -29,6 +31,8 @@ declare module "next-auth/jwt" {
     role?: string;
 
     cargo?: string;
+
+    debeCambiarPassword?: boolean;
 
     id?: string;
 

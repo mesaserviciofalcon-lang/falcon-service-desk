@@ -214,6 +214,8 @@ model Usuario {
 
   activo Boolean @default(true)
 
+  debeCambiarPassword Boolean @default(false)
+
   createdAt DateTime @default(now())
 }
 
