@@ -2,13 +2,10 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import {
-  areasActividad,
   fechaHoraColombiaDesdeInput,
-  fincasActividad,
   inicioDiaColombia,
   normalizarCorreo,
   puedeAdministrarActividades,
-  tiposActividad,
 } from "@/lib/actividadesSupervisores";
 import { prisma } from "@/lib/prisma";
 
@@ -59,7 +56,12 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       const finca = texto(body.finca);
       const tipoActividad = texto(body.actividad);
       const area = texto(body.area);
-      if (!fechaPlaneada || !fincasActividad.includes(finca) || !tiposActividad.includes(tipoActividad) || !areasActividad.includes(area)) {
+      const catalogos = await prisma.catalogoActividad.findMany({
+        where: { OR: [{ tipo: "FINCA", valor: finca }, { tipo: "ACTIVIDAD", valor: tipoActividad }, { tipo: "AREA", valor: area }] },
+        select: { tipo: true, valor: true },
+      });
+      const esValorCatalogo = (tipo: string, valor: string) => catalogos.some((item) => item.tipo === tipo && item.valor === valor);
+      if (!fechaPlaneada || !esValorCatalogo("FINCA", finca) || !esValorCatalogo("ACTIVIDAD", tipoActividad) || !esValorCatalogo("AREA", area)) {
         return Response.json({ error: "Seleccione una fecha, finca, actividad y área válidas" }, { status: 400 });
       }
       const correo = normalizarCorreo(body.supervisorCorreo);

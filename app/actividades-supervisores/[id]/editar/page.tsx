@@ -10,10 +10,11 @@ export default async function EditarActividadPage({ params }: { params: Promise<
   const session = await getServerSession(authOptions);
   if (!puedeAdministrarActividades(session?.user?.role)) redirect("/dashboard");
   const { id } = await params;
-  const [actividad, supervisores] = await Promise.all([
+  const [actividad, supervisores, catalogos] = await Promise.all([
     prisma.actividadSupervisor.findUnique({ where: { id: Number(id) }, select: { id: true, fechaPlaneada: true, finca: true, actividad: true, area: true, supervisorCorreo: true } }),
     prisma.usuario.findMany({ where: { activo: true, rol: "SUPERVISOR" }, orderBy: { nombre: "asc" }, select: { nombre: true, email: true } }),
+    prisma.catalogoActividad.findMany({ orderBy: { valor: "asc" }, select: { tipo: true, valor: true } }),
   ]);
   if (!actividad) notFound();
-  return <EditarActividadSupervisor actividad={{ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString() }} supervisores={supervisores} />;
+  return <EditarActividadSupervisor actividad={{ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString() }} supervisores={supervisores} catalogos={catalogos} />;
 }

@@ -14,7 +14,7 @@ export default async function ActividadesSupervisoresPage() {
 
   if (!esAdministrador && role !== "SUPERVISOR") redirect("/dashboard");
 
-  const [actividades, supervisores] = await Promise.all([
+  const [actividades, supervisores, catalogos] = await Promise.all([
     prisma.actividadSupervisor.findMany({
       where: esAdministrador ? undefined : { supervisorCorreo: email },
       orderBy: { fechaPlaneada: "asc" },
@@ -23,7 +23,10 @@ export default async function ActividadesSupervisoresPage() {
     esAdministrador
       ? prisma.usuario.findMany({ where: { activo: true, rol: "SUPERVISOR" }, orderBy: { nombre: "asc" }, select: { nombre: true, email: true } })
       : Promise.resolve([]),
+    esAdministrador
+      ? prisma.catalogoActividad.findMany({ orderBy: { valor: "asc" }, select: { tipo: true, valor: true } })
+      : Promise.resolve([]),
   ]);
 
-  return <ActividadesSupervisoresPanel actividades={actividades.map((actividad) => ({ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString() }))} supervisores={supervisores} puedeAdministrar={esAdministrador} />;
+  return <ActividadesSupervisoresPanel actividades={actividades.map((actividad) => ({ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString() }))} supervisores={supervisores} catalogos={catalogos} puedeAdministrar={esAdministrador} />;
 }
