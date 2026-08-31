@@ -35,6 +35,8 @@ import {
 
   Network,
 
+  CalendarDays,
+
 } from "lucide-react";
 
 import {
@@ -253,6 +255,26 @@ export default function Sidebar({
             >
               <Network size={20} />
               Organigrama Seguridad
+            </Link>
+          )}
+
+          {["ADMIN", "JEFE_SEG", "SUPERVISOR"].includes(role) && (
+            <Link
+              href="/actividades-supervisores"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
+            >
+              <CalendarDays size={20} />
+              Actividades supervisores
+            </Link>
+          )}
+
+          {["ADMIN", "JEFE_SEG", "SUPERVISOR"].includes(role) && (
+            <Link
+              href="/actividades-supervisores/metricas"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
+            >
+              <BarChart3 size={20} />
+              Métricas actividades
             </Link>
           )}
 

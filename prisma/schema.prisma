@@ -235,6 +235,38 @@ model EquipoAdministrativo {
   createdAt DateTime @default(now())
 }
 
+model ActividadSupervisor {
+  id Int @id @default(autoincrement())
+
+  origenId String? @unique
+  fechaPlaneada DateTime
+  fechaPlaneadaFin DateTime?
+  finca String
+  actividad String
+  area String?
+
+  supervisorNombre String?
+  supervisorCorreo String?
+  estado String @default("PENDIENTE_ASIGNAR")
+
+  observacionesCierre String?
+  evidencias Json?
+  fechaCierre DateTime?
+  cerradoPor String?
+  cerradoPorCorreo String?
+
+  creadoPor String?
+  creadoPorCorreo String?
+  recordatorioPrevioEnviadoAt DateTime?
+  recordatorioIncumplimientoEnviadoAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([fechaPlaneada])
+  @@index([estado])
+  @@index([supervisorCorreo])
+}
+
 model SolicitudAntecedente {
   id Int @id @default(autoincrement())
 

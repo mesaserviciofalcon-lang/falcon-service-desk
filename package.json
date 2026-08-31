@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "importar:visitas": "tsx scripts/importarVisitasHistoricas.ts",
-    "importar:vulnerabilidades": "tsx scripts/importarVulnerabilidadesHistoricas.ts"
+    "importar:vulnerabilidades": "tsx scripts/importarVulnerabilidadesHistoricas.ts",
+    "importar:actividades": "tsx scripts/importarActividadesSupervisores.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

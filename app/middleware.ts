@@ -164,6 +164,8 @@ export const config = {
 
     "/organigrama-seguridad/:path*",
 
+    "/actividades-supervisores/:path*",
+
     "/cambiar-password/:path*",
   ],
 };
