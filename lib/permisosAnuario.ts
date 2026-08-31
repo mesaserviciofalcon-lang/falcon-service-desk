@@ -25,7 +25,7 @@ export function puedeVerAnuario({
       "DIRECTOR_SEG",
       "JEFE_SEG",
     ].includes(String(rol || "")) ||
-    puedeAdministrarAnuario({ rol, cargo }) ||
+    puedeAdministrarAnuario({ rol }) ||
     (
       normalizarCargoUsuario(cargo) === "DIRECTOR GH" &&
       normalizarNombre(nombre) ===

@@ -21,7 +21,6 @@ export async function POST(request: Request) {
   if (
     !puedeAdministrarAnuario({
       rol: session?.user?.role,
-      cargo: session?.user?.cargo,
     })
   ) {
     return Response.json(
