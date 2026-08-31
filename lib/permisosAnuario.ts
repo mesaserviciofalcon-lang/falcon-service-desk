@@ -36,16 +36,10 @@ export function puedeVerAnuario({
 
 export function puedeAdministrarAnuario({
   rol,
-  cargo,
 }: {
   rol?: string | null;
-  cargo?: string | null;
 }) {
-  return (
-    String(rol || "") === "ADMIN" &&
-    normalizarCargoUsuario(cargo) ===
-      "ADMINISTRADOR MASTER"
-  );
+  return String(rol || "") === "ADMIN";
 }
 
 export function puedeVerOrganigramaSeguridad({
