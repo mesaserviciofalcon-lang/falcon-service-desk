@@ -7,12 +7,9 @@ from "@/lib/auth";
 import { prisma }
 from "@/lib/prisma";
 
-const rolesPuedeAgregarObservacion = [
-  "ADMIN",
-  "DIRECTOR_SEG",
-  "JEFE_SEG",
-  "SUPERVISOR",
-];
+import {
+  puedeGestionarVulnerabilidadesAsignadas,
+} from "@/lib/permisosUsuarios";
 
 export async function POST(
   request: Request,
@@ -41,22 +38,8 @@ export async function POST(
 
   const role =
     session.user.role || "";
-
-  if (
-    !rolesPuedeAgregarObservacion.includes(
-      role
-    )
-  ) {
-    return Response.json(
-      {
-        error:
-          "No tiene permiso para agregar observaciones",
-      },
-      {
-        status: 403,
-      }
-    );
-  }
+  const cargo =
+    session.user.cargo || "";
 
   try {
     const params =
@@ -123,6 +106,7 @@ export async function POST(
           select: {
             id: true,
             estado: true,
+            analistaSigCorreo: true,
           },
         });
 
@@ -134,6 +118,28 @@ export async function POST(
         },
         {
           status: 404,
+        }
+      );
+    }
+
+    const esAnalistaAsignado =
+      puedeGestionarVulnerabilidadesAsignadas(
+        role,
+        cargo
+      ) &&
+      informe.analistaSigCorreo
+        ?.trim()
+        .toLowerCase() ===
+        session.user.email.trim().toLowerCase();
+
+    if (!esAnalistaAsignado) {
+      return Response.json(
+        {
+          error:
+            "Solo el Analista SIG asignado puede gestionar este analisis",
+        },
+        {
+          status: 403,
         }
       );
     }

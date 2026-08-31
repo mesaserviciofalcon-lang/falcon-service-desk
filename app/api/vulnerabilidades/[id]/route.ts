@@ -20,10 +20,6 @@ import {
   puedeGestionarVulnerabilidadesAsignadas,
 } from "@/lib/permisosUsuarios";
 
-const rolesSeguridad = [
-  "ADMIN",
-];
-
 function puedeCerrar(
   informe: {
     analistaSigCorreo: string | null;
@@ -38,14 +34,14 @@ function puedeCerrar(
     session?.user?.cargo || "";
 
   return (
-    rolesSeguridad.includes(role) ||
-    (
-      puedeGestionarVulnerabilidadesAsignadas(
-        role,
-        cargo
-      ) &&
-      informe.analistaSigCorreo === email
-    )
+    puedeGestionarVulnerabilidadesAsignadas(
+      role,
+      cargo
+    ) &&
+    informe.analistaSigCorreo
+      ?.trim()
+      .toLowerCase() ===
+      email.trim().toLowerCase()
   );
 }
 

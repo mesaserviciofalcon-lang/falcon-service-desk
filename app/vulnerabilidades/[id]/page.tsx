@@ -31,6 +31,22 @@ const rolesSeguridad = [
   "SUPERVISOR",
 ];
 
+function esAnalistaAsignado(
+  analistaSigCorreo: string | null,
+  role: string,
+  cargo: string,
+  email: string
+) {
+  return (
+    puedeGestionarVulnerabilidadesAsignadas(
+      role,
+      cargo
+    ) &&
+    analistaSigCorreo?.trim().toLowerCase() ===
+      email.trim().toLowerCase()
+  );
+}
+
 export default async function VulnerabilidadDetallePage({
   params,
 }: {
@@ -82,12 +98,11 @@ export default async function VulnerabilidadDetallePage({
 
   const puedeVer =
     rolesSeguridad.includes(role) ||
-    (
-      puedeGestionarVulnerabilidadesAsignadas(
-        role,
-        cargo
-      ) &&
-      informe.analistaSigCorreo === email
+    esAnalistaAsignado(
+      informe.analistaSigCorreo,
+      role,
+      cargo,
+      email
     );
 
   if (!puedeVer) {
@@ -238,14 +253,19 @@ export default async function VulnerabilidadDetallePage({
           informeSerializado
         }
         puedeCerrar={
-          puedeGestionarVulnerabilidadesAsignadas(
+          esAnalistaAsignado(
+            informe.analistaSigCorreo,
             role,
-            cargo
+            cargo,
+            email
           )
         }
         puedeAgregarObservacion={
-          rolesSeguridad.includes(
-            role
+          esAnalistaAsignado(
+            informe.analistaSigCorreo,
+            role,
+            cargo,
+            email
           )
         }
       />

@@ -43,9 +43,5 @@ export function puedeGestionarVulnerabilidadesAsignadas(
   rol?: string | null,
   cargo?: string | null
 ) {
-  return (
-    String(rol || "") === "SOLICITANTE" &&
-    normalizarCargoUsuario(cargo) ===
-      "ANALISTA SIG"
-  );
+  return normalizarCargoUsuario(cargo) === "ANALISTA SIG";
 }
