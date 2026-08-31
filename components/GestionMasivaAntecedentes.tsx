@@ -1001,13 +1001,7 @@ export default function GestionMasivaAntecedentes({
                           </td>
                           <td className="w-72 border p-2">
                             <div className="flex flex-col gap-1">
-                              {puedeGestionarFila && role === "SUPERVISOR" ? (
-                                <input
-                                  value={revisadoPorAutomatico}
-                                  readOnly
-                                  className="w-full rounded border bg-slate-100 p-2"
-                                />
-                              ) : puedeGestionarFila ? (
+                              {puedeGestionarFila ? (
                                 <SelectCampo
                                 value={fila.observacion}
                                 options={observacionAntecedenteOpciones}
@@ -1034,7 +1028,13 @@ export default function GestionMasivaAntecedentes({
                           </td>
                           <td className="w-56 border p-2">
                             <div className="flex flex-col gap-1">
-                              {puedeGestionarFila ? (
+                              {puedeGestionarFila && role === "SUPERVISOR" ? (
+                                <input
+                                  value={revisadoPorAutomatico}
+                                  readOnly
+                                  className="w-full rounded border bg-slate-100 p-2"
+                                />
+                              ) : puedeGestionarFila ? (
                                 <SelectCampo
                                 value={fila.revisadoPor}
                                 options={revisadoPorOpciones}

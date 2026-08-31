@@ -380,19 +380,37 @@ export async function PATCH(
     });
 // ENVIAR CORREO CAMBIO ESTADO
 
-if (
-  solicitud.correoSolicitante
-) {
+const esCierre = estadoFinal === "COMPLETADO";
+const copiasCierre =
+  esCierre &&
+  ["CCTV", "NOVEDAD SEGURIDAD"].includes(solicitud.tipo)
+    ? correosResponsables[
+        solicitud.tipo as keyof typeof correosResponsables
+      ] || []
+    : [];
+const destinatarios = Array.from(
+  new Set(
+    [solicitud.correoSolicitante, ...copiasCierre]
+      .map((correo) => String(correo || "").trim().toLowerCase())
+      .filter(Boolean)
+  )
+);
+const correoPrincipal = solicitud.correoSolicitante
+  ? String(solicitud.correoSolicitante).trim().toLowerCase()
+  : destinatarios[0];
+const copias = destinatarios.filter(
+  (correo) => correo !== correoPrincipal
+);
+let correoActualizacionEnviado = false;
 
+if (correoPrincipal) {
   try {
-
     await enviarCorreo({
-
-      to:
-        solicitud.correoSolicitante,
-
-      subject:
-        `Actualización Ticket #${solicitud.id}`,
+      to: correoPrincipal,
+      cc: copias.length > 0 ? copias.join(",") : undefined,
+      subject: esCierre
+        ? `Cierre Ticket #${solicitud.id} - ${solicitud.tipo}`
+        : `Actualización Ticket #${solicitud.id}`,
 
       html: ticketActualizadoTemplate({
 
@@ -409,6 +427,8 @@ if (
     observacionesTecnico || "Sin observación",
 }),
     });
+
+    correoActualizacionEnviado = true;
 
   } catch (error) {
 
@@ -477,7 +497,10 @@ if (
 }
 
 return Response.json(
-  solicitud
+  {
+    ...solicitud,
+    correoActualizacionEnviado,
+  }
 );
 
 } catch (error) {

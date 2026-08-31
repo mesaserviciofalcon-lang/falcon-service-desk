@@ -4,6 +4,7 @@ import DetalleActividadSupervisor from "@/components/DetalleActividadSupervisor"
 import { authOptions } from "@/lib/auth";
 import { normalizarCorreo, puedeAdministrarActividades } from "@/lib/actividadesSupervisores";
 import { prisma } from "@/lib/prisma";
+import { esActividadSimulacro } from "@/lib/simulacros";
 
 export default async function ActividadDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
@@ -14,5 +15,5 @@ export default async function ActividadDetallePage({ params }: { params: Promise
   const esSupervisorAsignado = session?.user?.role === "SUPERVISOR" && normalizarCorreo(actividad.supervisorCorreo) === normalizarCorreo(session.user.email);
   if (!esAdministrador && !esSupervisorAsignado) redirect("/dashboard");
   const evidencias = Array.isArray(actividad.evidencias) ? actividad.evidencias.filter((archivo: any) => archivo?.url && archivo?.nombre) : [];
-  return <DetalleActividadSupervisor actividad={{ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString(), fechaCierre: actividad.fechaCierre?.toISOString() || null, evidencias: evidencias as any }} puedeCerrar={esSupervisorAsignado} />;
+  return <DetalleActividadSupervisor actividad={{ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString(), fechaCierre: actividad.fechaCierre?.toISOString() || null, evidencias: evidencias as any }} puedeCerrar={esSupervisorAsignado} esSimulacro={esActividadSimulacro(actividad.actividad)} />;
 }

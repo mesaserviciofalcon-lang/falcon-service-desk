@@ -263,9 +263,75 @@ model ActividadSupervisor {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  simulacro SimulacroActividad?
+
   @@index([fechaPlaneada])
   @@index([estado])
   @@index([supervisorCorreo])
+}
+
+model SimulacroActividad {
+  id Int @id @default(autoincrement())
+  actividadId Int @unique
+  actividadSupervisor ActividadSupervisor @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+
+  tipo String
+  finca String
+  area String?
+  horaInicio String
+  guion String
+  resultado String
+  cumplimientoObjetivo String
+  desarrollo String
+  aspectos Json
+  conclusion String
+  controlVulnerado String?
+  razonIncumplimiento String?
+  factoresFalla Json?
+  requiereSac Boolean @default(false)
+  evidencias Json?
+  creadoPor String
+  creadoPorCorreo String
+  notificadoAt DateTime?
+  recordatorioSacEnviadoAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  solicitudAccion SolicitudAccion?
+
+  @@index([finca])
+  @@index([resultado])
+}
+
+model SolicitudAccion {
+  id Int @id @default(autoincrement())
+  simulacroId Int @unique
+  simulacro SimulacroActividad @relation(fields: [simulacroId], references: [id], onDelete: Cascade)
+
+  consecutivo String? @unique
+  estado String @default("ABIERTA")
+  tipoAccion String @default("Correctiva")
+  proceso String @default("Seguridad")
+  sistemaGestion String @default("Seguridad Física")
+  responsableProceso String?
+  descripcionSituacion String
+  correccion String?
+  analisisCausa String
+  factoresCausa Json
+  planAccion Json
+  seguimiento Json?
+  eficacia Boolean?
+  seCierra Boolean?
+  comentariosCierre String?
+  analistaNombre String
+  analistaCorreo String
+  fechaCierre DateTime?
+  recordatorioEnviadoAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([estado])
+  @@index([analistaCorreo])
 }
 
 model SolicitudAntecedente {

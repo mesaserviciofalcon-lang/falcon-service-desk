@@ -1,6 +1,7 @@
 import { enviarCorreo } from "@/lib/email";
 import { inicioDiaColombia, incumplimientoActividadTemplate, recordatorioActividadTemplate } from "@/lib/actividadesSupervisores";
 import { prisma } from "@/lib/prisma";
+import { definicionSimulacro } from "@/lib/simulacros";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -15,10 +16,12 @@ export async function GET(request: Request) {
     const hoy = inicioDiaColombia(new Date());
     const manana = new Date(hoy); manana.setUTCDate(manana.getUTCDate() + 1);
     const pasadoManana = new Date(manana); pasadoManana.setUTCDate(pasadoManana.getUTCDate() + 1);
-    const [paraRecordar, incumplidas, jefes] = await Promise.all([
+    const haceTresDias = new Date(hoy); haceTresDias.setUTCDate(haceTresDias.getUTCDate() - 3);
+    const [paraRecordar, incumplidas, jefes, sacPendientes] = await Promise.all([
       prisma.actividadSupervisor.findMany({ where: { estado: "ASIGNADO", fechaPlaneada: { gte: manana, lt: pasadoManana }, recordatorioPrevioEnviadoAt: null, supervisorCorreo: { not: null } } }),
       prisma.actividadSupervisor.findMany({ where: { estado: { not: "TERMINADO" }, fechaPlaneada: { lt: hoy }, recordatorioIncumplimientoEnviadoAt: null } }),
       prisma.usuario.findMany({ where: { activo: true, cargo: "JEFE SEG" }, select: { email: true } }),
+      prisma.simulacroActividad.findMany({ where: { requiereSac: true, solicitudAccion: null, createdAt: { lt: haceTresDias }, recordatorioSacEnviadoAt: null }, include: { actividadSupervisor: true } }),
     ]);
     let enviados = 0;
     for (const actividad of paraRecordar) {
@@ -34,7 +37,16 @@ export async function GET(request: Request) {
       await prisma.actividadSupervisor.update({ where: { id: actividad.id }, data: { recordatorioIncumplimientoEnviadoAt: new Date() } });
       enviados += 1;
     }
-    return Response.json({ ok: true, recordatorios: paraRecordar.length, incumplidas: incumplidas.length, enviados });
+    const correosJefatura = await prisma.usuario.findMany({ where: { activo: true, OR: [{ rol: { in: ["JEFE_SEG", "DIRECTOR_SEG"] } }, { cargo: { in: ["JEFE SEG", "DIRECTOR SEG"] } }] }, select: { email: true } });
+    for (const simulacro of sacPendientes) {
+      const contactos = definicionSimulacro(simulacro.tipo, simulacro.area, simulacro.finca);
+      if (!contactos?.correoAnalista) continue;
+      const copias = Array.from(new Set([contactos.gerente?.correo, ...correosJefatura.map((usuario) => usuario.email)].filter(Boolean))).join(",");
+      await enviarCorreo({ to: contactos.correoAnalista, cc: copias || undefined, subject: `Recordatorio SAC pendiente - ${simulacro.finca}`, html: `<p>Han transcurrido más de tres días desde el simulacro <strong>${simulacro.tipo}</strong> con resultado no detectado.</p><p>Por favor diligencie la <a href="${process.env.NEXTAUTH_URL || "https://falconseguridad.com"}/solicitudes-accion/${simulacro.id}">Solicitud de Acción Correctiva</a>.</p>` });
+      await prisma.simulacroActividad.update({ where: { id: simulacro.id }, data: { recordatorioSacEnviadoAt: new Date() } });
+      enviados += 1;
+    }
+    return Response.json({ ok: true, recordatorios: paraRecordar.length, incumplidas: incumplidas.length, sacPendientes: sacPendientes.length, enviados });
   } catch (error) {
     console.error(error);
     return Response.json({ error: "No fue posible enviar los recordatorios" }, { status: 500 });

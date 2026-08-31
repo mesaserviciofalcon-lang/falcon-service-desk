@@ -12,6 +12,8 @@ import { enviarCorreo } from "@/lib/email";
 
 import { prisma } from "@/lib/prisma";
 
+import { getAppUrl } from "@/lib/appUrl";
+
 export async function POST(
   _request: Request,
   context: {
@@ -136,6 +138,8 @@ export async function POST(
       return actualizada;
     });
 
+  let correoEnviado = false;
+
   try {
     await enviarCorreo({
       to: tecnico.correo,
@@ -143,8 +147,10 @@ export async function POST(
       html: `
         <p>El ticket CCTV #${id} de la EAI ${solicitud.cctv?.fincaEAI || "sin EAI"} fue aprobado para ejecucion.</p>
         <p>Ya puede ingresar a Falcon Service Desk para gestionarlo.</p>
+        <p><a href="${getAppUrl()}/login?redirect=/tickets/${id}">Abrir ticket CCTV #${id}</a></p>
       `,
     });
+    correoEnviado = true;
   } catch (error) {
     console.error(
       "Error notificando al tecnico CCTV aprobado",
@@ -152,5 +158,8 @@ export async function POST(
     );
   }
 
-  return Response.json(aprobada);
+  return Response.json({
+    ...aprobada,
+    correoEnviado,
+  });
 }

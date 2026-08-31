@@ -350,7 +350,7 @@ export async function POST(
     ) {
 
       asignadoA =
-        "ADRIANA GARCIA";
+        "ANALISTAS DE SEGURIDAD";
     }
 
     if (
@@ -621,18 +621,48 @@ export async function POST(
     }
     // CORREO RESPONSABLES
 
-const responsables =
-
+const responsablesPorDefecto =
   correosResponsables[
     body.tipo as keyof typeof correosResponsables
-  ];
+  ] || [];
+
+const responsables = [...responsablesPorDefecto];
+
+if (body.tipo === "VISITA DOMICILIARIA") {
+  const analistas = await prisma.usuario.findMany({
+    where: {
+      activo: true,
+      cargo: {
+        equals: "ANALISTA SEGURIDAD",
+        mode: "insensitive",
+      },
+    },
+    select: { email: true },
+  });
+
+  if (analistas.length > 0) {
+    responsables.splice(
+      0,
+      responsables.length,
+      ...Array.from(
+        new Set(
+          analistas
+            .map((analista) => analista.email.trim().toLowerCase())
+            .filter(Boolean)
+        )
+      )
+    );
+  }
+}
 const responsableCorreo =
 
   responsables?.[0] || "";
 
 const responsableNombre =
 
-  responsableCorreo
+  body.tipo === "VISITA DOMICILIARIA"
+    ? "Analistas de Seguridad"
+    : responsableCorreo
     .split("@")[0]
     .replace(".", " ")
     .replace(/\b\w/g, (l) => l.toUpperCase());

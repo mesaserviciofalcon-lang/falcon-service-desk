@@ -35,7 +35,9 @@ export default function AprobarEjecucionCctv({
       }
 
       toast.success(
-        "Ticket aprobado y tecnico notificado"
+        data.correoEnviado
+          ? "Ticket aprobado y técnico notificado"
+          : "Ticket aprobado, pero no se pudo enviar el correo al técnico. Revise los registros de Vercel."
       );
       router.refresh();
     } catch (error) {
