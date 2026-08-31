@@ -252,6 +252,7 @@ model ActividadSupervisor {
   observacionesCierre String?
   evidencias Json?
   fechaCierre DateTime?
+  cumplidaEnFecha Boolean?
   cerradoPor String?
   cerradoPorCorreo String?
 

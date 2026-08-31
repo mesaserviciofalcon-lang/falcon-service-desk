@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { fechaHoraColombiaDesdeInput, puedeAdministrarActividades } from "@/lib/actividadesSupervisores";
+import { areasActividad, fechaHoraColombiaDesdeInput, fincasActividad, puedeAdministrarActividades, tiposActividad } from "@/lib/actividadesSupervisores";
 import { prisma } from "@/lib/prisma";
 
 function texto(valor: unknown) {
@@ -22,8 +22,8 @@ export async function POST(request: Request) {
     const actividad = texto(body.actividad);
     const area = texto(body.area);
 
-    if (!fechaPlaneada || !finca || !actividad) {
-      return Response.json({ error: "Fecha, finca y actividad son obligatorias" }, { status: 400 });
+    if (!fechaPlaneada || !fincasActividad.includes(finca) || !tiposActividad.includes(actividad) || !areasActividad.includes(area)) {
+      return Response.json({ error: "Seleccione una fecha, finca, actividad y área válidas" }, { status: 400 });
     }
 
     const supervisorCorreo = texto(body.supervisorCorreo).toLowerCase();

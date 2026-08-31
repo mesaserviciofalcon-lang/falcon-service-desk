@@ -37,6 +37,8 @@ const fincas = [
   "IB",
   "ADM",
   "I4",
+  "SEG",
+  "TEC",
 ];
 
 type Usuario = {

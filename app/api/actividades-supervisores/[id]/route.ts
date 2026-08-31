@@ -2,8 +2,13 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import {
+  areasActividad,
+  fechaHoraColombiaDesdeInput,
+  fincasActividad,
+  inicioDiaColombia,
   normalizarCorreo,
   puedeAdministrarActividades,
+  tiposActividad,
 } from "@/lib/actividadesSupervisores";
 import { prisma } from "@/lib/prisma";
 
@@ -46,6 +51,38 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       return Response.json({ ok: true, actividad: actualizado });
     }
 
+    if (body.accion === "actualizar") {
+      if (!esAdministrador) {
+        return Response.json({ error: "No tiene permiso para editar actividades" }, { status: 403 });
+      }
+      const fechaPlaneada = fechaHoraColombiaDesdeInput(texto(body.fechaPlaneada));
+      const finca = texto(body.finca);
+      const tipoActividad = texto(body.actividad);
+      const area = texto(body.area);
+      if (!fechaPlaneada || !fincasActividad.includes(finca) || !tiposActividad.includes(tipoActividad) || !areasActividad.includes(area)) {
+        return Response.json({ error: "Seleccione una fecha, finca, actividad y área válidas" }, { status: 400 });
+      }
+      const correo = normalizarCorreo(body.supervisorCorreo);
+      const supervisor = correo ? await prisma.usuario.findUnique({ where: { email: correo }, select: { nombre: true, email: true, rol: true, activo: true } }) : null;
+      if (supervisor && (!supervisor.activo || supervisor.rol !== "SUPERVISOR")) {
+        return Response.json({ error: "Seleccione un supervisor activo" }, { status: 400 });
+      }
+      const actualizado = await prisma.actividadSupervisor.update({
+        where: { id: actividad.id },
+        data: {
+          fechaPlaneada,
+          fechaPlaneadaFin: null,
+          finca,
+          actividad: tipoActividad,
+          area,
+          supervisorNombre: supervisor?.nombre || null,
+          supervisorCorreo: supervisor?.email || null,
+          estado: supervisor ? (actividad.estado === "TERMINADO" ? "TERMINADO" : "ASIGNADO") : "PENDIENTE_ASIGNAR",
+        },
+      });
+      return Response.json({ ok: true, actividad: actualizado });
+    }
+
     if (body.accion === "cerrar") {
       const esSupervisorAsignado =
         session.user.role === "SUPERVISOR" &&
@@ -61,13 +98,22 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       if (!observacionesCierre || evidencias.length === 0) {
         return Response.json({ error: "Registre la gestión y adjunte al menos una evidencia" }, { status: 400 });
       }
+      const fechaEjecutada = new Date();
+      const limiteCumplimiento = inicioDiaColombia(
+        actividad.fechaPlaneada
+      );
+      limiteCumplimiento.setUTCDate(
+        limiteCumplimiento.getUTCDate() + 1
+      );
       const actualizado = await prisma.actividadSupervisor.update({
         where: { id: actividad.id },
         data: {
           estado: "TERMINADO",
           observacionesCierre,
           evidencias,
-          fechaCierre: new Date(),
+          fechaCierre: fechaEjecutada,
+          cumplidaEnFecha:
+            fechaEjecutada < limiteCumplimiento,
           cerradoPor: session.user.name || session.user.email,
           cerradoPorCorreo: session.user.email,
         },
@@ -79,5 +125,37 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   } catch (error) {
     console.error(error);
     return Response.json({ error: "No fue posible actualizar la actividad" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions);
+  if (!puedeAdministrarActividades(session?.user?.role)) {
+    return Response.json(
+      { error: "No tiene permiso para eliminar actividades" },
+      { status: 403 }
+    );
+  }
+
+  const { id } = await context.params;
+  const actividadId = Number(id);
+  if (!Number.isInteger(actividadId)) {
+    return Response.json({ error: "Actividad inválida" }, { status: 400 });
+  }
+
+  try {
+    await prisma.actividadSupervisor.delete({
+      where: { id: actividadId },
+    });
+    return Response.json({ ok: true });
+  } catch (error: any) {
+    if (error?.code === "P2025") {
+      return Response.json({ error: "Actividad no encontrada" }, { status: 404 });
+    }
+    console.error(error);
+    return Response.json({ error: "No fue posible eliminar la actividad" }, { status: 500 });
   }
 }

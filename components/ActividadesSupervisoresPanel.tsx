@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { areasActividad, fincasActividad, tiposActividad } from "@/lib/actividadesSupervisores";
 
 type Actividad = {
   id: number;
@@ -99,6 +100,23 @@ export default function ActividadesSupervisoresPanel({
     }
   }
 
+  async function eliminar(id: number, nombreActividad: string) {
+    if (!window.confirm(`¿Eliminar la actividad "${nombreActividad}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/actividades-supervisores/${id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "No fue posible eliminar la actividad");
+      toast.success("Actividad eliminada correctamente");
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(error.message || "Error eliminando la actividad");
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -111,12 +129,11 @@ export default function ActividadesSupervisoresPanel({
 
       {formulario && (
         <form onSubmit={crearActividad} className="grid grid-cols-1 gap-3 rounded-xl border bg-white p-5 shadow-sm md:grid-cols-2">
-          <input name="fechaPlaneada" type="datetime-local" required className="rounded-lg border p-3" />
-          <input name="fechaPlaneadaFin" type="datetime-local" className="rounded-lg border p-3" />
-          <input name="finca" placeholder="Finca" required className="rounded-lg border p-3" />
-          <input name="actividad" placeholder="Actividad" required className="rounded-lg border p-3" />
-          <input name="area" placeholder="Área" className="rounded-lg border p-3" />
-          <select name="supervisorCorreo" className="rounded-lg border p-3"><option value="">Pendiente por asignar</option>{supervisores.map((supervisor) => <option key={supervisor.email} value={supervisor.email}>{supervisor.nombre}</option>)}</select>
+          <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">Fecha planeada<input name="fechaPlaneada" type="datetime-local" required className="rounded-lg border p-3 font-normal" /></label>
+          <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">Finca<select name="finca" required defaultValue="" className="rounded-lg border p-3 font-normal"><option value="" disabled>Seleccione finca</option>{fincasActividad.map((finca) => <option key={finca} value={finca}>{finca}</option>)}</select></label>
+          <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">Actividad<select name="actividad" required defaultValue="" className="rounded-lg border p-3 font-normal"><option value="" disabled>Seleccione actividad</option>{tiposActividad.map((actividad) => <option key={actividad} value={actividad}>{actividad}</option>)}</select></label>
+          <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">Área<select name="area" required defaultValue="" className="rounded-lg border p-3 font-normal"><option value="" disabled>Seleccione área</option>{areasActividad.map((area) => <option key={area} value={area}>{area}</option>)}</select></label>
+          <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">Supervisor<select name="supervisorCorreo" className="rounded-lg border p-3 font-normal"><option value="">Pendiente por asignar</option>{supervisores.map((supervisor) => <option key={supervisor.email} value={supervisor.email}>{supervisor.nombre}</option>)}</select></label>
           <button disabled={guardando} className="rounded-lg bg-[#0F3D1F] p-3 font-semibold text-white disabled:bg-slate-400">{guardando ? "Guardando..." : "Crear actividad"}</button>
         </form>
       )}
@@ -137,6 +154,8 @@ export default function ActividadesSupervisoresPanel({
             <p className="mt-1 text-sm"><strong>Supervisor:</strong> {actividad.supervisorNombre || "Pendiente por asignar"}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Link href={`/actividades-supervisores/${actividad.id}`} className="rounded-lg bg-[#0F3D1F] px-3 py-2 text-sm font-semibold text-white hover:bg-[#14532d]">Ver actividad</Link>
+              {puedeAdministrar && <Link href={`/actividades-supervisores/${actividad.id}/editar`} className="rounded-lg border bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-100">Editar</Link>}
+              {puedeAdministrar && <button type="button" onClick={() => eliminar(actividad.id, actividad.actividad)} className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">Eliminar</button>}
               {puedeAdministrar && actividad.estado !== "TERMINADO" && <select defaultValue={actividad.supervisorCorreo || ""} onChange={(event) => asignar(actividad.id, event.target.value)} className="max-w-52 rounded-lg border p-2 text-sm"><option value="">Asignar supervisor</option>{supervisores.map((supervisor) => <option key={supervisor.email} value={supervisor.email}>{supervisor.nombre}</option>)}</select>}
             </div>
           </div>
