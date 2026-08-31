@@ -290,7 +290,19 @@ export default function AntecedentesTicketTable({
                 "application/json",
             },
             body: JSON.stringify({
-              registros: filas,
+              // El supervisor no elige el revisor: se envía su identidad
+              // de sesión junto con cada fila para que la validación del
+              // servidor conserve el mismo valor automático.
+              registros:
+                role === "SUPERVISOR"
+                  ? filas.map((fila) => ({
+                      ...fila,
+                      revisadoPor:
+                        revisadoPorAutomatico ||
+                        fila.revisadoPor ||
+                        "Supervisor",
+                    }))
+                  : filas,
             }),
           }
         );
