@@ -71,6 +71,10 @@ export default function Template({
           session?.user?.cargo || ""
         }
 
+        nombre={
+          session?.user?.name || ""
+        }
+
       />
 
       <section className="flex-1">

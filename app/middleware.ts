@@ -160,6 +160,10 @@ export const config = {
 
     "/vulnerabilidades/:path*",
 
+    "/equipo-administrativo/:path*",
+
+    "/organigrama-seguridad/:path*",
+
     "/cambiar-password/:path*",
   ],
 };

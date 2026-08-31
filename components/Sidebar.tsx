@@ -31,6 +31,10 @@ import {
 
   BarChart3,
 
+  ImageIcon,
+
+  Network,
+
 } from "lucide-react";
 
 import {
@@ -40,17 +44,27 @@ import {
 import { puedeConsultarVisitas }
 from "@/lib/permisosVisitas";
 
+import { puedeVerAnuario }
+from "@/lib/permisosAnuario";
+
+import { puedeVerOrganigramaSeguridad }
+from "@/lib/permisosAnuario";
+
 export default function Sidebar({
 
   role,
 
   cargo,
 
+  nombre,
+
 }: {
 
   role: string;
 
   cargo?: string;
+
+  nombre?: string;
 
 }) {
 
@@ -213,6 +227,32 @@ export default function Sidebar({
 
               Vulnerabilidades
 
+            </Link>
+          )}
+
+          {puedeVerAnuario({
+            rol: role,
+            cargo,
+            nombre,
+          }) && (
+            <Link
+              href="/equipo-administrativo"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
+            >
+              <ImageIcon size={20} />
+              Equipo administrativo
+            </Link>
+          )}
+
+          {puedeVerOrganigramaSeguridad({
+            rol: role,
+          }) && (
+            <Link
+              href="/organigrama-seguridad"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition"
+            >
+              <Network size={20} />
+              Organigrama Seguridad
             </Link>
           )}
 

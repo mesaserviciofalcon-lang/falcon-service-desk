@@ -216,6 +216,22 @@ model Usuario {
 
   debeCambiarPassword Boolean @default(false)
 
+  fotoPerfilUrl String?
+
+  createdAt DateTime @default(now())
+}
+
+model EquipoAdministrativo {
+  id Int @id @default(autoincrement())
+
+  nombres String
+
+  apellidos String
+
+  cargo String
+
+  fotoUrl String
+
   createdAt DateTime @default(now())
 }
 
