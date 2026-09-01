@@ -36,6 +36,7 @@ import {
   Network,
 
   CalendarDays,
+  FileText,
 
 } from "lucide-react";
 
@@ -265,6 +266,13 @@ export default function Sidebar({
             >
               <CalendarDays size={20} />
               Actividades supervisores
+            </Link>
+          )}
+
+          {(["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(role) || cargo === "ANALISTA SIG") && (
+            <Link href="/simulacros" className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition">
+              <FileText size={20} />
+              Simulacros
             </Link>
           )}
 

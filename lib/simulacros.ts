@@ -27,7 +27,6 @@ type Definicion = {
 const controlesAcceso = [
   "Controles de acceso",
   "Identificación de personas mediante el carné",
-  "Reporte de actividades subestándar",
   "Cultura de seguridad",
 ];
 
@@ -37,7 +36,6 @@ const definiciones: Record<(typeof tiposSimulacro)[number], Definicion> = {
     objetivo: "Medir la eficacia de los controles establecidos para el aseguramiento de activos de la compañía y la activación del plan de emergencia frente a riesgos asociados a hurto.",
     controles: controlesAcceso,
     aspectos: [
-      "Tiempo de respuesta del grupo objeto",
       "Reporte de actividades sospechosas",
       ...controlesAcceso,
       "Activación del plan de emergencia para los riesgos asociados",

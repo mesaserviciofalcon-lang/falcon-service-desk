@@ -29,25 +29,32 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const horaInicio = texto(body.horaInicio);
     const resultado = texto(body.resultado).toUpperCase();
     const cumplimientoObjetivo = texto(body.cumplimientoObjetivo);
+    const duracionMinutos = Number(body.duracionMinutos);
+    const pasos = Array.isArray(body.pasos) ? body.pasos.map((paso: any) => ({ descripcion: texto(paso.descripcion) })).filter((paso: any) => paso.descripcion) : [];
     const desarrollo = texto(body.desarrollo) || desarrolloInicial(horaInicio, definicion.guionInicial);
     const conclusion = texto(body.conclusion);
     const evidencias = Array.isArray(body.evidencias) ? body.evidencias : [];
     const aspectos = Array.isArray(body.aspectos) ? body.aspectos.map((aspecto: any) => ({ nombre: texto(aspecto.nombre), calificacion: Number(aspecto.calificacion) })) : [];
     const factoresFalla = Array.isArray(body.factoresFalla) ? body.factoresFalla.map(texto).filter(Boolean) : [];
-    if (!horaInicio || !["DETECTADO", "NO DETECTADO"].includes(resultado) || !cumplimientoObjetivo || !conclusion || evidencias.length === 0 || aspectos.length === 0 || aspectos.some((aspecto: any) => !aspecto.nombre || ![1, 2, 3].includes(aspecto.calificacion))) {
+    if (!horaInicio || !Number.isInteger(duracionMinutos) || duracionMinutos < 1 || pasos.length === 0 || !["DETECTADO", "NO DETECTADO"].includes(resultado) || !cumplimientoObjetivo || !conclusion || evidencias.length === 0 || aspectos.length === 0 || aspectos.some((aspecto: any) => !aspecto.nombre || ![1, 2, 3].includes(aspecto.calificacion))) {
       return Response.json({ error: "Complete el resultado, la evaluación, la conclusión y al menos una evidencia" }, { status: 400 });
     }
 
-    const debeGenerarSac = requiereSac(resultado);
+    const promedioEvaluacion = aspectos.reduce((total: number, aspecto: { calificacion: number }) => total + aspecto.calificacion, 0) / aspectos.length;
+    const debeGenerarSac = requiereSac(resultado) || promedioEvaluacion <= 2;
+    const sacSugerida = debeGenerarSac ? `SAC sugerida: resultado ${resultado === "NO DETECTADO" ? "no detectado" : "con promedio de evaluación " + promedioEvaluacion.toFixed(2) + "/3"}. Conclusión reportada: ${conclusion}` : null;
     const fechaEjecutada = new Date();
     const limiteCumplimiento = new Date(actividad.fechaPlaneada);
     limiteCumplimiento.setUTCHours(5, 0, 0, 0);
     limiteCumplimiento.setUTCDate(limiteCumplimiento.getUTCDate() + 1);
     const simulacro = await prisma.$transaction(async (tx) => {
+      const inicioAno = new Date(fechaEjecutada.getFullYear(), 0, 1);
+      const consecutivoNumero = await tx.simulacroActividad.count({ where: { finca: actividad.finca, createdAt: { gte: inicioAno } } }) + 1;
+      const consecutivo = `SIM-${actividad.finca}-${fechaEjecutada.getFullYear()}-${String(consecutivoNumero).padStart(3, "0")}`;
       const creado = await tx.simulacroActividad.create({
         data: {
           actividadId: actividad.id, tipo: definicion.tipo, finca: actividad.finca, area: actividad.area,
-          horaInicio, guion: definicion.guionInicial, resultado, cumplimientoObjetivo, desarrollo, aspectos,
+          horaInicio, duracionMinutos, consecutivo, guion: definicion.guionInicial, resultado, cumplimientoObjetivo, desarrollo, pasos, aspectos, promedioEvaluacion, sacSugerida,
           conclusion, controlVulnerado: texto(body.controlVulnerado) || null,
           razonIncumplimiento: texto(body.razonIncumplimiento) || null,
           factoresFalla, requiereSac: debeGenerarSac, evidencias,
@@ -63,10 +70,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     });
 
     const pdf = await generarPdfSimulacro({
-      id: simulacro.id, tipo: definicion.tipo, finca: actividad.finca, area: actividad.area, fecha: fechaEjecutada,
+      id: simulacro.id, consecutivo: simulacro.consecutivo, tipo: definicion.tipo, finca: actividad.finca, area: actividad.area, fecha: fechaEjecutada,
       horaInicio, coordinador: session.user.name || session.user.email, analista: definicion.analista,
       objetivo: definicion.objetivo, riesgo: definicion.riesgo, controles: definicion.controles, guion: definicion.guionInicial,
-      resultado, cumplimientoObjetivo, desarrollo, aspectos, conclusion, controlVulnerado: texto(body.controlVulnerado),
+      resultado, duracionMinutos, promedioEvaluacion, cumplimientoObjetivo, desarrollo, aspectos, conclusion, controlVulnerado: texto(body.controlVulnerado),
       razonIncumplimiento: texto(body.razonIncumplimiento), factoresFalla, requiereSac: debeGenerarSac,
     });
     const jefatura = await prisma.usuario.findMany({ where: { activo: true, rol: { in: ["JEFE_SEG", "DIRECTOR_SEG"] } }, select: { email: true } });
@@ -76,7 +83,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         to: definicion.correoAnalista,
         cc: copias.length ? copias.join(",") : undefined,
         subject: `Informe de ${definicion.tipo} - ${actividad.finca}`,
-        html: `<p>Se adjunta el informe del simulacro realizado en la finca <strong>${actividad.finca}</strong>.</p>${debeGenerarSac ? `<p>El resultado fue <strong>NO DETECTADO</strong>. Debe diligenciar la <a href="${process.env.NEXTAUTH_URL || "https://falconseguridad.com"}/solicitudes-accion/${simulacro.id}">Solicitud de Acción (SAC)</a> en Falcon Service Desk.</p>` : ""}`,
+        html: `<p>Se adjunta el informe <strong>${simulacro.consecutivo}</strong> del simulacro realizado en la finca <strong>${actividad.finca}</strong>.</p>${debeGenerarSac ? `<p>${sacSugerida}. Debe diligenciar la <a href="${process.env.NEXTAUTH_URL || "https://falconseguridad.com"}/solicitudes-accion/${simulacro.id}">Solicitud de Acción (SAC)</a> en Falcon Service Desk.</p>` : ""}`,
         attachments: [{ filename: `simulacro-${actividad.finca}-${simulacro.id}.pdf`, content: pdf, contentType: "application/pdf" }],
       });
       await prisma.simulacroActividad.update({ where: { id: simulacro.id }, data: { notificadoAt: new Date() } });

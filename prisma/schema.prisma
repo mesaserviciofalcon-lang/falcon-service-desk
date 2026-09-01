@@ -279,11 +279,16 @@ model SimulacroActividad {
   finca String
   area String?
   horaInicio String
+  duracionMinutos Int?
+  consecutivo String? @unique
   guion String
   resultado String
   cumplimientoObjetivo String
   desarrollo String
+  pasos Json?
   aspectos Json
+  promedioEvaluacion Float?
+  sacSugerida String?
   conclusion String
   controlVulnerado String?
   razonIncumplimiento String?
@@ -326,6 +331,8 @@ model SolicitudAccion {
   analistaNombre String
   analistaCorreo String
   fechaCierre DateTime?
+  fechaReprogramacion DateTime?
+  actividadReprogramadaId Int?
   recordatorioEnviadoAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

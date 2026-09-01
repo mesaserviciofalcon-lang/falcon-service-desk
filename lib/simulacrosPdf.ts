@@ -27,11 +27,11 @@ function bloque(doc: PDFKit.PDFDocument, etiqueta: string, contenido?: string | 
 }
 
 export async function generarPdfSimulacro(datos: {
-  id: number; tipo: string; finca: string; area?: string | null; fecha: Date; horaInicio: string; coordinador: string; analista: string; objetivo: string; riesgo: string; controles: string[]; guion: string; resultado: string; cumplimientoObjetivo: string; desarrollo: string; aspectos: Aspecto[]; conclusion: string; controlVulnerado?: string | null; razonIncumplimiento?: string | null; factoresFalla?: string[] | null; requiereSac: boolean;
+  id: number; consecutivo?: string | null; tipo: string; finca: string; area?: string | null; fecha: Date; horaInicio: string; duracionMinutos?: number | null; coordinador: string; analista: string; objetivo: string; riesgo: string; controles: string[]; guion: string; resultado: string; promedioEvaluacion?: number | null; cumplimientoObjetivo: string; desarrollo: string; aspectos: Aspecto[]; conclusion: string; controlVulnerado?: string | null; razonIncumplimiento?: string | null; factoresFalla?: string[] | null; requiereSac: boolean;
 }) {
   return crearPdf((doc) => {
     titulo(doc, "INFORME DE SIMULACRO");
-    doc.fontSize(9.5).text(`Simulacro #${datos.id} | Fecha de ejecución: ${datos.fecha.toLocaleDateString("es-CO", { timeZone: "America/Bogota" })} | Hora de inicio: ${datos.horaInicio}`);
+    doc.fontSize(9.5).text(`Consecutivo: ${datos.consecutivo || `SIM-${datos.id}`} | Fecha de ejecución: ${datos.fecha.toLocaleDateString("es-CO", { timeZone: "America/Bogota" })} | Hora de inicio: ${datos.horaInicio}${datos.duracionMinutos ? ` | Duración: ${datos.duracionMinutos} min` : ""}`);
     doc.moveDown();
     bloque(doc, "Tipo de simulacro", datos.tipo);
     bloque(doc, "Finca / EAI", datos.finca);
@@ -52,6 +52,7 @@ export async function generarPdfSimulacro(datos: {
     for (const aspecto of datos.aspectos) {
       doc.font("Helvetica").fontSize(9.5).text(`${aspecto.nombre}: ${aspecto.calificacion}`);
     }
+    if (datos.promedioEvaluacion != null) doc.font("Helvetica-Bold").fontSize(10).text(`Promedio de evaluación: ${datos.promedioEvaluacion.toFixed(2)} / 3`);
     doc.moveDown();
     bloque(doc, "Conclusión general", datos.conclusion);
     bloque(doc, "Control vulnerado", datos.controlVulnerado);

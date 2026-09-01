@@ -55,6 +55,8 @@ export const config = {
 
     "/solicitudes-accion/:path*",
 
+    "/simulacros/:path*",
+
     "/cambiar-password/:path*",
   ],
 };
