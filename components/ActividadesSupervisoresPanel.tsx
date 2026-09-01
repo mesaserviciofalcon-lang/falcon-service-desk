@@ -161,7 +161,7 @@ export default function ActividadesSupervisoresPanel({
 
       <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-white p-4 shadow-sm">
         <label className="font-semibold text-slate-700">Mes <input value={mes} onChange={(event) => setMes(event.target.value)} type="month" className="ml-2 rounded border p-2" /></label>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={mostrarTerminadas} onChange={(event) => setMostrarTerminadas(event.target.checked)} /> Mostrar cerradas</label>
+        {puedeAdministrar && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={mostrarTerminadas} onChange={(event) => setMostrarTerminadas(event.target.checked)} /> Mostrar cerradas</label>}
         <span className="text-sm text-slate-500">{visibles.length} actividad(es)</span>
       </div>
 

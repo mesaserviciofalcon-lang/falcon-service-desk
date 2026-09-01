@@ -13,7 +13,7 @@ export default async function ActividadDetallePage({ params }: { params: Promise
   if (!actividad) notFound();
   const esAdministrador = puedeAdministrarActividades(session?.user?.role);
   const esSupervisorAsignado = session?.user?.role === "SUPERVISOR" && normalizarCorreo(actividad.supervisorCorreo) === normalizarCorreo(session.user.email);
-  if (!esAdministrador && !esSupervisorAsignado) redirect("/dashboard");
+  if (!esAdministrador && (!esSupervisorAsignado || actividad.estado === "TERMINADO")) redirect("/dashboard");
   const evidencias = Array.isArray(actividad.evidencias) ? actividad.evidencias.filter((archivo: any) => archivo?.url && archivo?.nombre) : [];
   return <DetalleActividadSupervisor actividad={{ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString(), fechaCierre: actividad.fechaCierre?.toISOString() || null, evidencias: evidencias as any }} puedeCerrar={esSupervisorAsignado} esSimulacro={esActividadSimulacro(actividad.actividad)} />;
 }

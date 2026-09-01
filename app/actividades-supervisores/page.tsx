@@ -16,7 +16,12 @@ export default async function ActividadesSupervisoresPage() {
 
   const [actividades, supervisores, catalogos] = await Promise.all([
     prisma.actividadSupervisor.findMany({
-      where: esAdministrador ? undefined : { supervisorCorreo: email },
+      where: esAdministrador
+        ? undefined
+        : {
+            supervisorCorreo: email,
+            estado: { not: "TERMINADO" },
+          },
       orderBy: { fechaPlaneada: "asc" },
       select: { id: true, fechaPlaneada: true, finca: true, actividad: true, area: true, supervisorNombre: true, supervisorCorreo: true, estado: true },
     }),
