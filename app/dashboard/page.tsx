@@ -837,6 +837,12 @@ export default async function DashboardPage({
   const role =
     session?.user?.role;
 
+  const cargoUsuario = String(
+    session?.user?.cargo || ""
+  )
+    .trim()
+    .toUpperCase();
+
   const email =
     session?.user?.email;
 
@@ -1133,7 +1139,11 @@ hace5Dias.setDate(
 
     ||
 
-    role === "VISITA";
+    role === "VISITA"
+
+    ||
+
+    cargoUsuario === "ANALISTA SEGURIDAD";
 
   const puedeSeleccionarMes =
     role === "ADMIN";
@@ -1145,7 +1155,8 @@ hace5Dias.setDate(
     puedeSeleccionarMes
       ? mesSeleccionado ||
         mesActual
-      : role === "VISITA"
+      : role === "VISITA" ||
+          cargoUsuario === "ANALISTA SEGURIDAD"
         ? mesActual
       : usaMetricasMensualesGestor
         ? mesGestor

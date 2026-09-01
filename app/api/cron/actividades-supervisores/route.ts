@@ -1,5 +1,15 @@
 import { enviarCorreo } from "@/lib/email";
-import { inicioDiaColombia, incumplimientoActividadTemplate, mismaFincaActividad, recordatorioActividadTemplate, recordatorioProgramacionActividadesTemplate, ventanaProgramacionAnalista } from "@/lib/actividadesSupervisores";
+import {
+  inicioDiaColombia,
+  incumplimientoActividadTemplate,
+  mismaFincaActividad,
+  normalizarCorreo,
+  recordatorioActividadesAnalistaTemplate,
+  recordatorioActividadesJefeTemplate,
+  recordatorioActividadesSupervisorTemplate,
+  recordatorioProgramacionActividadesTemplate,
+  ventanaProgramacionAnalista,
+} from "@/lib/actividadesSupervisores";
 import { prisma } from "@/lib/prisma";
 import { definicionSimulacro } from "@/lib/simulacros";
 
@@ -17,19 +27,59 @@ export async function GET(request: Request) {
     const manana = new Date(hoy); manana.setUTCDate(manana.getUTCDate() + 1);
     const pasadoManana = new Date(manana); pasadoManana.setUTCDate(pasadoManana.getUTCDate() + 1);
     const haceTresDias = new Date(hoy); haceTresDias.setUTCDate(haceTresDias.getUTCDate() - 3);
-    const [paraRecordar, incumplidas, jefes, sacPendientes] = await Promise.all([
+    const [paraRecordar, incumplidas, jefes, analistasSig, sacPendientes] = await Promise.all([
       prisma.actividadSupervisor.findMany({ where: { estado: "ASIGNADO", fechaPlaneada: { gte: manana, lt: pasadoManana }, recordatorioPrevioEnviadoAt: null, supervisorCorreo: { not: null } } }),
       prisma.actividadSupervisor.findMany({ where: { estado: { not: "TERMINADO" }, fechaPlaneada: { lt: hoy }, recordatorioIncumplimientoEnviadoAt: null } }),
       prisma.usuario.findMany({ where: { activo: true, cargo: "JEFE SEG" }, select: { email: true } }),
+      prisma.usuario.findMany({ where: { activo: true, cargo: "ANALISTA SIG", fincaEAI: { not: null } }, select: { nombre: true, email: true, fincaEAI: true } }),
       prisma.simulacroActividad.findMany({ where: { requiereSac: true, solicitudAccion: null, createdAt: { lt: haceTresDias }, recordatorioSacEnviadoAt: null }, include: { actividadSupervisor: true } }),
     ]);
     let enviados = 0;
+    const actividadesPorSupervisor = new Map<string, typeof paraRecordar>();
     for (const actividad of paraRecordar) {
-      if (!actividad.supervisorCorreo) continue;
-      await enviarCorreo({ to: actividad.supervisorCorreo, subject: `Recordatorio: ${actividad.actividad} programada para mañana`, html: recordatorioActividadTemplate({ actividad }) });
-      await prisma.actividadSupervisor.update({ where: { id: actividad.id }, data: { recordatorioPrevioEnviadoAt: new Date() } });
+      const correo = normalizarCorreo(actividad.supervisorCorreo);
+      if (!correo) continue;
+      const actividades = actividadesPorSupervisor.get(correo) || [];
+      actividades.push(actividad);
+      actividadesPorSupervisor.set(correo, actividades);
+    }
+    for (const [correo, actividades] of actividadesPorSupervisor) {
+      await enviarCorreo({
+        to: correo,
+        subject: `Recordatorio: actividades programadas para mañana (${actividades.length})`,
+        html: recordatorioActividadesSupervisorTemplate({ supervisor: actividades[0].supervisorNombre || "Supervisor", actividades }),
+      });
       enviados += 1;
     }
+
+    for (const analista of analistasSig) {
+      const actividadesAnalista = paraRecordar.filter((actividad) => actividad.actividad !== "RECOGER EFECTIVO" && mismaFincaActividad(analista.fincaEAI, actividad.finca));
+      if (!actividadesAnalista.length || !analista.email) continue;
+      await enviarCorreo({
+        to: analista.email,
+        subject: `Aviso: visita de Seguridad programada para mañana - ${actividadesAnalista[0].finca}`,
+        html: recordatorioActividadesAnalistaTemplate({ analista: analista.nombre, actividades: actividadesAnalista }),
+      });
+      enviados += 1;
+    }
+
+    const correosJefeProgramacion = jefes.map((jefe) => jefe.email).filter(Boolean).join(",");
+    if (paraRecordar.length && correosJefeProgramacion) {
+      await enviarCorreo({
+        to: correosJefeProgramacion,
+        subject: `Programación de supervisores para mañana (${paraRecordar.length} actividades)`,
+        html: recordatorioActividadesJefeTemplate({ actividades: paraRecordar }),
+      });
+      enviados += 1;
+    }
+
+    if (paraRecordar.length) {
+      await prisma.actividadSupervisor.updateMany({
+        where: { id: { in: paraRecordar.map((actividad) => actividad.id) } },
+        data: { recordatorioPrevioEnviadoAt: new Date() },
+      });
+    }
+
     const correosJefe = jefes.map((jefe) => jefe.email).filter(Boolean).join(",");
     for (const actividad of incumplidas) {
       if (!correosJefe) break;

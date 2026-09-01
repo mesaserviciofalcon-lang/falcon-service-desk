@@ -108,6 +108,115 @@ function fechaActividad(fecha: Date) {
   }).format(fecha);
 }
 
+function fechaSoloActividad(fecha: Date) {
+  return new Intl.DateTimeFormat("es-CO", {
+    dateStyle: "full",
+    timeZone: "America/Bogota",
+  }).format(fecha);
+}
+
+function horaActividad(fecha: Date) {
+  return new Intl.DateTimeFormat("es-CO", {
+    timeStyle: "short",
+    timeZone: "America/Bogota",
+  }).format(fecha);
+}
+
+type ActividadRecordatorio = {
+  id: number;
+  actividad: string;
+  finca: string;
+  area: string | null;
+  fechaPlaneada: Date;
+  supervisorNombre: string | null;
+};
+
+function filasRecordatorioActividades(
+  actividades: ActividadRecordatorio[],
+  incluirSupervisor = false
+) {
+  return actividades.map((actividad) => `
+    <tr>
+      <td style="padding:8px;border:1px solid #d1d5db">${fechaSoloActividad(actividad.fechaPlaneada)}</td>
+      <td style="padding:8px;border:1px solid #d1d5db">${horaActividad(actividad.fechaPlaneada)}</td>
+      <td style="padding:8px;border:1px solid #d1d5db">${actividad.finca}</td>
+      <td style="padding:8px;border:1px solid #d1d5db">${actividad.actividad}</td>
+      <td style="padding:8px;border:1px solid #d1d5db">${actividad.area || "Sin área"}</td>
+      ${incluirSupervisor ? `<td style="padding:8px;border:1px solid #d1d5db">${actividad.supervisorNombre || "Sin asignar"}</td>` : ""}
+    </tr>
+  `).join("");
+}
+
+function tablaRecordatorioActividades(
+  actividades: ActividadRecordatorio[],
+  incluirSupervisor = false
+) {
+  return `
+    <table style="border-collapse:collapse;width:100%;font-size:14px">
+      <thead>
+        <tr>
+          <th style="padding:8px;border:1px solid #d1d5db;text-align:left">Fecha</th>
+          <th style="padding:8px;border:1px solid #d1d5db;text-align:left">Hora</th>
+          <th style="padding:8px;border:1px solid #d1d5db;text-align:left">Finca</th>
+          <th style="padding:8px;border:1px solid #d1d5db;text-align:left">Actividad</th>
+          <th style="padding:8px;border:1px solid #d1d5db;text-align:left">Área</th>
+          ${incluirSupervisor ? '<th style="padding:8px;border:1px solid #d1d5db;text-align:left">Supervisor</th>' : ""}
+        </tr>
+      </thead>
+      <tbody>${filasRecordatorioActividades(actividades, incluirSupervisor)}</tbody>
+    </table>
+  `;
+}
+
+export function recordatorioActividadesSupervisorTemplate({
+  supervisor,
+  actividades,
+}: {
+  supervisor: string;
+  actividades: ActividadRecordatorio[];
+}) {
+  return `
+    <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.5">
+      <h2 style="color:#0F3D1F">Recordatorio de actividades programadas</h2>
+      <p>Buen día, ${supervisor}.</p>
+      <p>Mañana tiene ${actividades.length === 1 ? "una actividad programada" : `${actividades.length} actividades programadas`}. Ingrese a la plataforma para gestionarlas y registrar la evidencia del cierre.</p>
+      ${tablaRecordatorioActividades(actividades)}
+      <p style="margin-top:24px"><a href="${getAppUrl()}/actividades-supervisores" style="background:#0F3D1F;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:bold">Ver mis actividades</a></p>
+    </div>
+  `;
+}
+
+export function recordatorioActividadesAnalistaTemplate({
+  analista,
+  actividades,
+}: {
+  analista: string;
+  actividades: ActividadRecordatorio[];
+}) {
+  return `
+    <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.5">
+      <h2 style="color:#0F3D1F">Visita de Seguridad programada</h2>
+      <p>Buen día, ${analista}.</p>
+      <p>Mañana tendrá la visita del personal de Seguridad, a cargo del supervisor asignado, en su finca.</p>
+      ${tablaRecordatorioActividades(actividades, true)}
+    </div>
+  `;
+}
+
+export function recordatorioActividadesJefeTemplate({
+  actividades,
+}: {
+  actividades: ActividadRecordatorio[];
+}) {
+  return `
+    <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.5">
+      <h2 style="color:#0F3D1F">Programación de supervisores para mañana</h2>
+      <p>Los siguientes supervisores están programados para realizar actividades en las fincas indicadas:</p>
+      ${tablaRecordatorioActividades(actividades, true)}
+    </div>
+  `;
+}
+
 export function recordatorioActividadTemplate({
   actividad,
 }: {
