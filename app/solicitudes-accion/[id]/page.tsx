@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import FormularioSac from "@/components/FormularioSac";
 import { authOptions } from "@/lib/auth";
-import { definicionSimulacro } from "@/lib/simulacros";
+import { mismaFincaSimulacro } from "@/lib/simulacros";
 import { prisma } from "@/lib/prisma";
 
 export default async function SolicitudAccionPage({ params }: { params: Promise<{ id: string }> }) {
@@ -11,8 +11,8 @@ export default async function SolicitudAccionPage({ params }: { params: Promise<
   const { id } = await params;
   const simulacro = await prisma.simulacroActividad.findUnique({ where: { id: Number(id) }, include: { solicitudAccion: true } });
   if (!simulacro?.requiereSac) notFound();
-  const definicion = definicionSimulacro(simulacro.tipo, simulacro.area, simulacro.finca);
-  const esAnalista = session?.user?.cargo === "ANALISTA SIG" && definicion?.correoAnalista?.toLowerCase() === session.user.email?.toLowerCase();
+  const usuario = session?.user?.email ? await prisma.usuario.findUnique({ where: { email: session.user.email }, select: { cargo: true, fincaEAI: true } }) : null;
+  const esAnalista = usuario?.cargo === "ANALISTA SIG" && mismaFincaSimulacro(usuario.fincaEAI, simulacro.finca);
   const esAdmin = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(String(session?.user?.role || ""));
   if (!esAnalista && !esAdmin) redirect("/dashboard");
   if (simulacro.solicitudAccion) redirect(`/api/simulacros/${simulacro.id}/sac/pdf`);

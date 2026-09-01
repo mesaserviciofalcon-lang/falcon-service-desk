@@ -125,3 +125,11 @@ export function desarrolloInicial(horaInicio: string, guion: string) {
 export function requiereSac(resultado: string) {
   return ["NO DETECTADO", "PERDIDO"].includes(String(resultado || "").trim().toUpperCase());
 }
+
+export function mismaFincaSimulacro(fincaUsuario?: string | null, fincaSimulacro?: string | null) {
+  const normalizar = (valor?: string | null) => String(valor || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
+  const aliases: Record<string, string> = { FLOPACK: "FPK", FPK: "FPK" };
+  const usuario = aliases[normalizar(fincaUsuario)] || normalizar(fincaUsuario);
+  const simulacro = aliases[normalizar(fincaSimulacro)] || normalizar(fincaSimulacro);
+  return Boolean(usuario && simulacro && usuario === simulacro);
+}

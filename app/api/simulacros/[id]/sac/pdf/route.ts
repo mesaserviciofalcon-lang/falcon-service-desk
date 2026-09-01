@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { definicionSimulacro } from "@/lib/simulacros";
+import { mismaFincaSimulacro } from "@/lib/simulacros";
 import { generarPdfSac } from "@/lib/simulacrosPdf";
 import { prisma } from "@/lib/prisma";
 
@@ -12,7 +12,8 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const simulacro = await prisma.simulacroActividad.findUnique({ where: { id: Number(id) }, include: { solicitudAccion: true } });
   if (!simulacro?.solicitudAccion) return new Response("SAC no encontrada", { status: 404 });
   const sac = simulacro.solicitudAccion;
-  const esAnalista = sac.analistaCorreo.toLowerCase() === session.user.email.toLowerCase();
+  const usuario = await prisma.usuario.findUnique({ where: { email: session.user.email }, select: { cargo: true, fincaEAI: true } });
+  const esAnalista = usuario?.cargo === "ANALISTA SIG" && mismaFincaSimulacro(usuario.fincaEAI, simulacro.finca);
   const esSupervisor = session.user.role === "SUPERVISOR";
   if (!esAnalista && !esSupervisor && !["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(String(session.user.role || ""))) return new Response("No autorizado", { status: 403 });
   const pdf = await generarPdfSac({ ...sac, consecutivo: sac.consecutivo || `SAC-${simulacro.finca}-${String(simulacro.id).padStart(4, "0")}`, finca: simulacro.finca, factoresCausa: sac.factoresCausa as string[], planAccion: sac.planAccion as any, seguimiento: sac.seguimiento as any });
