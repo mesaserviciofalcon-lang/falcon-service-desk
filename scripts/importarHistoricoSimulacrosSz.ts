@@ -1,0 +1,45 @@
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+type Tipo = "SIMULACRO HURTO" | "SIMULACRO INTRUSION" | "SIMULACRO PAQUETE SOSPECHOSO" | "SIMULACRO CONTAMINACION";
+type Aspecto = { nombre: string; calificacion: number };
+type Registro = { consecutivo: string; fecha: Date; tipo: Tipo; area: string; horaInicio: string; supervisor: string; resultado: "DETECTADO" | "NO DETECTADO"; aspectos: Aspecto[]; conclusion: string; desarrollo: string; cierrePosterior?: string };
+
+const crearAspectos = (nombres: string[], calificaciones: number[]) => nombres.map((nombre, indice) => ({ nombre, calificacion: calificaciones[indice] }));
+const hurto = (calificaciones: number[]) => crearAspectos(["Reporte de actividades sospechosas", "Controles de acceso", "Identificación de personas mediante el carné", "Cultura de seguridad", "Activación del plan de emergencia para los riesgos asociados"], calificaciones);
+const intrusion = hurto;
+const paquete = (calificaciones: number[]) => crearAspectos(["Reporte de actividades subestándar y detección temprana de paquetes sospechosos", "Plan de contingencia", "Cultura de seguridad", "Aseguramiento del área", "Activación del plan de emergencia para los riesgos asociados"], calificaciones);
+const contaminacion = (calificaciones: number[]) => crearAspectos(["Conocimiento y aplicación de procedimientos ante actividades sospechosas", "Identificación e inspección del material de empaque", "Aseguramiento de áreas de trabajo", "Activación del plan de emergencia para los riesgos asociados"], calificaciones);
+
+const registros: Registro[] = [
+  { consecutivo: "SIM-SZ-2026-001", fecha: new Date("2026-01-17T13:00:00.000Z"), tipo: "SIMULACRO HURTO", area: "OFICINAS DE GESTIÓN HUMANA", horaInicio: "08:00", supervisor: "Javier Serna Vargas", resultado: "DETECTADO", aspectos: hurto([3, 3, 3, 3, 3]), conclusion: "Los controles de acceso de Gestión Humana fueron eficaces y el personal ejecutó los protocolos de seguridad establecidos.", desarrollo: "Simulacro histórico importado desde SZ2601. La situación fue detectada y reportada oportunamente." },
+  { consecutivo: "SIM-SZ-2026-002", fecha: new Date("2026-02-06T13:00:00.000Z"), tipo: "SIMULACRO INTRUSION", area: "ESTACIÓN MIRFE #3", horaInicio: "08:00", supervisor: "Sebastian Yunda Rodriguez", resultado: "NO DETECTADO", aspectos: intrusion([1, 1, 1, 2, 2]), conclusion: "El ejercicio presentó debilidades en los controles de acceso y el reporte oportuno. Fue subsanado por una ejecución posterior exitosa.", desarrollo: "Simulacro histórico importado desde SZ2602. Se identificaron oportunidades de mejora en control de acceso y reporte.", cierrePosterior: "SIM-SZ-2026-003" },
+  { consecutivo: "SIM-SZ-2026-003", fecha: new Date("2026-03-17T13:00:00.000Z"), tipo: "SIMULACRO INTRUSION", area: "POSCOSECHA", horaInicio: "08:00", supervisor: "Cristian Camilo Salgado", resultado: "DETECTADO", aspectos: intrusion([3, 2, 3, 3, 3]), conclusion: "Los controles de acceso de poscosecha fueron eficaces, con oportunidad de mejora en el reporte más oportuno.", desarrollo: "Simulacro histórico importado desde SZ2603. La situación fue detectada y controlada de acuerdo con el protocolo." },
+  { consecutivo: "SIM-SZ-2026-004", fecha: new Date("2026-04-09T13:00:00.000Z"), tipo: "SIMULACRO PAQUETE SOSPECHOSO", area: "ÁREA ADMINISTRATIVA", horaInicio: "08:00", supervisor: "Sebastian Yunda Rodriguez", resultado: "DETECTADO", aspectos: paquete([3, 3, 3, 3, 3]), conclusion: "Se evidenció eficacia en la detección del paquete sospechoso, el reporte y la activación del plan de contingencia.", desarrollo: "Simulacro histórico importado desde SZ2604. El paquete fue detectado y reportado conforme al protocolo." },
+  { consecutivo: "SIM-SZ-2026-005", fecha: new Date("2026-05-28T13:00:00.000Z"), tipo: "SIMULACRO INTRUSION", area: "ESTACIÓN MIRFE #3", horaInicio: "08:00", supervisor: "Sebastian Yunda Rodriguez", resultado: "DETECTADO", aspectos: intrusion([3, 3, 3, 3, 3]), conclusion: "Los controles de acceso y aseguramiento físico de la Estación MIRFE #3 fueron eficaces.", desarrollo: "Simulacro histórico importado desde SZ2605. El área permaneció cerrada, asegurada y protegida contra ingreso no autorizado." },
+  { consecutivo: "SIM-SZ-2026-006", fecha: new Date("2026-06-24T13:00:00.000Z"), tipo: "SIMULACRO CONTAMINACION", area: "EMPAQUE", horaInicio: "08:00", supervisor: "Javier Serna Vargas", resultado: "NO DETECTADO", aspectos: contaminacion([1, 1, 1, 1]), conclusion: "El personal detectó la caja contaminada, pero no activó la alerta ni tenía claros los protocolos. Fue subsanado por una ejecución posterior exitosa.", desarrollo: "Simulacro histórico importado desde SZ2606. Se identificó necesidad de fortalecer conocimiento y activación del plan de contingencia.", cierrePosterior: "SIM-SZ-2026-008" },
+  { consecutivo: "SIM-SZ-2026-007", fecha: new Date("2026-07-16T14:00:00.000Z"), tipo: "SIMULACRO INTRUSION", area: "TALLER DE MANTENIMIENTO", horaInicio: "09:00", supervisor: "Jose Reinel Perez Peña", resultado: "NO DETECTADO", aspectos: intrusion([1, 1, 1, 1, 1]), conclusion: "Los controles del taller no fueron eficaces y se identificaron debilidades en aseguramiento, control de acceso y salida de materiales. Fue subsanado por una ejecución posterior exitosa.", desarrollo: "Simulacro histórico importado desde SZ2607. El intruso ingresó y sustrajo una caneca con ACPM sin ser detectado.", cierrePosterior: "SIM-SZ-2026-009" },
+  { consecutivo: "SIM-SZ-2026-008", fecha: new Date("2026-08-27T14:00:00.000Z"), tipo: "SIMULACRO CONTAMINACION", area: "EMPAQUE", horaInicio: "09:00", supervisor: "Yeison Andres Hernández", resultado: "DETECTADO", aspectos: contaminacion([3, 3, 3, 3]), conclusion: "El personal de empaque detectó la caja contaminada, realizó la alerta y aplicó correctamente el plan de contingencia.", desarrollo: "Simulacro histórico importado desde SZ2608. Se evidenció conocimiento de protocolos y de a quién informar ante una novedad." },
+  { consecutivo: "SIM-SZ-2026-009", fecha: new Date("2026-08-31T13:00:00.000Z"), tipo: "SIMULACRO INTRUSION", area: "TALLER DE MANTENIMIENTO Y MADERAS", horaInicio: "08:00", supervisor: "Ivan Dario Mora Cardenas", resultado: "DETECTADO", aspectos: intrusion([1, 3, 2, 2, 1]), conclusion: "El control físico del activo fue exitoso frente al ejercicio anterior, aunque se identificó una brecha en el reporte inmediato a Seguridad y al Analista SIG.", desarrollo: "Simulacro histórico importado desde SZ2609. El colaborador detectó la acción e impidió el retiro de la pulidora; se reforzó la cadena de llamadas." },
+];
+
+function promedio(aspectos: Aspecto[]) { const puntos: Record<number, number> = { 3: 1, 2: 0.5, 1: 0 }; return aspectos.reduce((total, aspecto) => total + puntos[aspecto.calificacion], 0) / aspectos.length; }
+
+async function main() {
+  let importados = 0;
+  for (const registro of registros) {
+    if (await prisma.simulacroActividad.findUnique({ where: { consecutivo: registro.consecutivo }, select: { id: true } })) continue;
+    const origenId = `HISTORICO-${registro.consecutivo}`;
+    if (await prisma.actividadSupervisor.findUnique({ where: { origenId }, select: { id: true } })) continue;
+    await prisma.$transaction(async (tx) => {
+      const observaciones = registro.cierrePosterior ? `Cierre histórico validado: resultado subsanado por ejecución posterior exitosa ${registro.cierrePosterior}.` : "Histórico cerrado por procedimiento anterior.";
+      const actividad = await tx.actividadSupervisor.create({ data: { origenId, fechaPlaneada: registro.fecha, finca: "SZ", actividad: registro.tipo, area: registro.area, supervisorNombre: registro.supervisor, estado: "TERMINADO", fechaCierre: registro.fecha, cumplidaEnFecha: true, cerradoPor: registro.supervisor, observacionesCierre: observaciones, creadoPor: "Importación histórica", creadoPorCorreo: "historico@falconservice.local", createdAt: registro.fecha } });
+      await tx.simulacroActividad.create({ data: { actividadId: actividad.id, tipo: registro.tipo, finca: "SZ", area: registro.area, grupoObjeto: `Personal de ${registro.area}`, personasInformadas: "Registro histórico importado", escenario: registro.area, horaInicio: registro.horaInicio, duracionMinutos: 30, consecutivo: registro.consecutivo, guion: "Registro histórico importado desde los formatos de simulacro SZ 2026.", resultado: registro.resultado, cumplimientoObjetivo: registro.conclusion, desarrollo: registro.desarrollo, pasos: [{ descripcion: registro.desarrollo }], aspectos: registro.aspectos, promedioEvaluacion: promedio(registro.aspectos), conclusion: registro.conclusion, requiereSac: false, evidencias: [], creadoPor: registro.supervisor, creadoPorCorreo: "historico@falconservice.local", createdAt: registro.fecha } });
+    });
+    importados++;
+  }
+  console.log(JSON.stringify({ total: registros.length, importados, cierresPorRepeticion: registros.filter((registro) => registro.cierrePosterior).length }));
+}
+
+main().finally(() => prisma.$disconnect());

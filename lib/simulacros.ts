@@ -47,8 +47,7 @@ const definiciones: Record<(typeof tiposSimulacro)[number], Definicion> = {
     objetivo: "Medir y evaluar los procedimientos y protocolos establecidos para la detección de personal no autorizado, control de acceso y reporte de actividades subestándar.",
     controles: controlesAcceso,
     aspectos: [
-      "Tiempo de respuesta del grupo objeto",
-      "Detección y reporte de personas o actividades sospechosas",
+      "Reporte de actividades sospechosas",
       ...controlesAcceso,
       "Activación del plan de emergencia para los riesgos asociados",
     ],
@@ -64,8 +63,9 @@ const definiciones: Record<(typeof tiposSimulacro)[number], Definicion> = {
       "Activación del plan de emergencia",
     ],
     aspectos: [
-      "Tiempo de respuesta del grupo objeto",
-      "Detección y reporte del paquete sospechoso",
+      "Reporte de actividades subestándar y detección temprana de paquetes sospechosos",
+      "Plan de contingencia",
+      "Cultura de seguridad",
       "Aseguramiento del área",
       "Activación del plan de emergencia para los riesgos asociados",
     ],
@@ -84,7 +84,6 @@ const definiciones: Record<(typeof tiposSimulacro)[number], Definicion> = {
       "Control de acceso",
     ],
     aspectos: [
-      "Tiempo de respuesta del grupo objeto",
       "Conocimiento y aplicación de procedimientos ante actividades sospechosas",
       "Identificación e inspección del material de empaque",
       "Aseguramiento de áreas de trabajo",
