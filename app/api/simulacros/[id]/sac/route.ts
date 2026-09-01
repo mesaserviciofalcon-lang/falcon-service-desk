@@ -29,6 +29,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const body = await request.json();
     const descripcionSituacion = texto(body.descripcionSituacion);
     const analisisCausa = texto(body.analisisCausa);
+    const correcciones = Array.isArray(body.correcciones) ? body.correcciones.map((item: any) => ({ actividad: texto(item.actividad), responsable: texto(item.responsable), fecha: texto(item.fecha) })).filter((item: any) => item.actividad && item.responsable && item.fecha) : [];
     const factoresCausa = Array.isArray(body.factoresCausa) ? body.factoresCausa.map(texto).filter((item: string) => factoresSac.includes(item as any)) : [];
     const planAccion = Array.isArray(body.planAccion) ? body.planAccion.map((item: any) => ({ actividad: texto(item.actividad), responsable: texto(item.responsable), fecha: texto(item.fecha) })).filter((item: any) => item.actividad && item.responsable && item.fecha) : [];
     const fechaReprogramacion = fechaHoraColombiaDesdeInput(`${texto(body.fechaReprogramacion)}T08:00`);
@@ -37,13 +38,13 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const sac = await prisma.$transaction(async (tx) => {
       const reprogramada = await tx.actividadSupervisor.create({ data: { fechaPlaneada: fechaReprogramacion, finca: simulacro.finca, actividad: simulacro.tipo, area: simulacro.area, estado: "PENDIENTE_ASIGNAR", creadoPor: nombreActor, creadoPorCorreo: correoActor } });
       return tx.solicitudAccion.create({ data: {
-      simulacroId: simulacro.id, consecutivo, estado: "CERRADA", tipoAccion: texto(body.tipoAccion) || "Correctiva", proceso: texto(body.proceso) || "Seguridad", sistemaGestion: texto(body.sistemaGestion) || "Seguridad Física", responsableProceso: texto(body.responsableProceso) || null,
-      descripcionSituacion, correccion: texto(body.correccion) || null, analisisCausa, factoresCausa, planAccion,
+      simulacroId: simulacro.id, consecutivo, estado: "CERRADA", tipoAccion: texto(body.tipoAccion) || "Correctiva", proceso: texto(body.proceso) || "Seguridad", sistemaGestion: texto(body.sistemaGestion) || "Seguridad Física", norma: texto(body.norma) || null, requisito: texto(body.requisito) || null, responsableProceso: texto(body.responsableProceso) || null,
+      descripcionSituacion, correccion: texto(body.correccion) || null, correcciones, analisisCausa, factoresCausa, planAccion,
       seguimiento: Array.isArray(body.seguimiento) ? body.seguimiento : [], eficacia: body.eficacia === true, seCierra: true,
-      comentariosCierre: texto(body.comentariosCierre) || null, analistaNombre: nombreActor, analistaCorreo: correoActor, fechaCierre: new Date(), fechaReprogramacion, actividadReprogramadaId: reprogramada.id,
+      comentariosCierre: texto(body.comentariosCierre) || null, analistaNombre: nombreActor, analistaCorreo: correoActor, analisisRealizadoCargo: usuario?.cargo || "ANALISTA SIG", fechaCierre: new Date(), fechaReprogramacion, actividadReprogramadaId: reprogramada.id,
     } });
     });
-    const pdf = await generarPdfSac({ ...sac, consecutivo: sac.consecutivo || consecutivo, finca: simulacro.finca, factoresCausa: factoresCausa as string[], planAccion, seguimiento: sac.seguimiento as any });
+    const pdf = await generarPdfSac({ ...sac, consecutivo: sac.consecutivo || consecutivo, finca: simulacro.finca, factoresCausa: factoresCausa as string[], correcciones: sac.correcciones as any, planAccion, seguimiento: sac.seguimiento as any });
     const jefatura = await prisma.usuario.findMany({ where: { activo: true, OR: [{ rol: { in: ["JEFE_SEG", "DIRECTOR_SEG"] } }, { cargo: { in: ["JEFE SEG", "DIRECTOR SEG"] } }] }, select: { email: true } });
     const correosJefe = Array.from(new Set(jefatura.map((usuario) => usuario.email).filter(Boolean)));
     if (correosJefe.length) await enviarCorreo({

@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { normalizarCorreo } from "@/lib/actividadesSupervisores";
 import { enviarCorreo } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
-import { definicionSimulacro, desarrolloInicial, esActividadSimulacro, requiereSac } from "@/lib/simulacros";
+import { definicionSimulacro, desarrolloInicial, esActividadSimulacro, mismaFincaSimulacro, requiereSac } from "@/lib/simulacros";
 import { generarPdfSimulacro } from "@/lib/simulacrosPdf";
 
 function texto(valor: unknown) {
@@ -26,6 +26,11 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const body = await request.json();
     const definicion = definicionSimulacro(actividad.actividad, actividad.area, actividad.finca);
     if (!definicion) return Response.json({ error: "Tipo de simulacro no configurado" }, { status: 400 });
+    const usuariosInformados = await prisma.usuario.findMany({ where: { activo: true }, select: { nombre: true, email: true, cargo: true, rol: true, fincaEAI: true } });
+    const analistaAsignado = usuariosInformados.find((usuario) => usuario.cargo === "ANALISTA SIG" && mismaFincaSimulacro(usuario.fincaEAI, actividad.finca));
+    const personasInformadas = [`${analistaAsignado?.nombre || definicion.analista} - ANALISTA SIG`, ...usuariosInformados.filter((usuario) => ["JEFE_SEG", "DIRECTOR_SEG"].includes(usuario.rol) || ["JEFE SEG", "DIRECTOR SEG"].includes(String(usuario.cargo || ""))).map((usuario) => `${usuario.nombre} - ${usuario.cargo || usuario.rol}`)].join(" / ");
+    const analista = analistaAsignado?.nombre || definicion.analista;
+    const correoAnalista = analistaAsignado?.email || definicion.correoAnalista;
     const horaInicio = texto(body.horaInicio);
     const resultado = texto(body.resultado).toUpperCase();
     const cumplimientoObjetivo = texto(body.cumplimientoObjetivo);
@@ -55,7 +60,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       const creado = await tx.simulacroActividad.create({
         data: {
           actividadId: actividad.id, tipo: definicion.tipo, finca: actividad.finca, area: actividad.area,
-          horaInicio, duracionMinutos, consecutivo, guion: definicion.guionInicial, resultado, cumplimientoObjetivo, desarrollo, pasos, aspectos, promedioEvaluacion, sacSugerida,
+          horaInicio, duracionMinutos, consecutivo, grupoObjeto: texto(body.grupoObjeto) || null, personasInformadas, escenario: texto(body.escenario) || null, guion: definicion.guionInicial, resultado, cumplimientoObjetivo, desarrollo, pasos, aspectos, promedioEvaluacion, sacSugerida,
           conclusion, controlVulnerado: texto(body.controlVulnerado) || null,
           razonIncumplimiento: texto(body.razonIncumplimiento) || null,
           factoresFalla, requiereSac: debeGenerarSac, evidencias,
@@ -71,17 +76,17 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     });
 
     const pdf = await generarPdfSimulacro({
-      id: simulacro.id, consecutivo: simulacro.consecutivo, tipo: definicion.tipo, finca: actividad.finca, area: actividad.area, fecha: fechaEjecutada,
-      horaInicio, coordinador: session.user.name || session.user.email, analista: definicion.analista,
+      id: simulacro.id, consecutivo: simulacro.consecutivo, tipo: definicion.tipo, finca: actividad.finca, area: actividad.area, grupoObjeto: simulacro.grupoObjeto, personasInformadas: simulacro.personasInformadas, escenario: simulacro.escenario, fecha: fechaEjecutada,
+      horaInicio, coordinador: session.user.name || session.user.email, analista,
       objetivo: definicion.objetivo, riesgo: definicion.riesgo, controles: definicion.controles, guion: definicion.guionInicial,
       resultado, duracionMinutos, promedioEvaluacion, cumplimientoObjetivo, desarrollo, aspectos, conclusion, controlVulnerado: texto(body.controlVulnerado),
       razonIncumplimiento: texto(body.razonIncumplimiento), factoresFalla, requiereSac: debeGenerarSac,
     });
     const jefatura = await prisma.usuario.findMany({ where: { activo: true, rol: { in: ["JEFE_SEG", "DIRECTOR_SEG"] } }, select: { email: true } });
     const copias = Array.from(new Set([definicion.gerente?.correo, ...jefatura.map((usuario) => usuario.email)].filter(Boolean) as string[]));
-    if (definicion.correoAnalista) {
+    if (correoAnalista) {
       await enviarCorreo({
-        to: definicion.correoAnalista,
+        to: correoAnalista,
         cc: copias.length ? copias.join(",") : undefined,
         subject: `Informe de ${definicion.tipo} - ${actividad.finca}`,
         html: `<p>Se adjunta el informe <strong>${simulacro.consecutivo}</strong> del simulacro realizado en la finca <strong>${actividad.finca}</strong>.</p>${debeGenerarSac ? `<p>${sacSugerida}. Debe diligenciar la <a href="${process.env.NEXTAUTH_URL || "https://falconseguridad.com"}/solicitudes-accion/${simulacro.id}">Solicitud de Acción (SAC)</a> en Falcon Service Desk.</p>` : ""}`,

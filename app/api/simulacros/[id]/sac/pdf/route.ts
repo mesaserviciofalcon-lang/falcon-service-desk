@@ -16,6 +16,6 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const esAnalista = usuario?.cargo === "ANALISTA SIG" && mismaFincaSimulacro(usuario.fincaEAI, simulacro.finca);
   const esSupervisor = session.user.role === "SUPERVISOR";
   if (!esAnalista && !esSupervisor && !["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(String(session.user.role || ""))) return new Response("No autorizado", { status: 403 });
-  const pdf = await generarPdfSac({ ...sac, consecutivo: sac.consecutivo || `SAC-${simulacro.finca}-${String(simulacro.id).padStart(4, "0")}`, finca: simulacro.finca, factoresCausa: sac.factoresCausa as string[], planAccion: sac.planAccion as any, seguimiento: sac.seguimiento as any });
+  const pdf = await generarPdfSac({ ...sac, consecutivo: sac.consecutivo || `SAC-${simulacro.finca}-${String(simulacro.id).padStart(4, "0")}`, finca: simulacro.finca, factoresCausa: sac.factoresCausa as string[], correcciones: sac.correcciones as any, planAccion: sac.planAccion as any, seguimiento: sac.seguimiento as any });
   return new Response(new Uint8Array(pdf), { headers: { "Content-Type": "application/pdf", "Content-Disposition": `inline; filename="${sac.consecutivo || "sac"}.pdf"` } });
 }

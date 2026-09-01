@@ -1,4 +1,6 @@
-import PDFDocument from "pdfkit";
+// La versión standalone incorpora las métricas de fuente; la versión Node busca
+// archivos .afm que no están disponibles dentro de la función de Vercel.
+import PDFDocument from "pdfkit/js/pdfkit.standalone";
 
 type Aspecto = { nombre: string; calificacion: number | string };
 
@@ -27,26 +29,29 @@ function bloque(doc: PDFKit.PDFDocument, etiqueta: string, contenido?: string | 
 }
 
 export async function generarPdfSimulacro(datos: {
-  id: number; consecutivo?: string | null; tipo: string; finca: string; area?: string | null; fecha: Date; horaInicio: string; duracionMinutos?: number | null; coordinador: string; analista: string; objetivo: string; riesgo: string; controles: string[]; guion: string; resultado: string; promedioEvaluacion?: number | null; cumplimientoObjetivo: string; desarrollo: string; aspectos: Aspecto[]; conclusion: string; controlVulnerado?: string | null; razonIncumplimiento?: string | null; factoresFalla?: string[] | null; requiereSac: boolean;
+  id: number; consecutivo?: string | null; tipo: string; finca: string; area?: string | null; grupoObjeto?: string | null; personasInformadas?: string | null; escenario?: string | null; fecha: Date; horaInicio: string; duracionMinutos?: number | null; coordinador: string; analista: string; objetivo: string; riesgo: string; controles: string[]; guion: string; resultado: string; promedioEvaluacion?: number | null; cumplimientoObjetivo: string; desarrollo: string; aspectos: Aspecto[]; conclusion: string; controlVulnerado?: string | null; razonIncumplimiento?: string | null; factoresFalla?: string[] | null; requiereSac: boolean;
 }) {
   return crearPdf((doc) => {
-    titulo(doc, "INFORME DE SIMULACRO");
-    doc.fontSize(9.5).text(`Consecutivo: ${datos.consecutivo || `SIM-${datos.id}`} | Fecha de ejecución: ${datos.fecha.toLocaleDateString("es-CO", { timeZone: "America/Bogota" })} | Hora de inicio: ${datos.horaInicio}${datos.duracionMinutos ? ` | Duración: ${datos.duracionMinutos} min` : ""}`);
+    titulo(doc, "SIMULACRO");
+    doc.fontSize(9.5).text(`SIMULACRO No.: ${datos.consecutivo || `SIM-${datos.id}`} | Fecha prevista de ejecución: ${datos.fecha.toLocaleDateString("es-CO", { timeZone: "America/Bogota" })} | Hora prevista: ${datos.horaInicio}`);
     doc.moveDown();
+    bloque(doc, "EAI/EIC", datos.finca);
+    bloque(doc, "OSV", "Departamento de Seguridad Falcon Farms");
+    bloque(doc, "Grupo objeto del simulacro", datos.grupoObjeto || `Personal de la finca ${datos.finca}`);
     bloque(doc, "Tipo de simulacro", datos.tipo);
-    bloque(doc, "Finca / EAI", datos.finca);
-    bloque(doc, "Área", datos.area);
     bloque(doc, "Coordinador", datos.coordinador);
-    bloque(doc, "Analista SIG coordinado", datos.analista);
+    bloque(doc, "Cargos y personas informadas", datos.personasInformadas || datos.analista);
     bloque(doc, "Objetivo", datos.objetivo);
     bloque(doc, "Riesgo a evaluar", datos.riesgo);
     bloque(doc, "Controles a evaluar", datos.controles.join("; "));
-    bloque(doc, "Guion", datos.guion);
+    bloque(doc, "Escenario", datos.escenario || datos.area);
+    bloque(doc, "Descripción del guion", datos.guion);
+    bloque(doc, "Tiempo estimado del ejercicio", datos.duracionMinutos ? `${datos.duracionMinutos} minutos` : null);
     bloque(doc, "Resultado", datos.resultado);
     bloque(doc, "Cumplimiento del objetivo", datos.cumplimientoObjetivo);
     bloque(doc, "Desarrollo del simulacro", datos.desarrollo);
     doc.addPage();
-    titulo(doc, "RESULTADOS Y EVALUACIÓN");
+    titulo(doc, "RESULTADOS Y EVALUACIÓN DEL SIMULACRO");
     doc.font("Helvetica-Bold").fontSize(10).text("Aspectos evaluados (excelente: 1 punto, bueno: 0,5 puntos, deficiente: 0 puntos)");
     doc.moveDown(0.3);
     for (const aspecto of datos.aspectos) {
@@ -58,15 +63,15 @@ export async function generarPdfSimulacro(datos: {
     bloque(doc, "Control vulnerado", datos.controlVulnerado);
     bloque(doc, "Razón del incumplimiento", datos.razonIncumplimiento);
     bloque(doc, "Factores identificados", datos.factoresFalla?.join("; "));
-    bloque(doc, "¿Requiere SAC?", datos.requiereSac ? "Sí" : "No");
+    bloque(doc, "Requiere generar SAC o SAP", datos.requiereSac ? `Sí. ${datos.razonIncumplimiento || "Revisar la acción correctiva asociada."}` : "No");
     doc.moveDown();
-    doc.font("Helvetica-Bold").text("Responsable de la evaluación");
-    doc.font("Helvetica").text(datos.coordinador);
+    doc.font("Helvetica-Bold").text("RESPONSABLE(S) DE LA EVALUACIÓN");
+    doc.font("Helvetica").text(`${datos.coordinador} | Supervisor de Seguridad`);
   });
 }
 
 export async function generarPdfSac(datos: {
-  consecutivo: string; finca: string; tipoAccion: string; proceso: string; sistemaGestion: string; responsableProceso?: string | null; descripcionSituacion: string; correccion?: string | null; analisisCausa: string; factoresCausa: string[]; planAccion: Array<{ actividad: string; responsable: string; fecha: string }>; seguimiento?: Array<{ fecha: string; comentario: string; realizadoPor: string }> | null; eficacia?: boolean | null; seCierra?: boolean | null; comentariosCierre?: string | null; analistaNombre: string;
+  consecutivo: string; finca: string; tipoAccion: string; proceso: string; sistemaGestion: string; norma?: string | null; requisito?: string | null; responsableProceso?: string | null; descripcionSituacion: string; correccion?: string | null; correcciones?: Array<{ actividad: string; responsable: string; fecha: string }> | null; analisisCausa: string; factoresCausa: string[]; planAccion: Array<{ actividad: string; responsable: string; fecha: string }>; seguimiento?: Array<{ fecha: string; comentario: string; realizadoPor: string }> | null; eficacia?: boolean | null; seCierra?: boolean | null; comentariosCierre?: string | null; analistaNombre: string; analisisRealizadoCargo?: string | null;
 }) {
   return crearPdf((doc) => {
     titulo(doc, "SOLICITUD DE ACCIÓN");
@@ -75,11 +80,17 @@ export async function generarPdfSac(datos: {
     bloque(doc, "Tipo de acción", datos.tipoAccion);
     bloque(doc, "Proceso", datos.proceso);
     bloque(doc, "Sistema de gestión", datos.sistemaGestion);
+    bloque(doc, "Norma", datos.norma);
+    bloque(doc, "Requisito", datos.requisito);
     bloque(doc, "Responsable del proceso", datos.responsableProceso);
     bloque(doc, "1. Descripción de la situación", datos.descripcionSituacion);
-    bloque(doc, "2. Corrección", datos.correccion);
+    doc.font("Helvetica-Bold").fontSize(10).text("2. CORRECCIÓN (si aplica)");
+    doc.moveDown(0.3);
+    for (const item of datos.correcciones || []) doc.font("Helvetica").fontSize(9.5).text(`${item.actividad} | Responsable: ${item.responsable} | Fecha: ${item.fecha}`);
+    if (!datos.correcciones?.length) bloque(doc, "Corrección", datos.correccion);
     bloque(doc, "3. Análisis de causa raíz", datos.analisisCausa);
     bloque(doc, "Factores de causa", datos.factoresCausa.join("; "));
+    bloque(doc, "Análisis realizado por", `${datos.analistaNombre}${datos.analisisRealizadoCargo ? ` (${datos.analisisRealizadoCargo})` : ""}`);
     doc.addPage();
     titulo(doc, "PLAN DE ACCIÓN Y CIERRE");
     doc.font("Helvetica-Bold").fontSize(10).text("4. Plan de acción");

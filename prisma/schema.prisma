@@ -278,6 +278,9 @@ model SimulacroActividad {
   tipo String
   finca String
   area String?
+  grupoObjeto String?
+  personasInformadas String?
+  escenario String?
   horaInicio String
   duracionMinutos Int?
   consecutivo String? @unique
@@ -318,9 +321,12 @@ model SolicitudAccion {
   tipoAccion String @default("Correctiva")
   proceso String @default("Seguridad")
   sistemaGestion String @default("Seguridad Física")
+  norma String?
+  requisito String?
   responsableProceso String?
   descripcionSituacion String
   correccion String?
+  correcciones Json?
   analisisCausa String
   factoresCausa Json
   planAccion Json
@@ -330,6 +336,7 @@ model SolicitudAccion {
   comentariosCierre String?
   analistaNombre String
   analistaCorreo String
+  analisisRealizadoCargo String?
   fechaCierre DateTime?
   fechaReprogramacion DateTime?
   actividadReprogramadaId Int?
