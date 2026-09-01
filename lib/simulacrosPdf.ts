@@ -43,7 +43,7 @@ function dibujarLogo(doc: PDFKit.PDFDocument, y: number) {
     try { logoPdf = readFileSync(path.join(process.cwd(), "public", "fflogo-pdf.jpg")); } catch { logoPdf = null; }
   }
   if (logoPdf) {
-    try { doc.image(logoPdf, MARGEN + 7, y + 12, { fit: [124, 44], align: "center", valign: "center" }); return; } catch { /* Se conserva el texto de respaldo. */ }
+    try { doc.image(`data:image/jpeg;base64,${logoPdf.toString("base64")}`, MARGEN + 7, y + 12, { fit: [124, 44], align: "center", valign: "center" }); return; } catch { /* Se conserva el texto de respaldo. */ }
   }
   doc.fillColor("#0F3D1F").font("Helvetica-Bold").fontSize(14).text("FALCON FARMS", MARGEN + 17, y + 25, { width: 105, align: "center" });
 }
@@ -56,7 +56,7 @@ function encabezadoFormato(doc: PDFKit.PDFDocument, pagina: number) {
   doc.moveTo(484, y + 24).lineTo(566, y + 24).stroke();
   doc.moveTo(484, y + 48).lineTo(566, y + 48).stroke();
   dibujarLogo(doc, y);
-  doc.font("Helvetica").fontSize(12).text("FALCON FARMS DE COLOMBIA S.A.", 194, y + 20, { width: 280, align: "center" });
+  doc.fillColor("#111111").font("Helvetica").fontSize(12).text("FALCON FARMS DE COLOMBIA S.A.", 194, y + 20, { width: 280, align: "center", height: 14 });
   doc.font("Helvetica-Bold").fontSize(12).text("PLANEACIÓN Y EVALUACIÓN DE SIMULACRO", 190, y + 40, { width: 288, align: "center" });
   doc.font("Helvetica").fontSize(8.5).text("Versión 01", 486, y + 7, { width: 78, align: "center" });
   doc.text("Mayo 2019", 486, y + 31, { width: 78, align: "center" });
@@ -71,15 +71,16 @@ function encabezadoSacFormato(doc: PDFKit.PDFDocument, pagina: number) {
   doc.moveTo(484, y + 24).lineTo(566, y + 24).stroke();
   doc.moveTo(484, y + 48).lineTo(566, y + 48).stroke();
   dibujarLogo(doc, y);
-  doc.font("Helvetica-Bold").fontSize(13).text("FALCON FARMS DE COLOMBIA S.A.", 190, y + 15, { width: 288, align: "center" });
+  doc.fillColor("#111111").font("Helvetica-Bold").fontSize(13).text("FALCON FARMS DE COLOMBIA S.A.", 190, y + 15, { width: 288, align: "center", height: 16 });
   doc.font("Helvetica-Bold").fontSize(13).text("SOLICITUD DE ACCIÓN", 190, y + 37, { width: 288, align: "center" });
   doc.font("Helvetica").fontSize(10).text("Versión 6", 486, y + 13, { width: 78, align: "center" });
   doc.text("Julio 2026", 486, y + 37, { width: 78, align: "center" });
+  doc.fontSize(8).text(`Página ${pagina} de 2`, 486, y + 55, { width: 78, align: "center", height: 10 });
 }
 
-function barraFormato(doc: PDFKit.PDFDocument, titulo: string, y: number) {
+function barraFormato(doc: PDFKit.PDFDocument, titulo: string, y: number, centrado = false) {
   doc.fillColor("#050505").rect(MARGEN, y, ANCHO, 19).fill();
-  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8.5).text(titulo.toUpperCase(), MARGEN + 6, y + 5, { width: ANCHO - 12 });
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8.5).text(titulo.toUpperCase(), MARGEN + 6, y + 5, { width: ANCHO - 12, height: 10, align: centrado ? "center" : "left" });
   return y + 19;
 }
 
@@ -92,17 +93,19 @@ function campoFormato(doc: PDFKit.PDFDocument, etiqueta: string, valor: string |
   const contenido = valor || "No registrado";
   const h = alto || altoTexto(doc, contenido);
   doc.strokeColor("#111111").lineWidth(0.6).rect(MARGEN, y, ANCHO, h).stroke();
-  doc.fillColor("#111111").font("Helvetica-Bold").fontSize(8.2).text(etiqueta, MARGEN + 6, y + 5);
-  doc.font("Helvetica").fontSize(8.6).text(contenido, MARGEN + 6, y + 16, { width: ANCHO - 12, lineGap: 2 });
+  doc.fillColor("#111111").font("Helvetica-Bold").fontSize(8.2).text(etiqueta, MARGEN + 6, y + 5, { width: ANCHO - 12, height: 9, lineBreak: false });
+  const fuente = h >= 100 ? 7.2 : 8.1;
+  doc.font("Helvetica").fontSize(fuente).text(contenido, MARGEN + 6, y + 16, { width: ANCHO - 12, height: Math.max(8, h - 20), lineGap: 1, ellipsis: true });
   return y + h;
 }
 
 function filaFormato(doc: PDFKit.PDFDocument, y: number, celdas: Array<{ etiqueta: string; valor: string; ancho: number }>, alto = 39) {
   let x = MARGEN;
   for (const celda of celdas) {
+    const filaCompacta = alto <= 24;
     doc.strokeColor("#111111").lineWidth(0.6).rect(x, y, celda.ancho, alto).stroke();
-    doc.fillColor("#111111").font("Helvetica-Bold").fontSize(7.6).text(celda.etiqueta, x + 5, y + 5, { width: celda.ancho - 10 });
-    doc.font("Helvetica").fontSize(8.4).text(celda.valor || "—", x + 5, y + 18, { width: celda.ancho - 10 });
+    doc.fillColor("#111111").font("Helvetica-Bold").fontSize(7.4).text(celda.etiqueta, x + 5, y + 4, { width: celda.ancho - 10, height: filaCompacta ? 7 : 10, lineBreak: false });
+    doc.font("Helvetica").fontSize(filaCompacta ? 7 : 7.8).text(celda.valor || "—", x + 5, y + (filaCompacta ? 12 : 18), { width: celda.ancho - 10, height: Math.max(7, alto - (filaCompacta ? 14 : 21)), ellipsis: true });
     x += celda.ancho;
   }
   return y + alto;
@@ -127,12 +130,12 @@ function tablaAccionesFormato(doc: PDFKit.PDFDocument, titulo: string, filas: Ar
 async function descargarEvidenciasImagen(evidencias: Array<{ nombre?: string; url?: string }> = []) {
   const resultados: Array<{ nombre: string; contenido: Buffer }> = [];
   for (const evidencia of evidencias.slice(0, 4)) {
-    if (!evidencia.url || !/^https?:\/\//i.test(evidencia.url)) continue;
+    if (!evidencia.url || !/^https?:\/\//i.test(evidencia.url) || !/\.(jpg|jpeg)$/i.test(evidencia.nombre || "")) continue;
     try {
       const respuesta = await fetch(evidencia.url);
-      const tipo = respuesta.headers.get("content-type") || "";
-      if (!respuesta.ok || !["image/jpeg", "image/png"].some((formato) => tipo.startsWith(formato))) continue;
-      resultados.push({ nombre: evidencia.nombre || "Evidencia fotográfica", contenido: Buffer.from(await respuesta.arrayBuffer()) });
+      const contenido = Buffer.from(await respuesta.arrayBuffer());
+      if (!respuesta.ok || contenido[0] !== 0xff || contenido[1] !== 0xd8) continue;
+      resultados.push({ nombre: evidencia.nombre || "Evidencia fotográfica", contenido });
     } catch {
       // La evidencia sigue disponible como enlace en Falcon aunque el proveedor no permita descargarla aquí.
     }
@@ -148,6 +151,8 @@ export async function generarPdfSimulacro(datos: {
     const fecha = datos.fecha.toLocaleDateString("es-CO", { timeZone: "America/Bogota", day: "2-digit", month: "2-digit", year: "numeric" });
     let y = 126;
     encabezadoFormato(doc, 1);
+    let paginaSimulacro = 1;
+    doc.on("pageAdded", () => encabezadoFormato(doc, ++paginaSimulacro));
     y = filaFormato(doc, y, [
       { etiqueta: "SIMULACRO No.", valor: datos.consecutivo || `SIM-${datos.id}`, ancho: 173 },
       { etiqueta: "FECHA PREVISTA EJECUCIÓN", valor: fecha, ancho: 173 },
@@ -172,14 +177,13 @@ export async function generarPdfSimulacro(datos: {
     y = campoFormato(doc, "TIEMPO ESTIMADO DEL EJERCICIO", datos.duracionMinutos ? `${datos.duracionMinutos} minutos` : "No registrado", y, 30);
 
     doc.addPage({ margin: MARGEN, size: "LETTER" });
-    encabezadoFormato(doc, 2);
     y = 126;
     y = barraFormato(doc, "RESULTADOS Y EVALUACIÓN DEL SIMULACRO", y);
     y = filaFormato(doc, y, [{ etiqueta: "FECHA DE EVALUACIÓN", valor: fecha, ancho: ANCHO }], 32);
     y = campoFormato(doc, "RESULTADO DEL SIMULACRO", datos.resultado, y, 31);
     y = campoFormato(doc, "CUMPLIMIENTO DEL OBJETIVO", datos.cumplimientoObjetivo, y);
     y = barraFormato(doc, "DESARROLLO DEL SIMULACRO", y);
-    y = campoFormato(doc, "", datos.desarrollo, y, Math.min(120, altoTexto(doc, datos.desarrollo)));
+    y = campoFormato(doc, "", datos.desarrollo, y, Math.min(165, altoTexto(doc, datos.desarrollo)));
     y = barraFormato(doc, "ASPECTOS PARA EVALUAR", y);
     doc.fillColor("#111111").font("Helvetica-Oblique").fontSize(7.8).text("Calificación: Excelente = 1 punto · Bueno = 0,5 puntos · Deficiente = 0 puntos", MARGEN + 4, y + 4, { width: ANCHO - 8 });
     y += 19;
@@ -187,12 +191,12 @@ export async function generarPdfSimulacro(datos: {
       y = filaFormato(doc, y, [
         { etiqueta: aspecto.nombre.toUpperCase(), valor: "", ancho: 360 },
         { etiqueta: "CALIFICACIÓN", valor: calificacionVisible(aspecto.calificacion), ancho: 160 },
-      ], 31);
+      ], 22);
     }
     const promedio = datos.promedioEvaluacion == null ? "No calculado" : `${datos.promedioEvaluacion.toFixed(2)} / 1 (${Math.round(datos.promedioEvaluacion * 100)}%)`;
     y = campoFormato(doc, "PROMEDIO DE EVALUACIÓN", promedio, y, 30);
     y = barraFormato(doc, "CONCLUSIÓN GENERAL DEL SIMULACRO", y);
-    y = campoFormato(doc, "", datos.conclusion, y, Math.min(65, altoTexto(doc, datos.conclusion)));
+    y = campoFormato(doc, "", datos.conclusion, y, Math.min(45, altoTexto(doc, datos.conclusion)));
     y = campoFormato(doc, "CONTROL VULNERADO / RAZÓN DEL INCUMPLIMIENTO", [datos.controlVulnerado, datos.razonIncumplimiento, datos.factoresFalla?.join(", ")].filter(Boolean).join(". ") || "No aplica", y);
     y = campoFormato(doc, "REQUIERE GENERAR SAC O SAP", datos.requiereSac ? "SÍ. Debe gestionar la solicitud de acción correctiva asociada." : "NO", y, 32);
     y = barraFormato(doc, "RESPONSABLE(S) DE LA EVALUACIÓN", y);
@@ -202,10 +206,11 @@ export async function generarPdfSimulacro(datos: {
       { etiqueta: "FIRMA", valor: "", ancho: 120 },
     ], 42);
 
+    doc.removeAllListeners("pageAdded");
     doc.addPage({ margin: MARGEN, size: "LETTER" });
     encabezadoFormato(doc, 3);
     y = 126;
-    y = barraFormato(doc, "REGISTRO FOTOGRÁFICO", y);
+    y = barraFormato(doc, "REGISTRO FOTOGRÁFICO", y, true);
     const archivos = datos.evidencias || [];
     if (imagenes.length) {
       const espacio = 10;
@@ -218,7 +223,7 @@ export async function generarPdfSimulacro(datos: {
         const fotoY = y + 8 + fila * (altoFoto + 30);
         doc.strokeColor("#111111").lineWidth(0.6).rect(x - 2, fotoY - 2, anchoFoto + 4, altoFoto + 4).stroke();
         try {
-          doc.image(imagen.contenido, x, fotoY, { fit: [anchoFoto, altoFoto], align: "center", valign: "center" });
+          doc.image(`data:image/jpeg;base64,${imagen.contenido.toString("base64")}`, x, fotoY, { fit: [anchoFoto, altoFoto], align: "center", valign: "center" });
         } catch {
           doc.fillColor("#4b5563").font("Helvetica").fontSize(9).text("No fue posible incrustar esta imagen.", x + 12, fotoY + 20, { width: anchoFoto - 24, align: "center" });
         }
@@ -241,6 +246,8 @@ export async function generarPdfSac(datos: {
   return crearPdf((doc) => {
     let y = 126;
     encabezadoSacFormato(doc, 1);
+    let paginaSac = 1;
+    doc.on("pageAdded", () => encabezadoSacFormato(doc, ++paginaSac));
     y = filaFormato(doc, y, [{ etiqueta: "TIPO DE ACCIÓN", valor: "CORRECTIVA", ancho: 173 }, { etiqueta: "CONSECUTIVO", valor: datos.consecutivo, ancho: 173 }, { etiqueta: "FINCA", valor: datos.finca, ancho: 174 }]);
     y = filaFormato(doc, y, [{ etiqueta: "RESPONSABLE", valor: datos.responsableProceso || datos.analistaNombre, ancho: 173 }, { etiqueta: "PROCESO", valor: datos.proceso, ancho: 173 }, { etiqueta: "SISTEMA DE GESTIÓN", valor: datos.sistemaGestion, ancho: 174 }]);
     y = filaFormato(doc, y, [{ etiqueta: "NORMA", valor: datos.norma || "—", ancho: 260 }, { etiqueta: "REQUISITO", valor: datos.requisito || "—", ancho: 260 }]);
@@ -253,7 +260,6 @@ export async function generarPdfSac(datos: {
     y = filaFormato(doc, y, [{ etiqueta: "ANÁLISIS REALIZADO POR", valor: datos.analistaNombre, ancho: 260 }, { etiqueta: "CARGO", valor: datos.analisisRealizadoCargo || "ANALISTA SIG", ancho: 260 }], 38);
 
     doc.addPage({ margin: MARGEN, size: "LETTER" });
-    encabezadoSacFormato(doc, 2);
     y = 126;
     y = tablaAccionesFormato(doc, "4. PLAN DE ACCIÓN FRENTE A LA CAUSA RAÍZ", datos.planAccion, y);
     const seguimiento = (datos.seguimiento || []).map((item) => `${item.fecha}: ${item.comentario} (${item.realizadoPor})`).join("\n");
