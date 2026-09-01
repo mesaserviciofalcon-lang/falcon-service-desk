@@ -1,6 +1,8 @@
 // La versión standalone incorpora las métricas de fuente; la versión Node busca
 // archivos .afm que no están disponibles dentro de la función de Vercel.
 import PDFDocument from "pdfkit/js/pdfkit.standalone";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 type Aspecto = { nombre: string; calificacion: number | string };
 
@@ -11,8 +13,12 @@ function crearPdf(escribir: (doc: PDFKit.PDFDocument) => void) {
     doc.on("data", (fragmento) => fragmentos.push(Buffer.from(fragmento)));
     doc.on("end", () => resolve(Buffer.concat(fragmentos)));
     doc.on("error", reject);
-    escribir(doc);
-    doc.end();
+    try {
+      escribir(doc);
+      doc.end();
+    } catch (error) {
+      reject(error);
+    }
   });
 }
 
@@ -30,6 +36,17 @@ function bloque(doc: PDFKit.PDFDocument, etiqueta: string, contenido?: string | 
 
 const MARGEN = 46;
 const ANCHO = 520;
+let logoPdf: Buffer | null | undefined;
+
+function dibujarLogo(doc: PDFKit.PDFDocument, y: number) {
+  if (logoPdf === undefined) {
+    try { logoPdf = readFileSync(path.join(process.cwd(), "public", "fflogo-pdf.jpg")); } catch { logoPdf = null; }
+  }
+  if (logoPdf) {
+    try { doc.image(logoPdf, MARGEN + 7, y + 12, { fit: [124, 44], align: "center", valign: "center" }); return; } catch { /* Se conserva el texto de respaldo. */ }
+  }
+  doc.fillColor("#0F3D1F").font("Helvetica-Bold").fontSize(14).text("FALCON FARMS", MARGEN + 17, y + 25, { width: 105, align: "center" });
+}
 
 function encabezadoFormato(doc: PDFKit.PDFDocument, pagina: number) {
   const y = 42;
@@ -38,8 +55,7 @@ function encabezadoFormato(doc: PDFKit.PDFDocument, pagina: number) {
   doc.moveTo(484, y).lineTo(484, y + 72).stroke();
   doc.moveTo(484, y + 24).lineTo(566, y + 24).stroke();
   doc.moveTo(484, y + 48).lineTo(566, y + 48).stroke();
-  doc.fillColor("#0F3D1F").font("Helvetica-Bold").fontSize(14).text("FALCON FARMS", MARGEN + 17, y + 25, { width: 105, align: "center" });
-  doc.fillColor("#111111").font("Helvetica").fontSize(7.5).text("flower growers and distributors", MARGEN + 17, y + 43, { width: 105, align: "center" });
+  dibujarLogo(doc, y);
   doc.font("Helvetica").fontSize(12).text("FALCON FARMS DE COLOMBIA S.A.", 194, y + 20, { width: 280, align: "center" });
   doc.font("Helvetica-Bold").fontSize(12).text("PLANEACIÓN Y EVALUACIÓN DE SIMULACRO", 190, y + 40, { width: 288, align: "center" });
   doc.font("Helvetica").fontSize(8.5).text("Versión 01", 486, y + 7, { width: 78, align: "center" });
@@ -54,13 +70,11 @@ function encabezadoSacFormato(doc: PDFKit.PDFDocument, pagina: number) {
   doc.moveTo(484, y).lineTo(484, y + 72).stroke();
   doc.moveTo(484, y + 24).lineTo(566, y + 24).stroke();
   doc.moveTo(484, y + 48).lineTo(566, y + 48).stroke();
-  doc.fillColor("#0F3D1F").font("Helvetica-Bold").fontSize(14).text("FALCON FARMS", MARGEN + 17, y + 25, { width: 105, align: "center" });
-  doc.fillColor("#111111").font("Helvetica").fontSize(7.5).text("flower growers and distributors", MARGEN + 17, y + 43, { width: 105, align: "center" });
-  doc.font("Helvetica-Bold").fontSize(13).text("SOLICITUD DE ACCIÓN", 190, y + 26, { width: 288, align: "center" });
-  doc.font("Helvetica").fontSize(8.5).text("Acción Correctiva", 190, y + 45, { width: 288, align: "center" });
-  doc.text("Versión 01", 486, y + 7, { width: 78, align: "center" });
-  doc.text("Mayo 2019", 486, y + 31, { width: 78, align: "center" });
-  doc.text(`Página ${pagina} de 2`, 486, y + 55, { width: 78, align: "center" });
+  dibujarLogo(doc, y);
+  doc.font("Helvetica-Bold").fontSize(13).text("FALCON FARMS DE COLOMBIA S.A.", 190, y + 15, { width: 288, align: "center" });
+  doc.font("Helvetica-Bold").fontSize(13).text("SOLICITUD DE ACCIÓN", 190, y + 37, { width: 288, align: "center" });
+  doc.font("Helvetica").fontSize(10).text("Versión 6", 486, y + 13, { width: 78, align: "center" });
+  doc.text("Julio 2026", 486, y + 37, { width: 78, align: "center" });
 }
 
 function barraFormato(doc: PDFKit.PDFDocument, titulo: string, y: number) {
@@ -117,7 +131,7 @@ async function descargarEvidenciasImagen(evidencias: Array<{ nombre?: string; ur
     try {
       const respuesta = await fetch(evidencia.url);
       const tipo = respuesta.headers.get("content-type") || "";
-      if (!respuesta.ok || !tipo.startsWith("image/")) continue;
+      if (!respuesta.ok || !["image/jpeg", "image/png"].some((formato) => tipo.startsWith(formato))) continue;
       resultados.push({ nombre: evidencia.nombre || "Evidencia fotográfica", contenido: Buffer.from(await respuesta.arrayBuffer()) });
     } catch {
       // La evidencia sigue disponible como enlace en Falcon aunque el proveedor no permita descargarla aquí.
@@ -203,7 +217,11 @@ export async function generarPdfSimulacro(datos: {
         const x = MARGEN + 8 + columna * (anchoFoto + espacio);
         const fotoY = y + 8 + fila * (altoFoto + 30);
         doc.strokeColor("#111111").lineWidth(0.6).rect(x - 2, fotoY - 2, anchoFoto + 4, altoFoto + 4).stroke();
-        doc.image(imagen.contenido, x, fotoY, { fit: [anchoFoto, altoFoto], align: "center", valign: "center" });
+        try {
+          doc.image(imagen.contenido, x, fotoY, { fit: [anchoFoto, altoFoto], align: "center", valign: "center" });
+        } catch {
+          doc.fillColor("#4b5563").font("Helvetica").fontSize(9).text("No fue posible incrustar esta imagen.", x + 12, fotoY + 20, { width: anchoFoto - 24, align: "center" });
+        }
         doc.fillColor("#111111").font("Helvetica").fontSize(7.5).text(imagen.nombre, x, fotoY + altoFoto + 7, { width: anchoFoto, align: "center" });
       }
     } else if (!archivos.length) {
