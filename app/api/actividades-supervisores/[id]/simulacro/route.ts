@@ -72,6 +72,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         cerradoPor: session.user.name || session.user.email, cerradoPorCorreo: session.user.email,
         observacionesCierre: `Simulacro registrado: ${resultado}`, evidencias,
       } });
+      if (resultado === "DETECTADO") {
+        await tx.solicitudAccion.updateMany({ where: { actividadReprogramadaId: actividad.id, estado: "EN_SEGUIMIENTO" }, data: { estado: "CERRADA", seCierra: true, fechaCierre: fechaEjecutada, comentariosCierre: `Cierre automático: reprogramación ${consecutivo} ejecutada exitosamente.` } });
+      }
       return creado;
     });
 

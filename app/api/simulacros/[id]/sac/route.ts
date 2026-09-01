@@ -38,18 +38,18 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const sac = await prisma.$transaction(async (tx) => {
       const reprogramada = await tx.actividadSupervisor.create({ data: { fechaPlaneada: fechaReprogramacion, finca: simulacro.finca, actividad: simulacro.tipo, area: simulacro.area, estado: "PENDIENTE_ASIGNAR", creadoPor: nombreActor, creadoPorCorreo: correoActor } });
       return tx.solicitudAccion.create({ data: {
-      simulacroId: simulacro.id, consecutivo, estado: "CERRADA", tipoAccion: "Correctiva", proceso: texto(body.proceso) || "Seguridad", sistemaGestion: texto(body.sistemaGestion) || "Seguridad Física", norma: texto(body.norma) || null, requisito: texto(body.requisito) || null, responsableProceso: nombreActor,
+      simulacroId: simulacro.id, consecutivo, estado: "EN_SEGUIMIENTO", tipoAccion: "Correctiva", proceso: texto(body.proceso) || "Seguridad", sistemaGestion: texto(body.sistemaGestion) || "Seguridad Física", norma: texto(body.norma) || null, requisito: texto(body.requisito) || null, responsableProceso: nombreActor,
       descripcionSituacion, correccion: texto(body.correccion) || null, correcciones, analisisCausa, factoresCausa, planAccion,
-      seguimiento: Array.isArray(body.seguimiento) ? body.seguimiento : [], eficacia: body.eficacia === true, seCierra: true,
-      comentariosCierre: texto(body.comentariosCierre) || null, evidencias, analistaNombre: nombreActor, analistaCorreo: correoActor, analisisRealizadoCargo: usuario?.cargo || "ANALISTA SIG", fechaCierre: new Date(), fechaReprogramacion, actividadReprogramadaId: reprogramada.id,
+      seguimiento: Array.isArray(body.seguimiento) ? body.seguimiento : [], eficacia: body.eficacia === true, seCierra: false,
+      comentariosCierre: texto(body.comentariosCierre) || null, evidencias, analistaNombre: nombreActor, analistaCorreo: correoActor, analisisRealizadoCargo: usuario?.cargo || "ANALISTA SIG", fechaCierre: null, fechaReprogramacion, actividadReprogramadaId: reprogramada.id,
     } });
     });
     const jefatura = await prisma.usuario.findMany({ where: { activo: true, OR: [{ rol: "JEFE_SEG" }, { cargo: "JEFE SEG" }] }, select: { email: true } });
     const correosJefe = Array.from(new Set(jefatura.map((usuario) => usuario.email).filter(Boolean)));
     if (correosJefe.length) await enviarCorreo({
       to: correosJefe.join(","), cc: definicion?.gerente?.correo,
-      subject: `Cierre SAC ${consecutivo} - ${simulacro.finca}`,
-      html: `<p>Se informa el cierre de la Solicitud de Acción <strong>${consecutivo}</strong>, originada por el simulacro de ${simulacro.tipo} en la finca ${simulacro.finca}.</p><p>La finca solicitó reprogramar el simulacro para el <strong>${fechaReprogramacion.toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}</strong>. Ingrese a la plataforma para asignar el supervisor correspondiente.</p><p><a href="${getAppUrl()}/solicitudes-accion/${simulacro.id}">Ver detalle de la SAC</a></p>`,
+      subject: `SAC en seguimiento ${consecutivo} - ${simulacro.finca}`,
+      html: `<p>Se registró la Solicitud de Acción <strong>${consecutivo}</strong>, originada por el simulacro de ${simulacro.tipo} en la finca ${simulacro.finca}.</p><p>La SAC quedará <strong>en seguimiento</strong> hasta verificar el resultado de la reprogramación solicitada para el <strong>${fechaReprogramacion.toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}</strong>. Ingrese a la plataforma para asignar el supervisor correspondiente.</p><p><a href="${getAppUrl()}/solicitudes-accion/${simulacro.id}">Ver detalle de la SAC</a></p>`,
     });
     return Response.json({ ok: true, sacId: sac.id });
   } catch (error) {
