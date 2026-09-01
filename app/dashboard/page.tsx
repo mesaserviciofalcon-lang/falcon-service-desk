@@ -1218,7 +1218,7 @@ hace5Dias.setDate(
   const metricasVisitasPorFinca =
     puedeVerMetricasVisitas
       ? await obtenerMetricasVisitasPorFinca(
-          mesActual
+          mesIndicadores
         )
       : [];
 
