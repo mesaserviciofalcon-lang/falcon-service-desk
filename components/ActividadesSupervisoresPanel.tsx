@@ -13,6 +13,8 @@ type Actividad = {
   supervisorNombre: string | null;
   supervisorCorreo: string | null;
   estado: string;
+  fechaCierre: string | null;
+  cumplidaEnFecha: boolean | null;
 };
 
 type Supervisor = { nombre: string; email: string };
@@ -22,7 +24,20 @@ const etiquetaEstado: Record<string, string> = {
   PENDIENTE_ASIGNAR: "Pendiente por asignar",
   ASIGNADO: "Asignado",
   TERMINADO: "Terminado",
+  NO_REALIZADO: "No realizado",
 };
+
+function cumplimientoActividad(actividad: Actividad) {
+  if (actividad.estado === "NO_REALIZADO") {
+    return { texto: "No realizado", clase: "bg-red-100 text-red-800" };
+  }
+  if (actividad.estado === "TERMINADO") {
+    return actividad.cumplidaEnFecha === false
+      ? { texto: "Cumplido fuera de la fecha", clase: "bg-orange-100 text-orange-800" }
+      : { texto: "Cumplido", clase: "bg-green-100 text-green-800" };
+  }
+  return { texto: "Pendiente", clase: "bg-amber-100 text-amber-900" };
+}
 
 function fechaLocal(fecha: string) {
   const partes = new Intl.DateTimeFormat("es-CO", {
@@ -55,7 +70,7 @@ export default function ActividadesSupervisoresPanel({
   catalogos: Catalogo[];
   puedeAdministrar: boolean;
 }) {
-  const [mostrarTerminadas, setMostrarTerminadas] = useState(false);
+  const [mostrarTerminadas, setMostrarTerminadas] = useState(puedeAdministrar);
   const [mes, setMes] = useState(() => fechaInput(new Date()).slice(0, 7));
   const [formulario, setFormulario] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -168,7 +183,7 @@ export default function ActividadesSupervisoresPanel({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visibles.map((actividad) => (
           <div key={actividad.id} className="rounded-xl border bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-3"><p className="font-bold text-[#0F3D1F]">{actividad.actividad}</p><span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">{etiquetaEstado[actividad.estado]}</span></div>
+            <div className="flex items-start justify-between gap-3"><p className="font-bold text-[#0F3D1F]">{actividad.actividad}</p><div className="flex shrink-0 flex-col items-end gap-1"><span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">{etiquetaEstado[actividad.estado] || actividad.estado}</span><span className={`rounded-full px-2 py-1 text-xs font-semibold ${cumplimientoActividad(actividad).clase}`}>{cumplimientoActividad(actividad).texto}</span></div></div>
             <p className="mt-3 text-sm"><strong>Fecha:</strong> {fechaLocal(actividad.fechaPlaneada)}</p>
             <p className="mt-1 text-sm"><strong>Finca:</strong> {actividad.finca}</p>
             <p className="mt-1 text-sm"><strong>Área:</strong> {actividad.area || "Sin área"}</p>

@@ -23,7 +23,7 @@ export default async function ActividadesSupervisoresPage() {
             estado: { not: "TERMINADO" },
           },
       orderBy: { fechaPlaneada: "asc" },
-      select: { id: true, fechaPlaneada: true, finca: true, actividad: true, area: true, supervisorNombre: true, supervisorCorreo: true, estado: true },
+      select: { id: true, fechaPlaneada: true, finca: true, actividad: true, area: true, supervisorNombre: true, supervisorCorreo: true, estado: true, fechaCierre: true, cumplidaEnFecha: true },
     }),
     esAdministrador
       ? prisma.usuario.findMany({ where: { activo: true, rol: "SUPERVISOR" }, orderBy: { nombre: "asc" }, select: { nombre: true, email: true } })
@@ -33,5 +33,5 @@ export default async function ActividadesSupervisoresPage() {
       : Promise.resolve([]),
   ]);
 
-  return <ActividadesSupervisoresPanel actividades={actividades.map((actividad) => ({ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString() }))} supervisores={supervisores} catalogos={catalogos} puedeAdministrar={esAdministrador} />;
+  return <ActividadesSupervisoresPanel actividades={actividades.map((actividad) => ({ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString(), fechaCierre: actividad.fechaCierre?.toISOString() || null }))} supervisores={supervisores} catalogos={catalogos} puedeAdministrar={esAdministrador} />;
 }
