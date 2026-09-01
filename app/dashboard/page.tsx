@@ -13,6 +13,9 @@ from "next/link";
 import NumeroAnimado
 from "@/components/NumeroAnimado";
 
+import MetricasVisitasFinca
+from "@/components/MetricasVisitasFinca";
+
 import { formatearFechaColombia }
 from "@/lib/fecha";
 
@@ -129,7 +132,12 @@ function obtenerWhereDashboardPorRol(
 
   if (role === "SUPERVISOR") {
     return {
-      tipo: "ANTECEDENTES",
+      tipo: {
+        in: [
+          "ANTECEDENTES",
+          "ESTUDIO DE ANTECEDENTES",
+        ],
+      },
     };
   }
 
@@ -303,6 +311,14 @@ type ConteoMes = {
 type ConteoVisitasMes = {
   mes: string;
   total: bigint | number;
+};
+
+type VisitasPorFinca = {
+  finca: string;
+  ingreso: bigint | number;
+  mantenimiento: bigint | number;
+  confiable: bigint | number;
+  no_confiable: bigint | number;
 };
 
 const metricasAntecedentesVacias: MetricasAntecedentes = {
@@ -675,6 +691,27 @@ async function obtenerMesesVisitas(
   );
 }
 
+async function obtenerMetricasVisitasPorFinca(mes: string) {
+  const resultado = await prisma.$queryRaw<VisitasPorFinca[]>`
+    WITH visitas AS (
+      SELECT COALESCE(NULLIF(trim(v."fincaEAI"), ''), 'SIN FINCA') AS finca, upper(trim(COALESCE(v."resultadoVisita", ''))) AS resultado, upper(trim(COALESCE(v."motivoVisita", ''))) AS motivo, COALESCE(v."fechaRealizada", s."fechaGestion", s."fechaCierre", s."fechaCreacion") AS fecha_indicador
+      FROM "SolicitudVisita" v INNER JOIN "Solicitud" s ON s."id" = v."solicitudId"
+      WHERE s."tipo" = 'VISITA DOMICILIARIA'
+      UNION ALL
+      SELECT COALESCE(NULLIF(trim(h."fincaEAI"), ''), 'SIN FINCA') AS finca, CASE WHEN upper(trim(COALESCE(h."fechaVisitaRealizada", ''))) LIKE '%NO%CONFIABLE%' THEN 'NO CONFIABLE' WHEN upper(trim(COALESCE(h."fechaVisitaRealizada", ''))) LIKE '%CONFIABLE%' THEN 'CONFIABLE' WHEN h."fechaVisitaDate" IS NOT NULL THEN 'CONFIABLE' ELSE upper(trim(COALESCE(h."fechaVisitaRealizada", ''))) END AS resultado, upper(trim(COALESCE(h."motivoVisita", ''))) AS motivo, COALESCE(h."fechaVisitaDate", h."fechaSolicitudDate", h."createdAt") AS fecha_indicador
+      FROM "VisitaHistorica" h
+    )
+    SELECT finca,
+      COUNT(*) FILTER (WHERE motivo = 'INGRESO' OR motivo LIKE 'INGRESO %') AS ingreso,
+      COUNT(*) FILTER (WHERE motivo = 'MANTENIMIENTO' OR motivo LIKE 'MANTENIMIENTO %') AS mantenimiento,
+      COUNT(*) FILTER (WHERE resultado LIKE '%CONFIABLE%' AND resultado NOT LIKE '%NO%CONFIABLE%') AS confiable,
+      COUNT(*) FILTER (WHERE resultado LIKE '%NO%CONFIABLE%') AS no_confiable
+    FROM visitas WHERE to_char(fecha_indicador, 'YYYY-MM') = ${mes}
+    GROUP BY finca ORDER BY finca ASC
+  `;
+  return resultado.map((fila) => ({ finca: fila.finca, ingreso: normalizarConteo(fila.ingreso), mantenimiento: normalizarConteo(fila.mantenimiento), confiable: normalizarConteo(fila.confiable), noConfiable: normalizarConteo(fila.no_confiable) }));
+}
+
 async function obtenerConteoVisitasPorMes(
   anio: number
 ) {
@@ -993,42 +1030,28 @@ hace5Dias.setDate(
     solicitudes.filter(
       (s: any) => {
 
-        const visible =
-
-          s.estado !==
-            "COMPLETADO"
-
-          ||
-
-          (
-
-            s.fechaCierre &&
-
-            new Date(
-              s.fechaCierre
-            ) >= hace5Dias
-          );
-
         return (
 
-          s.tipo ===
-            "ANTECEDENTES"
-
-          &&
-
-          visible
+          [
+            "ANTECEDENTES",
+            "ESTUDIO DE ANTECEDENTES",
+          ].includes(
+            s.tipo
+          )
         );
       }
     );
 }
 
-  tickets =
-    tickets.filter((ticket: any) =>
-      visibleEnBandejaPorRol(
-        ticket,
-        role
-      )
-    );
+  if (role !== "SUPERVISOR") {
+    tickets =
+      tickets.filter((ticket: any) =>
+        visibleEnBandejaPorRol(
+          ticket,
+          role
+        )
+      );
+  }
 
   const usaMetricasMensualesGestor =
     role === "VISITA" ||
@@ -1061,8 +1084,12 @@ hace5Dias.setDate(
         : role === "SUPERVISOR"
           ? solicitudes.filter(
               (ticket: any) =>
-                ticket.tipo ===
-                "ANTECEDENTES"
+                [
+                  "ANTECEDENTES",
+                  "ESTUDIO DE ANTECEDENTES",
+                ].includes(
+                  ticket.tipo
+                )
             )
           : tickets;
 
@@ -1112,12 +1139,14 @@ hace5Dias.setDate(
     role === "ADMIN";
 
   const aplicarFiltroMes =
-    role === "SUPERVISOR";
+    false;
 
   const mesIndicadores =
     puedeSeleccionarMes
       ? mesSeleccionado ||
         mesActual
+      : role === "VISITA"
+        ? mesActual
       : usaMetricasMensualesGestor
         ? mesGestor
         : mesActual;
@@ -1185,6 +1214,13 @@ hace5Dias.setDate(
           mesIndicadores
         )
       : metricasVisitasVacias;
+
+  const metricasVisitasPorFinca =
+    puedeVerMetricasVisitas
+      ? await obtenerMetricasVisitasPorFinca(
+          mesActual
+        )
+      : [];
 
   const mesesVisitasDisponibles =
     puedeSeleccionarMes
@@ -2139,6 +2175,8 @@ hace5Dias.setDate(
             </div>
 
           </div>
+
+          <MetricasVisitasFinca filas={metricasVisitasPorFinca} />
 
         </div>
       )}

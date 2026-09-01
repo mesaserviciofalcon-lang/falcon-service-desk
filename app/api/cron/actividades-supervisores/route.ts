@@ -50,13 +50,13 @@ export async function GET(request: Request) {
     const ventanaProgramacion = ventanaProgramacionAnalista(hoy);
     if (ventanaProgramacion.abierta) {
       const [actividadesProgramables, analistas] = await Promise.all([
-        prisma.actividadSupervisor.findMany({ where: { estado: { not: "TERMINADO" }, programadoPorAnalistaAt: null, fechaPlaneada: { gte: ventanaProgramacion.inicioMesDestino, lt: ventanaProgramacion.finMesDestino }, OR: [{ recordatorioProgramacionEnviadoAt: null }, { recordatorioProgramacionEnviadoAt: { lt: hoy } }] } }),
+        prisma.actividadSupervisor.findMany({ where: { estado: { not: "TERMINADO" }, actividad: { not: "RECOGER EFECTIVO" }, programadoPorAnalistaAt: null, fechaPlaneada: { gte: ventanaProgramacion.inicioMesDestino, lt: ventanaProgramacion.finMesDestino }, OR: [{ recordatorioProgramacionEnviadoAt: null }, { recordatorioProgramacionEnviadoAt: { lt: hoy } }] } }),
         prisma.usuario.findMany({ where: { activo: true, cargo: "ANALISTA SIG", fincaEAI: { not: null } }, select: { nombre: true, email: true, fincaEAI: true } }),
       ]);
       for (const analista of analistas) {
         const actividadesAnalista = actividadesProgramables.filter((actividad) => mismaFincaActividad(analista.fincaEAI, actividad.finca));
         if (!actividadesAnalista.length) continue;
-        await enviarCorreo({ to: analista.email, subject: `Programación pendiente de actividades - ${ventanaProgramacion.etiquetaMes}`, html: recordatorioProgramacionActividadesTemplate({ analista: analista.nombre, actividades: actividadesAnalista, etiquetaMes: ventanaProgramacion.etiquetaMes }) });
+        await enviarCorreo({ to: analista.email, subject: `Programación pendiente de actividades - ${ventanaProgramacion.etiquetaMes}`, html: recordatorioProgramacionActividadesTemplate({ analista: analista.nombre, actividades: actividadesAnalista, etiquetaMes: ventanaProgramacion.etiquetaMes, etiquetaVentana: ventanaProgramacion.etiquetaMesActual, etiquetaUltimoDiaVentana: ventanaProgramacion.etiquetaUltimoDiaVentana }) });
         await prisma.actividadSupervisor.updateMany({ where: { id: { in: actividadesAnalista.map((actividad) => actividad.id) } }, data: { recordatorioProgramacionEnviadoAt: new Date() } });
         recordatoriosProgramacion += 1;
         enviados += 1;

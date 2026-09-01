@@ -14,10 +14,10 @@ export default async function ProgramacionActividadesPage() {
 
   const ventana = ventanaProgramacionAnalista();
   const [actividadesMes, actividadesOcupadas, catalogos] = await Promise.all([
-    prisma.actividadSupervisor.findMany({ where: { finca: { not: "" }, fechaPlaneada: { gte: ventana.inicioMesDestino, lt: ventana.finMesDestino } }, orderBy: { fechaPlaneada: "asc" }, select: { id: true, fechaPlaneada: true, finca: true, actividad: true, area: true, estado: true, programadoPorAnalistaAt: true } }),
-    prisma.actividadSupervisor.findMany({ where: { fechaPlaneada: { gte: ventana.inicioMesDestino, lt: ventana.finMesDestino } }, select: { id: true, finca: true, fechaPlaneada: true } }),
+    prisma.actividadSupervisor.findMany({ where: { finca: { not: "" }, actividad: { not: "RECOGER EFECTIVO" }, fechaPlaneada: { gte: ventana.inicioMesDestino, lt: ventana.finMesDestino } }, orderBy: { fechaPlaneada: "asc" }, select: { id: true, fechaPlaneada: true, finca: true, actividad: true, area: true, estado: true, programadoPorAnalistaAt: true } }),
+    prisma.actividadSupervisor.findMany({ where: { actividad: { not: "RECOGER EFECTIVO" }, fechaPlaneada: { gte: ventana.inicioMesDestino, lt: ventana.finMesDestino } }, select: { id: true, finca: true, fechaPlaneada: true } }),
     prisma.catalogoActividad.findMany({ where: { tipo: "AREA" }, orderBy: { valor: "asc" }, select: { valor: true } }),
   ]);
   const actividades = actividadesMes.filter((actividad) => mismaFincaActividad(usuario.fincaEAI, actividad.finca));
-  return <ProgramacionActividadesPanel ventanaAbierta={ventana.abierta} etiquetaMes={ventana.etiquetaMes} actividades={actividades.map((actividad) => ({ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString(), programadoPorAnalistaAt: actividad.programadoPorAnalistaAt?.toISOString() || null }))} ocupadas={actividadesOcupadas.map((actividad) => ({ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString() }))} areas={catalogos.map((catalogo) => catalogo.valor)} />;
+  return <ProgramacionActividadesPanel ventanaAbierta={ventana.abierta} etiquetaMes={ventana.etiquetaMes} etiquetaVentana={ventana.etiquetaMesActual} etiquetaUltimoDiaVentana={ventana.etiquetaUltimoDiaVentana} actividades={actividades.map((actividad) => ({ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString(), programadoPorAnalistaAt: actividad.programadoPorAnalistaAt?.toISOString() || null }))} ocupadas={actividadesOcupadas.map((actividad) => ({ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString() }))} areas={catalogos.map((catalogo) => catalogo.valor)} />;
 }

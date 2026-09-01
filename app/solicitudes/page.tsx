@@ -24,6 +24,11 @@ import {
   tiposPermitidosParaCrearSolicitud,
 } from "@/lib/visibilidadSolicitudes";
 
+type ValidacionVisita = {
+  pendiente: { ticketId: number; estado: string } | null;
+  vigente: { ticketId?: number; fecha: string; fechaVencimiento: string; diasRestantes: number; puedeRenovar: boolean } | null;
+};
+
 export default function SolicitudesPage() {
 
   const router =
@@ -80,6 +85,9 @@ export default function SolicitudesPage() {
     cedula,
     setCedula
   ] = useState("");
+
+  const [validacionVisita, setValidacionVisita] = useState<ValidacionVisita | null>(null);
+  const [consultandoVisita, setConsultandoVisita] = useState(false);
 
   const [
     fechaExpedicion,
@@ -166,6 +174,17 @@ const [
     }
 
   }, [session]);
+
+  async function consultarVisitaExistente() {
+    const documento = cedula.replace(/\D/g, "");
+    if (tipo !== "VISITA DOMICILIARIA" || documento.length < 5) { setValidacionVisita(null); return; }
+    setConsultandoVisita(true);
+    try {
+      const response = await fetch(`/api/visitas/validar?cedula=${encodeURIComponent(documento)}`);
+      if (!response.ok) return;
+      setValidacionVisita(await response.json());
+    } finally { setConsultandoVisita(false); }
+  }
 
   async function crearSolicitud(
   e: React.FormEvent
@@ -527,11 +546,14 @@ setTimeout(() => {
               required
               value={cedula}
               onChange={(e) =>
-                setCedula(
-                  e.target.value
-                )
+                setCedula(e.target.value.replace(/\D/g, ""))
               }
+              onBlur={consultarVisitaExistente}
             />
+
+            {consultandoVisita && <p className="text-sm text-slate-500">Validando visitas anteriores...</p>}
+            {validacionVisita?.pendiente && <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">Visita solicitada anteriormente bajo el ticket <strong>#{validacionVisita.pendiente.ticketId}</strong>, actualmente {validacionVisita.pendiente.estado.toLowerCase()}.</p>}
+            {!validacionVisita?.pendiente && validacionVisita?.vigente && <p className={`rounded-lg border p-3 text-sm ${validacionVisita.vigente.puedeRenovar ? "border-blue-200 bg-blue-50 text-blue-900" : "border-amber-200 bg-amber-50 text-amber-900"}`}>La visita está vigente. Se realizó el <strong>{new Date(validacionVisita.vigente.fecha).toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}</strong>{validacionVisita.vigente.ticketId ? <> bajo el ticket <strong>#{validacionVisita.vigente.ticketId}</strong></> : ""} y vence el <strong>{new Date(validacionVisita.vigente.fechaVencimiento).toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}</strong>. {validacionVisita.vigente.puedeRenovar ? `Faltan ${validacionVisita.vigente.diasRestantes} días; puede solicitar la renovación.` : `Faltan ${validacionVisita.vigente.diasRestantes} días; la nueva solicitud se habilitará durante los últimos 30 días.`}</p>}
 
             <div className="flex flex-col gap-1">
 

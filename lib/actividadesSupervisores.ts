@@ -79,6 +79,8 @@ export function ventanaProgramacionAnalista(referencia = new Date()) {
   const inicioVentana = new Date(Date.UTC(ano, mes - 1, 25, 5));
   const inicioMesDestino = new Date(Date.UTC(anoDestino, mesDestino - 1, 1, 5));
   const finMesDestino = new Date(Date.UTC(anoDestino, mesDestino, 1, 5));
+  const ultimoDiaVentana = new Date(inicioMesDestino);
+  ultimoDiaVentana.setUTCDate(ultimoDiaVentana.getUTCDate() - 1);
   return {
     abierta: dia >= 25,
     inicioVentana,
@@ -86,6 +88,8 @@ export function ventanaProgramacionAnalista(referencia = new Date()) {
     inicioMesDestino,
     finMesDestino,
     etiquetaMes: new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", month: "long", year: "numeric" }).format(inicioMesDestino),
+    etiquetaMesActual: new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", month: "long", year: "numeric" }).format(inicioMesActual),
+    etiquetaUltimoDiaVentana: new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", day: "numeric", month: "long", year: "numeric" }).format(ultimoDiaVentana),
   };
 }
 
@@ -158,7 +162,7 @@ export function incumplimientoActividadTemplate({
   `;
 }
 
-export function recordatorioProgramacionActividadesTemplate({ analista, actividades, etiquetaMes }: { analista: string; etiquetaMes: string; actividades: Array<{ actividad: string; finca: string; area: string | null; fechaPlaneada: Date }>; }) {
+export function recordatorioProgramacionActividadesTemplate({ analista, actividades, etiquetaMes, etiquetaVentana, etiquetaUltimoDiaVentana }: { analista: string; etiquetaMes: string; etiquetaVentana: string; etiquetaUltimoDiaVentana: string; actividades: Array<{ actividad: string; finca: string; area: string | null; fechaPlaneada: Date }>; }) {
   const filas = actividades.map((actividad) => `<tr><td style="padding:8px;border:1px solid #d1d5db">${actividad.actividad}</td><td style="padding:8px;border:1px solid #d1d5db">${actividad.finca}</td><td style="padding:8px;border:1px solid #d1d5db">${actividad.area || "Sin área"}</td><td style="padding:8px;border:1px solid #d1d5db">${fechaActividad(actividad.fechaPlaneada)}</td></tr>`).join("");
-  return `<div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.5"><h2 style="color:#0F3D1F">Programación de actividades pendiente</h2><p>Buen día, ${analista}.</p><p>Entre el día 25 y el último día del mes debe ingresar a la plataforma para confirmar o ajustar únicamente el área y la fecha planeada de las actividades de <strong>${etiquetaMes}</strong>. Si no realiza la programación, se conservarán las fechas y áreas establecidas por Seguridad.</p><table style="border-collapse:collapse;width:100%;font-size:14px"><thead><tr><th style="padding:8px;border:1px solid #d1d5db;text-align:left">Actividad</th><th style="padding:8px;border:1px solid #d1d5db;text-align:left">Finca</th><th style="padding:8px;border:1px solid #d1d5db;text-align:left">Área estimada</th><th style="padding:8px;border:1px solid #d1d5db;text-align:left">Fecha estimada</th></tr></thead><tbody>${filas}</tbody></table><p style="margin-top:24px"><a href="${getAppUrl()}/programacion-actividades" style="background:#0F3D1F;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:bold">Ingresar a programación de actividades</a></p></div>`;
+  return `<div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.5"><h2 style="color:#0F3D1F">Programación de actividades pendiente</h2><p>Buen día, ${analista}.</p><p>La programación de las actividades de <strong>${etiquetaMes}</strong> está disponible desde el 25 de <strong>${etiquetaVentana}</strong> hasta el <strong>${etiquetaUltimoDiaVentana}</strong>. Ingrese a la plataforma para confirmar o ajustar únicamente el área y la fecha planeada. Si no realiza la programación, se conservarán las fechas y áreas establecidas por Seguridad.</p><table style="border-collapse:collapse;width:100%;font-size:14px"><thead><tr><th style="padding:8px;border:1px solid #d1d5db;text-align:left">Actividad</th><th style="padding:8px;border:1px solid #d1d5db;text-align:left">Finca</th><th style="padding:8px;border:1px solid #d1d5db;text-align:left">Área estimada</th><th style="padding:8px;border:1px solid #d1d5db;text-align:left">Fecha estimada</th></tr></thead><tbody>${filas}</tbody></table><p style="margin-top:24px"><a href="${getAppUrl()}/programacion-actividades" style="background:#0F3D1F;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:bold">Ingresar a programación de actividades</a></p></div>`;
 }

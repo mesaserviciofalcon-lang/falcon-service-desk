@@ -43,7 +43,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       if (!fechaPlaneada || !areaValida || fechaPlaneada < ventana.inicioMesDestino || fechaPlaneada >= ventana.finMesDestino) return Response.json({ error: "Seleccione un área y una fecha válida del mes a programar" }, { status: 400 });
       if (fechaPlaneada.getTime() !== actividad.fechaPlaneada.getTime()) {
         const inicioDia = inicioDiaColombia(fechaPlaneada); const finDia = new Date(inicioDia); finDia.setUTCDate(finDia.getUTCDate() + 1);
-        const conflicto = await prisma.actividadSupervisor.findFirst({ where: { id: { not: actividad.id }, finca: { not: actividad.finca }, fechaPlaneada: { gte: inicioDia, lt: finDia } }, select: { id: true } });
+        const conflicto = await prisma.actividadSupervisor.findFirst({ where: { id: { not: actividad.id }, actividad: { not: "RECOGER EFECTIVO" }, finca: { not: actividad.finca }, fechaPlaneada: { gte: inicioDia, lt: finDia } }, select: { id: true } });
         if (conflicto) return Response.json({ error: "La fecha seleccionada está ocupada por otra finca" }, { status: 409 });
       }
       const actualizado = await prisma.actividadSupervisor.update({ where: { id: actividad.id }, data: { area, fechaPlaneada, programadoPorAnalistaAt: new Date(), recordatorioProgramacionEnviadoAt: null } });

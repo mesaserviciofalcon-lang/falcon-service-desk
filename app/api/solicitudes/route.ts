@@ -43,6 +43,9 @@ import {
   esMismoLoteAntecedentes,
 } from "@/lib/antecedentesDuplicados";
 
+import { normalizarCedula } from "@/lib/visitasHistoricas";
+import { validarVisitaPorCedula } from "@/lib/validacionVisitasDuplicadas";
+
 const rolesVistaTotal = [
   "ADMIN",
   "DIRECTOR_SEG",
@@ -218,6 +221,17 @@ export async function POST(
           }
         );
       }
+
+      const validacionVisita = await validarVisitaPorCedula(body.cedula);
+      if (validacionVisita.pendiente) {
+        return Response.json({ error: `Visita solicitada anteriormente bajo el ticket #${validacionVisita.pendiente.ticketId}, que se encuentra ${validacionVisita.pendiente.estado.toLowerCase()}.` }, { status: 409 });
+      }
+      if (validacionVisita.vigente && !validacionVisita.vigente.puedeRenovar) {
+        const fecha = validacionVisita.vigente.fecha.toLocaleDateString("es-CO", { timeZone: "America/Bogota" });
+        const vencimiento = validacionVisita.vigente.fechaVencimiento.toLocaleDateString("es-CO", { timeZone: "America/Bogota" });
+        const ticket = validacionVisita.vigente.ticketId ? ` en el ticket #${validacionVisita.vigente.ticketId}` : "";
+        return Response.json({ error: `La visita solicitada está vigente: se realizó el ${fecha}${ticket} y vence el ${vencimiento}. Solo se puede solicitar una nueva visita durante los últimos 30 días de vigencia.` }, { status: 409 });
+      }
     }
 
     const archivoAntecedentesExcel =
@@ -329,6 +343,7 @@ export async function POST(
           }
         );
       }
+
     }
 
     let asignadoA = "";
@@ -457,7 +472,7 @@ export async function POST(
               body.nombreCandidato,
 
             cedula:
-              body.cedula,
+              normalizarCedula(body.cedula),
 
             fechaExpedicion:
               body.fechaExpedicion,
