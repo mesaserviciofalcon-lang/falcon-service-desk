@@ -334,6 +334,7 @@ model SolicitudAccion {
   eficacia Boolean?
   seCierra Boolean?
   comentariosCierre String?
+  evidencias Json?
   analistaNombre String
   analistaCorreo String
   analisisRealizadoCargo String?

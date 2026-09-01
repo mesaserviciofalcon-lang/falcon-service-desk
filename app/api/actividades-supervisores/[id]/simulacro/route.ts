@@ -80,7 +80,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       horaInicio, coordinador: session.user.name || session.user.email, analista,
       objetivo: definicion.objetivo, riesgo: definicion.riesgo, controles: definicion.controles, guion: definicion.guionInicial,
       resultado, duracionMinutos, promedioEvaluacion, cumplimientoObjetivo, desarrollo, aspectos, conclusion, controlVulnerado: texto(body.controlVulnerado),
-      razonIncumplimiento: texto(body.razonIncumplimiento), factoresFalla, requiereSac: debeGenerarSac,
+      razonIncumplimiento: texto(body.razonIncumplimiento), factoresFalla, requiereSac: debeGenerarSac, evidencias,
     });
     const jefatura = await prisma.usuario.findMany({ where: { activo: true, rol: { in: ["JEFE_SEG", "DIRECTOR_SEG"] } }, select: { email: true } });
     const copias = Array.from(new Set([definicion.gerente?.correo, ...jefatura.map((usuario) => usuario.email)].filter(Boolean) as string[]));
