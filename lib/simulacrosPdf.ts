@@ -47,12 +47,12 @@ export async function generarPdfSimulacro(datos: {
     bloque(doc, "Desarrollo del simulacro", datos.desarrollo);
     doc.addPage();
     titulo(doc, "RESULTADOS Y EVALUACIÓN");
-    doc.font("Helvetica-Bold").fontSize(10).text("Aspectos evaluados (3 excelente, 2 bueno, 1 deficiente)");
+    doc.font("Helvetica-Bold").fontSize(10).text("Aspectos evaluados (excelente: 1 punto, bueno: 0,5 puntos, deficiente: 0 puntos)");
     doc.moveDown(0.3);
     for (const aspecto of datos.aspectos) {
       doc.font("Helvetica").fontSize(9.5).text(`${aspecto.nombre}: ${aspecto.calificacion}`);
     }
-    if (datos.promedioEvaluacion != null) doc.font("Helvetica-Bold").fontSize(10).text(`Promedio de evaluación: ${datos.promedioEvaluacion.toFixed(2)} / 3`);
+    if (datos.promedioEvaluacion != null) doc.font("Helvetica-Bold").fontSize(10).text(`Promedio de evaluación: ${datos.promedioEvaluacion.toFixed(2)} / 1 (${Math.round(datos.promedioEvaluacion * 100)}%)`);
     doc.moveDown();
     bloque(doc, "Conclusión general", datos.conclusion);
     bloque(doc, "Control vulnerado", datos.controlVulnerado);

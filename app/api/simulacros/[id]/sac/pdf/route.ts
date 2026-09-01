@@ -13,7 +13,8 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   if (!simulacro?.solicitudAccion) return new Response("SAC no encontrada", { status: 404 });
   const sac = simulacro.solicitudAccion;
   const esAnalista = sac.analistaCorreo.toLowerCase() === session.user.email.toLowerCase();
-  if (!esAnalista && !["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(String(session.user.role || ""))) return new Response("No autorizado", { status: 403 });
+  const esSupervisor = session.user.role === "SUPERVISOR";
+  if (!esAnalista && !esSupervisor && !["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(String(session.user.role || ""))) return new Response("No autorizado", { status: 403 });
   const pdf = await generarPdfSac({ ...sac, consecutivo: sac.consecutivo || `SAC-${simulacro.finca}-${String(simulacro.id).padStart(4, "0")}`, finca: simulacro.finca, factoresCausa: sac.factoresCausa as string[], planAccion: sac.planAccion as any, seguimiento: sac.seguimiento as any });
   return new Response(new Uint8Array(pdf), { headers: { "Content-Type": "application/pdf", "Content-Disposition": `inline; filename="${sac.consecutivo || "sac"}.pdf"` } });
 }

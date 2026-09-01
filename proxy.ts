@@ -57,6 +57,8 @@ export const config = {
 
     "/simulacros/:path*",
 
+    "/api/simulacros/:path*",
+
     "/cambiar-password/:path*",
   ],
 };

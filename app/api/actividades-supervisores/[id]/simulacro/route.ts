@@ -40,9 +40,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       return Response.json({ error: "Complete el resultado, la evaluación, la conclusión y al menos una evidencia" }, { status: 400 });
     }
 
-    const promedioEvaluacion = aspectos.reduce((total: number, aspecto: { calificacion: number }) => total + aspecto.calificacion, 0) / aspectos.length;
-    const debeGenerarSac = requiereSac(resultado) || promedioEvaluacion <= 2;
-    const sacSugerida = debeGenerarSac ? `SAC sugerida: resultado ${resultado === "NO DETECTADO" ? "no detectado" : "con promedio de evaluación " + promedioEvaluacion.toFixed(2) + "/3"}. Conclusión reportada: ${conclusion}` : null;
+    const puntosPorCalificacion: Record<number, number> = { 3: 1, 2: 0.5, 1: 0 };
+    const promedioEvaluacion = aspectos.reduce((total: number, aspecto: { calificacion: number }) => total + puntosPorCalificacion[aspecto.calificacion], 0) / aspectos.length;
+    const debeGenerarSac = requiereSac(resultado) || promedioEvaluacion <= 0.5;
+    const sacSugerida = debeGenerarSac ? `SAC sugerida: resultado ${resultado === "NO DETECTADO" ? "no detectado" : "con promedio de evaluación " + promedioEvaluacion.toFixed(2) + "/1"}. Conclusión reportada: ${conclusion}` : null;
     const fechaEjecutada = new Date();
     const limiteCumplimiento = new Date(actividad.fechaPlaneada);
     limiteCumplimiento.setUTCHours(5, 0, 0, 0);
