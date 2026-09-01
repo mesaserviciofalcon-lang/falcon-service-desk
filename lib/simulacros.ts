@@ -126,6 +126,14 @@ export function requiereSac(resultado: string) {
   return ["NO DETECTADO", "PERDIDO"].includes(String(resultado || "").trim().toUpperCase());
 }
 
+export function calcularPromedioSimulacro(aspectos: Array<{ calificacion: number | string }> | null | undefined) {
+  if (!aspectos?.length) return null;
+  const puntos: Record<number, number> = { 3: 1, 2: 0.5, 1: 0 };
+  const calificaciones = aspectos.map((aspecto) => Number(aspecto.calificacion)).filter((calificacion) => Object.hasOwn(puntos, calificacion));
+  if (!calificaciones.length) return null;
+  return calificaciones.reduce((total, calificacion) => total + puntos[calificacion], 0) / calificaciones.length;
+}
+
 export function mismaFincaSimulacro(fincaUsuario?: string | null, fincaSimulacro?: string | null) {
   const normalizar = (valor?: string | null) => String(valor || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
   const aliases: Record<string, string> = { FLOPACK: "FPK", FPK: "FPK" };

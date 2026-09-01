@@ -5,7 +5,6 @@ import { getAppUrl } from "@/lib/appUrl";
 import { enviarCorreo } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { definicionSimulacro, factoresSac, mismaFincaSimulacro } from "@/lib/simulacros";
-import { generarPdfSac } from "@/lib/simulacrosPdf";
 import { fechaHoraColombiaDesdeInput } from "@/lib/actividadesSupervisores";
 
 function texto(valor: unknown) { return String(valor || "").trim(); }
@@ -45,14 +44,12 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       comentariosCierre: texto(body.comentariosCierre) || null, evidencias, analistaNombre: nombreActor, analistaCorreo: correoActor, analisisRealizadoCargo: usuario?.cargo || "ANALISTA SIG", fechaCierre: new Date(), fechaReprogramacion, actividadReprogramadaId: reprogramada.id,
     } });
     });
-    const pdf = await generarPdfSac({ ...sac, consecutivo: sac.consecutivo || consecutivo, finca: simulacro.finca, factoresCausa: factoresCausa as string[], correcciones: sac.correcciones as any, planAccion, seguimiento: sac.seguimiento as any });
-    const jefatura = await prisma.usuario.findMany({ where: { activo: true, OR: [{ rol: { in: ["JEFE_SEG", "DIRECTOR_SEG"] } }, { cargo: { in: ["JEFE SEG", "DIRECTOR SEG"] } }] }, select: { email: true } });
+    const jefatura = await prisma.usuario.findMany({ where: { activo: true, OR: [{ rol: "JEFE_SEG" }, { cargo: "JEFE SEG" }] }, select: { email: true } });
     const correosJefe = Array.from(new Set(jefatura.map((usuario) => usuario.email).filter(Boolean)));
     if (correosJefe.length) await enviarCorreo({
       to: correosJefe.join(","), cc: definicion?.gerente?.correo,
       subject: `Cierre SAC ${consecutivo} - ${simulacro.finca}`,
-      html: `<p>Se informa el cierre de la Solicitud de Acción <strong>${consecutivo}</strong>, originada por el simulacro de ${simulacro.tipo} en la finca ${simulacro.finca}.</p><p>La finca solicitó reprogramar el simulacro para el <strong>${fechaReprogramacion.toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}</strong>. Ingrese a la plataforma para asignar el supervisor correspondiente.</p><p><a href="${getAppUrl()}/api/simulacros/${simulacro.id}/sac/pdf">Ver PDF de la SAC</a></p>`,
-      attachments: [{ filename: `${consecutivo}.pdf`, content: pdf, contentType: "application/pdf" }],
+      html: `<p>Se informa el cierre de la Solicitud de Acción <strong>${consecutivo}</strong>, originada por el simulacro de ${simulacro.tipo} en la finca ${simulacro.finca}.</p><p>La finca solicitó reprogramar el simulacro para el <strong>${fechaReprogramacion.toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}</strong>. Ingrese a la plataforma para asignar el supervisor correspondiente.</p><p><a href="${getAppUrl()}/solicitudes-accion/${simulacro.id}">Ver detalle de la SAC</a></p>`,
     });
     return Response.json({ ok: true, sacId: sac.id });
   } catch (error) {

@@ -193,7 +193,10 @@ export async function generarPdfSimulacro(datos: {
         { etiqueta: "CALIFICACIÓN", valor: calificacionVisible(aspecto.calificacion), ancho: 160 },
       ], 22);
     }
-    const promedio = datos.promedioEvaluacion == null ? "No calculado" : `${datos.promedioEvaluacion.toFixed(2)} / 1 (${Math.round(datos.promedioEvaluacion * 100)}%)`;
+    const puntos: Record<number, number> = { 3: 1, 2: 0.5, 1: 0 };
+    const calificaciones = datos.aspectos.map((aspecto) => Number(aspecto.calificacion)).filter((calificacion) => Object.hasOwn(puntos, calificacion));
+    const promedioCalculado = calificaciones.length ? calificaciones.reduce((total, calificacion) => total + puntos[calificacion], 0) / calificaciones.length : null;
+    const promedio = promedioCalculado == null ? "No calculado" : `${promedioCalculado.toFixed(2)} / 1 (${Math.round(promedioCalculado * 100)}%)`;
     y = campoFormato(doc, "PROMEDIO DE EVALUACIÓN", promedio, y, 30);
     y = barraFormato(doc, "CONCLUSIÓN GENERAL DEL SIMULACRO", y);
     y = campoFormato(doc, "", datos.conclusion, y, Math.min(45, altoTexto(doc, datos.conclusion)));
@@ -201,9 +204,8 @@ export async function generarPdfSimulacro(datos: {
     y = campoFormato(doc, "REQUIERE GENERAR SAC O SAP", datos.requiereSac ? "SÍ. Debe gestionar la solicitud de acción correctiva asociada." : "NO", y, 32);
     y = barraFormato(doc, "RESPONSABLE(S) DE LA EVALUACIÓN", y);
     y = filaFormato(doc, y, [
-      { etiqueta: "NOMBRE", valor: datos.coordinador, ancho: 210 },
-      { etiqueta: "CARGO", valor: "SUPERVISOR DE SEGURIDAD", ancho: 190 },
-      { etiqueta: "FIRMA", valor: "", ancho: 120 },
+      { etiqueta: "NOMBRE", valor: datos.coordinador, ancho: 260 },
+      { etiqueta: "CARGO", valor: "SUPERVISOR DE SEGURIDAD", ancho: 260 },
     ], 42);
 
     doc.removeAllListeners("pageAdded");

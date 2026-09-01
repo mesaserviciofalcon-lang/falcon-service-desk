@@ -5,7 +5,7 @@ import { normalizarCorreo } from "@/lib/actividadesSupervisores";
 import { enviarCorreo } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { definicionSimulacro, desarrolloInicial, esActividadSimulacro, mismaFincaSimulacro, requiereSac } from "@/lib/simulacros";
-import { generarPdfSimulacro } from "@/lib/simulacrosPdf";
+import { getAppUrl } from "@/lib/appUrl";
 
 function texto(valor: unknown) {
   return String(valor || "").trim();
@@ -75,22 +75,17 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       return creado;
     });
 
-    const pdf = await generarPdfSimulacro({
-      id: simulacro.id, consecutivo: simulacro.consecutivo, tipo: definicion.tipo, finca: actividad.finca, area: actividad.area, grupoObjeto: simulacro.grupoObjeto, personasInformadas: simulacro.personasInformadas, escenario: simulacro.escenario, fecha: fechaEjecutada,
-      horaInicio, coordinador: session.user.name || session.user.email, analista,
-      objetivo: definicion.objetivo, riesgo: definicion.riesgo, controles: definicion.controles, guion: definicion.guionInicial,
-      resultado, duracionMinutos, promedioEvaluacion, cumplimientoObjetivo, desarrollo, aspectos, conclusion, controlVulnerado: texto(body.controlVulnerado),
-      razonIncumplimiento: texto(body.razonIncumplimiento), factoresFalla, requiereSac: debeGenerarSac, evidencias,
-    });
-    const jefatura = await prisma.usuario.findMany({ where: { activo: true, rol: { in: ["JEFE_SEG", "DIRECTOR_SEG"] } }, select: { email: true } });
+    const jefatura = await prisma.usuario.findMany({ where: { activo: true, OR: [{ rol: { in: ["JEFE_SEG", "DIRECTOR_SEG"] } }, { cargo: { in: ["JEFE SEG", "DIRECTOR SEG"] } }] }, select: { email: true } });
     const copias = Array.from(new Set([definicion.gerente?.correo, ...jefatura.map((usuario) => usuario.email)].filter(Boolean) as string[]));
     if (correoAnalista) {
+      const fueDetectado = resultado === "DETECTADO";
+      const resultadoDestacado = `<p style="margin:18px 0;padding:12px 16px;border-radius:6px;font-size:18px;font-weight:700;color:${fueDetectado ? "#166534" : "#b91c1c"};background:${fueDetectado ? "#dcfce7" : "#fee2e2"};">${fueDetectado ? "FUE DETECTADO" : "PERDIDO"}</p>`;
+      const enlaceSac = `${getAppUrl()}/solicitudes-accion/${simulacro.id}`;
       await enviarCorreo({
         to: correoAnalista,
         cc: copias.length ? copias.join(",") : undefined,
         subject: `Informe de ${definicion.tipo} - ${actividad.finca}`,
-        html: `<p>Se adjunta el informe <strong>${simulacro.consecutivo}</strong> del simulacro realizado en la finca <strong>${actividad.finca}</strong>.</p>${debeGenerarSac ? `<p>${sacSugerida}. Debe diligenciar la <a href="${process.env.NEXTAUTH_URL || "https://falconseguridad.com"}/solicitudes-accion/${simulacro.id}">Solicitud de Acción (SAC)</a> en Falcon Service Desk.</p>` : ""}`,
-        attachments: [{ filename: `simulacro-${actividad.finca}-${simulacro.id}.pdf`, content: pdf, contentType: "application/pdf" }],
+        html: `<p>Se registró el informe <strong>${simulacro.consecutivo}</strong> del simulacro realizado en la finca <strong>${actividad.finca}</strong>.</p>${resultadoDestacado}<ul><li><strong>Simulacro:</strong> ${definicion.tipo}</li><li><strong>Área:</strong> ${actividad.area || "No registrada"}</li><li><strong>Fecha de ejecución:</strong> ${fechaEjecutada.toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}</li><li><strong>Supervisor:</strong> ${session.user.name || session.user.email}</li><li><strong>Evaluación:</strong> ${promedioEvaluacion.toFixed(2)} / 1 (${Math.round(promedioEvaluacion * 100)}%)</li></ul><p>El informe queda disponible en Falcon Service Desk.</p>${debeGenerarSac ? `<p><strong>Debe ingresar al aplicativo para realizar la Solicitud de Acción Correctiva (SAC). Cuenta con tres (3) días para efectuar el cierre.</strong></p><p><a href="${enlaceSac}">Crear Solicitud de Acción Correctiva</a></p>` : ""}`,
       });
       await prisma.simulacroActividad.update({ where: { id: simulacro.id }, data: { notificadoAt: new Date() } });
     }
