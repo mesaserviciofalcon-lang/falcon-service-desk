@@ -1,5 +1,5 @@
 import { enviarCorreo } from "@/lib/email";
-import { inicioDiaColombia, incumplimientoActividadTemplate, recordatorioActividadTemplate } from "@/lib/actividadesSupervisores";
+import { inicioDiaColombia, incumplimientoActividadTemplate, mismaFincaActividad, recordatorioActividadTemplate, recordatorioProgramacionActividadesTemplate, ventanaProgramacionAnalista } from "@/lib/actividadesSupervisores";
 import { prisma } from "@/lib/prisma";
 import { definicionSimulacro } from "@/lib/simulacros";
 
@@ -46,7 +46,23 @@ export async function GET(request: Request) {
       await prisma.simulacroActividad.update({ where: { id: simulacro.id }, data: { recordatorioSacEnviadoAt: new Date() } });
       enviados += 1;
     }
-    return Response.json({ ok: true, recordatorios: paraRecordar.length, incumplidas: incumplidas.length, sacPendientes: sacPendientes.length, enviados });
+    let recordatoriosProgramacion = 0;
+    const ventanaProgramacion = ventanaProgramacionAnalista(hoy);
+    if (ventanaProgramacion.abierta) {
+      const [actividadesProgramables, analistas] = await Promise.all([
+        prisma.actividadSupervisor.findMany({ where: { estado: { not: "TERMINADO" }, programadoPorAnalistaAt: null, fechaPlaneada: { gte: ventanaProgramacion.inicioMesDestino, lt: ventanaProgramacion.finMesDestino }, OR: [{ recordatorioProgramacionEnviadoAt: null }, { recordatorioProgramacionEnviadoAt: { lt: hoy } }] } }),
+        prisma.usuario.findMany({ where: { activo: true, cargo: "ANALISTA SIG", fincaEAI: { not: null } }, select: { nombre: true, email: true, fincaEAI: true } }),
+      ]);
+      for (const analista of analistas) {
+        const actividadesAnalista = actividadesProgramables.filter((actividad) => mismaFincaActividad(analista.fincaEAI, actividad.finca));
+        if (!actividadesAnalista.length) continue;
+        await enviarCorreo({ to: analista.email, subject: `Programación pendiente de actividades - ${ventanaProgramacion.etiquetaMes}`, html: recordatorioProgramacionActividadesTemplate({ analista: analista.nombre, actividades: actividadesAnalista, etiquetaMes: ventanaProgramacion.etiquetaMes }) });
+        await prisma.actividadSupervisor.updateMany({ where: { id: { in: actividadesAnalista.map((actividad) => actividad.id) } }, data: { recordatorioProgramacionEnviadoAt: new Date() } });
+        recordatoriosProgramacion += 1;
+        enviados += 1;
+      }
+    }
+    return Response.json({ ok: true, recordatorios: paraRecordar.length, incumplidas: incumplidas.length, sacPendientes: sacPendientes.length, recordatoriosProgramacion, enviados });
   } catch (error) {
     console.error(error);
     return Response.json({ error: "No fue posible enviar los recordatorios" }, { status: 500 });

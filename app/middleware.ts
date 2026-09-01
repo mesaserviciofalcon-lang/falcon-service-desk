@@ -166,6 +166,8 @@ export const config = {
 
     "/actividades-supervisores/:path*",
 
+    "/programacion-actividades/:path*",
+
     "/cambiar-password/:path*",
   ],
 };

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { mismaFincaSimulacro } from "@/lib/simulacros";
+import { esDelAnoActualColombia, mismaFincaSimulacro } from "@/lib/simulacros";
 
 type SimulacroFila = Awaited<ReturnType<typeof obtenerSimulacros>>[number];
 
@@ -21,8 +21,10 @@ export default async function SimulacrosPage() {
   const rol = String(sesion.user.role || ""); const esJefatura = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(rol); const esSupervisor = rol === "SUPERVISOR"; const esAnalista = sesion.user.cargo === "ANALISTA SIG";
   if (!esJefatura && !esSupervisor && !esAnalista) return <main className="p-8">No tiene permiso para consultar simulacros.</main>;
   const [todos, usuario] = await Promise.all([obtenerSimulacros(), prisma.usuario.findUnique({ where: { email: sesion.user.email }, select: { fincaEAI: true } })]);
-  const simulacros = (esJefatura || esSupervisor) ? todos : todos.filter((item) => mismaFincaSimulacro(usuario?.fincaEAI, item.finca));
+  const puedeVerHistorico = ["ADMIN", "JEFE_SEG"].includes(rol);
+  const simulacrosPermitidos = (esJefatura || esSupervisor) ? todos : todos.filter((item) => mismaFincaSimulacro(usuario?.fincaEAI, item.finca));
+  const simulacros = puedeVerHistorico ? simulacrosPermitidos : simulacrosPermitidos.filter((item) => esDelAnoActualColombia(item.createdAt));
   const porFinca = simulacros.reduce<Record<string, SimulacroFila[]>>((grupos, simulacro) => { (grupos[simulacro.finca] ||= []).push(simulacro); return grupos; }, {});
   const agrupar = esJefatura || esSupervisor;
-  return <main className="mx-auto max-w-7xl p-6"><h1 className="text-3xl font-bold text-[#0F3D1F]">Simulacros</h1><p className="mt-1 text-slate-600">Histórico, desarrollo, informes y solicitudes de acción correctiva.</p>{simulacros.length === 0 ? <div className="mt-6 rounded-xl border bg-white p-6 text-slate-500">No hay simulacros disponibles.</div> : agrupar ? <div className="mt-6 space-y-4">{Object.entries(porFinca).map(([finca, registros], indice) => <details key={finca} open={indice === 0} className="rounded-xl border bg-white shadow-sm"><summary className="cursor-pointer list-none px-5 py-4 font-bold text-[#0F3D1F]"><span className="mr-3 inline-block rounded-full bg-[#0F3D1F] px-3 py-1 text-xs text-white">{registros.length}</span>{finca} <span className="ml-2 text-sm font-normal text-slate-500">simulacro(s)</span></summary><div className="border-t"><TablaSimulacros simulacros={registros} esAnalista={false} /></div></details>)}</div> : <div className="mt-6 overflow-x-auto rounded-xl border bg-white"><TablaSimulacros simulacros={simulacros} esAnalista /></div>}</main>;
+  return <main className="mx-auto max-w-7xl p-6"><h1 className="text-3xl font-bold text-[#0F3D1F]">Simulacros</h1><p className="mt-1 text-slate-600">{puedeVerHistorico ? "Histórico, desarrollo, informes y solicitudes de acción correctiva." : "Simulacros, desarrollo e informes del año en curso."}</p>{simulacros.length === 0 ? <div className="mt-6 rounded-xl border bg-white p-6 text-slate-500">No hay simulacros disponibles para el año en curso.</div> : agrupar ? <div className="mt-6 space-y-4">{Object.entries(porFinca).map(([finca, registros], indice) => <details key={finca} open={indice === 0} className="rounded-xl border bg-white shadow-sm"><summary className="cursor-pointer list-none px-5 py-4 font-bold text-[#0F3D1F]"><span className="mr-3 inline-block rounded-full bg-[#0F3D1F] px-3 py-1 text-xs text-white">{registros.length}</span>{finca} <span className="ml-2 text-sm font-normal text-slate-500">simulacro(s)</span></summary><div className="border-t"><TablaSimulacros simulacros={registros} esAnalista={false} /></div></details>)}</div> : <div className="mt-6 overflow-x-auto rounded-xl border bg-white"><TablaSimulacros simulacros={simulacros} esAnalista /></div>}</main>;
 }

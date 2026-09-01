@@ -130,7 +130,6 @@ function obtenerWhereDashboardPorRol(
   if (role === "SUPERVISOR") {
     return {
       tipo: "ANTECEDENTES",
-      asignadoA: "SEGURIDAD",
     };
   }
 

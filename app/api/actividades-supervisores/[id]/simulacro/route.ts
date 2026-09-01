@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { normalizarCorreo } from "@/lib/actividadesSupervisores";
 import { enviarCorreo } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
-import { definicionSimulacro, desarrolloInicial, esActividadSimulacro, mismaFincaSimulacro, requiereSac } from "@/lib/simulacros";
+import { definicionSimulacro, desarrolloInicial, esActividadSimulacro, mismaFincaSimulacro, rangoAnoActualColombia, requiereSac } from "@/lib/simulacros";
 import { getAppUrl } from "@/lib/appUrl";
 
 function texto(valor: unknown) {
@@ -54,9 +54,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     limiteCumplimiento.setUTCHours(5, 0, 0, 0);
     limiteCumplimiento.setUTCDate(limiteCumplimiento.getUTCDate() + 1);
     const simulacro = await prisma.$transaction(async (tx) => {
-      const inicioAno = new Date(fechaEjecutada.getFullYear(), 0, 1);
-      const consecutivoNumero = await tx.simulacroActividad.count({ where: { finca: actividad.finca, createdAt: { gte: inicioAno } } }) + 1;
-      const consecutivo = `SIM-${actividad.finca}-${fechaEjecutada.getFullYear()}-${String(consecutivoNumero).padStart(3, "0")}`;
+      const { ano, inicio, fin } = rangoAnoActualColombia(fechaEjecutada);
+      const consecutivoNumero = await tx.simulacroActividad.count({ where: { finca: actividad.finca, createdAt: { gte: inicio, lt: fin } } }) + 1;
+      const consecutivo = `SIM-${actividad.finca}-${ano}-${String(consecutivoNumero).padStart(3, "0")}`;
       const creado = await tx.simulacroActividad.create({
         data: {
           actividadId: actividad.id, tipo: definicion.tipo, finca: actividad.finca, area: actividad.area,

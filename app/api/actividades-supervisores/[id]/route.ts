@@ -3,9 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import {
   fechaHoraColombiaDesdeInput,
+  fechaProgramadaConservandoHora,
   inicioDiaColombia,
+  mismaFincaActividad,
   normalizarCorreo,
   puedeAdministrarActividades,
+  ventanaProgramacionAnalista,
 } from "@/lib/actividadesSupervisores";
 import { prisma } from "@/lib/prisma";
 
@@ -28,6 +31,24 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 
     const body = await request.json();
     const esAdministrador = puedeAdministrarActividades(session.user.role);
+
+    if (body.accion === "programarAnalista") {
+      const usuario = await prisma.usuario.findUnique({ where: { email: session.user.email }, select: { cargo: true, fincaEAI: true } });
+      const ventana = ventanaProgramacionAnalista();
+      if (usuario?.cargo !== "ANALISTA SIG" || !mismaFincaActividad(usuario.fincaEAI, actividad.finca)) return Response.json({ error: "Solo el Analista SIG de la finca puede programar esta actividad" }, { status: 403 });
+      if (!ventana.abierta || actividad.fechaPlaneada < ventana.inicioMesDestino || actividad.fechaPlaneada >= ventana.finMesDestino) return Response.json({ error: "La programación solo está disponible del 25 al último día del mes anterior" }, { status: 403 });
+      const area = texto(body.area);
+      const fechaPlaneada = fechaProgramadaConservandoHora(actividad.fechaPlaneada, texto(body.fechaPlaneada));
+      const areaValida = await prisma.catalogoActividad.findFirst({ where: { tipo: "AREA", valor: area } });
+      if (!fechaPlaneada || !areaValida || fechaPlaneada < ventana.inicioMesDestino || fechaPlaneada >= ventana.finMesDestino) return Response.json({ error: "Seleccione un área y una fecha válida del mes a programar" }, { status: 400 });
+      if (fechaPlaneada.getTime() !== actividad.fechaPlaneada.getTime()) {
+        const inicioDia = inicioDiaColombia(fechaPlaneada); const finDia = new Date(inicioDia); finDia.setUTCDate(finDia.getUTCDate() + 1);
+        const conflicto = await prisma.actividadSupervisor.findFirst({ where: { id: { not: actividad.id }, finca: { not: actividad.finca }, fechaPlaneada: { gte: inicioDia, lt: finDia } }, select: { id: true } });
+        if (conflicto) return Response.json({ error: "La fecha seleccionada está ocupada por otra finca" }, { status: 409 });
+      }
+      const actualizado = await prisma.actividadSupervisor.update({ where: { id: actividad.id }, data: { area, fechaPlaneada, programadoPorAnalistaAt: new Date(), recordatorioProgramacionEnviadoAt: null } });
+      return Response.json({ ok: true, actividad: actualizado });
+    }
 
     if (body.accion === "asignar") {
       if (!esAdministrador) {

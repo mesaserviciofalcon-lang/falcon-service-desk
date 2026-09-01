@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 
 import FormularioSac from "@/components/FormularioSac";
 import { authOptions } from "@/lib/auth";
-import { mismaFincaSimulacro } from "@/lib/simulacros";
+import { esDelAnoActualColombia, mismaFincaSimulacro } from "@/lib/simulacros";
 import { prisma } from "@/lib/prisma";
 
 type Fila = { actividad: string; responsable: string; fecha: string };
@@ -20,6 +20,7 @@ export default async function SolicitudAccionPage({ params }: { params: Promise<
   const esAnalista = usuario?.cargo === "ANALISTA SIG" && mismaFincaSimulacro(usuario.fincaEAI, simulacro.finca);
   const puedeVer = esAnalista || ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG", "SUPERVISOR"].includes(rol);
   if (!puedeVer) redirect("/dashboard");
+  if (!["ADMIN", "JEFE_SEG"].includes(rol) && !esDelAnoActualColombia(simulacro.createdAt)) redirect("/simulacros");
 
   if (!simulacro.solicitudAccion) {
     if (!esAnalista && !["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(rol)) redirect(`/simulacros/${simulacro.id}`);

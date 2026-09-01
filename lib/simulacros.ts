@@ -140,3 +140,18 @@ export function mismaFincaSimulacro(fincaUsuario?: string | null, fincaSimulacro
   const simulacro = aliases[normalizar(fincaSimulacro)] || normalizar(fincaSimulacro);
   return Boolean(usuario && simulacro && usuario === simulacro);
 }
+
+/** Colombia does not observe daylight-saving time (UTC-5). */
+export function rangoAnoActualColombia(referencia = new Date()) {
+  const ano = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Bogota", year: "numeric" }).format(referencia));
+  return {
+    ano,
+    inicio: new Date(`${ano}-01-01T05:00:00.000Z`),
+    fin: new Date(`${ano + 1}-01-01T05:00:00.000Z`),
+  };
+}
+
+export function esDelAnoActualColombia(fecha: Date, referencia = new Date()) {
+  const { inicio, fin } = rangoAnoActualColombia(referencia);
+  return fecha >= inicio && fecha < fin;
+}

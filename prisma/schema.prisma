@@ -258,9 +258,11 @@ model ActividadSupervisor {
 
   creadoPor String?
   creadoPorCorreo String?
-  recordatorioPrevioEnviadoAt DateTime?
-  recordatorioIncumplimientoEnviadoAt DateTime?
-  createdAt DateTime @default(now())
+    recordatorioPrevioEnviadoAt DateTime?
+    recordatorioIncumplimientoEnviadoAt DateTime?
+    recordatorioProgramacionEnviadoAt DateTime?
+    programadoPorAnalistaAt DateTime?
+    createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   simulacro SimulacroActividad?
