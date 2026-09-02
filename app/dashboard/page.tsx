@@ -38,8 +38,6 @@ import {
   esObservacionNoTenerEnCuenta,
 } from "@/lib/validacionAntecedentesGestion";
 
-import { esAnalistaSig } from "@/lib/permisosUsuarios";
-
 const OBSERVACION_CONTINUAR =
   "CONTINUAR CON EL PROCESO";
 
@@ -1142,10 +1140,7 @@ hace5Dias.setDate(
     ||
 
     role === "VISITA"
-
-    ||
-
-    esAnalistaSig(cargoUsuario);
+    ;
 
   const puedeSeleccionarMes =
     role === "ADMIN";
@@ -1157,8 +1152,7 @@ hace5Dias.setDate(
     puedeSeleccionarMes
       ? mesSeleccionado ||
         mesActual
-      : role === "VISITA" ||
-          esAnalistaSig(cargoUsuario)
+      : role === "VISITA"
         ? mesActual
       : usaMetricasMensualesGestor
         ? mesGestor
