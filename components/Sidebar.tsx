@@ -269,7 +269,7 @@ export default function Sidebar({
             </Link>
           )}
 
-          {cargo === "ANALISTA SIG" && (
+          {(cargo === "ANALISTA SIG" || role === "ADMIN") && (
             <Link href="/programacion-actividades" className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition">
               <CalendarDays size={20} />
               Programación actividades

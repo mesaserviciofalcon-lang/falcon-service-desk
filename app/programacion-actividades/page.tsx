@@ -9,8 +9,10 @@ import { prisma } from "@/lib/prisma";
 export default async function ProgramacionActividadesPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) redirect("/login");
+  const esAdministrador = session.user.role === "ADMIN";
   const usuario = await prisma.usuario.findUnique({ where: { email: session.user.email }, select: { cargo: true, fincaEAI: true } });
-  if (usuario?.cargo !== "ANALISTA SIG" || !usuario.fincaEAI) redirect("/dashboard");
+  const esAnalistaSig = usuario?.cargo === "ANALISTA SIG" && Boolean(usuario.fincaEAI);
+  if (!esAdministrador && !esAnalistaSig) redirect("/dashboard");
 
   const ventana = ventanaProgramacionAnalista();
   const [actividadesMes, actividadesOcupadas, catalogos] = await Promise.all([
@@ -18,6 +20,6 @@ export default async function ProgramacionActividadesPage() {
     prisma.actividadSupervisor.findMany({ where: { actividad: { not: "RECOGER EFECTIVO" }, fechaPlaneada: { gte: ventana.inicioMesDestino, lt: ventana.finMesDestino } }, select: { id: true, finca: true, fechaPlaneada: true } }),
     prisma.catalogoActividad.findMany({ where: { tipo: "AREA" }, orderBy: { valor: "asc" }, select: { valor: true } }),
   ]);
-  const actividades = actividadesMes.filter((actividad) => mismaFincaActividad(usuario.fincaEAI, actividad.finca));
-  return <ProgramacionActividadesPanel ventanaAbierta={ventana.abierta} etiquetaMes={ventana.etiquetaMes} etiquetaVentana={ventana.etiquetaMesActual} etiquetaUltimoDiaVentana={ventana.etiquetaUltimoDiaVentana} actividades={actividades.map((actividad) => ({ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString(), programadoPorAnalistaAt: actividad.programadoPorAnalistaAt?.toISOString() || null }))} ocupadas={actividadesOcupadas.map((actividad) => ({ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString() }))} areas={catalogos.map((catalogo) => catalogo.valor)} />;
+  const actividades = esAdministrador ? actividadesMes : actividadesMes.filter((actividad) => mismaFincaActividad(usuario?.fincaEAI, actividad.finca));
+  return <ProgramacionActividadesPanel ventanaAbierta={ventana.abierta} puedeControlar={esAdministrador} etiquetaMes={ventana.etiquetaMes} etiquetaVentana={ventana.etiquetaMesActual} etiquetaUltimoDiaVentana={ventana.etiquetaUltimoDiaVentana} actividades={actividades.map((actividad) => ({ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString(), programadoPorAnalistaAt: actividad.programadoPorAnalistaAt?.toISOString() || null }))} ocupadas={actividadesOcupadas.map((actividad) => ({ ...actividad, fechaPlaneada: actividad.fechaPlaneada.toISOString() }))} areas={catalogos.map((catalogo) => catalogo.valor)} />;
 }

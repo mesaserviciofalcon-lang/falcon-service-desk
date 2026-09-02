@@ -35,8 +35,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     if (body.accion === "programarAnalista") {
       const usuario = await prisma.usuario.findUnique({ where: { email: session.user.email }, select: { cargo: true, fincaEAI: true } });
       const ventana = ventanaProgramacionAnalista();
-      if (usuario?.cargo !== "ANALISTA SIG" || !mismaFincaActividad(usuario.fincaEAI, actividad.finca)) return Response.json({ error: "Solo el Analista SIG de la finca puede programar esta actividad" }, { status: 403 });
-      if (!ventana.abierta || actividad.fechaPlaneada < ventana.inicioMesDestino || actividad.fechaPlaneada >= ventana.finMesDestino) return Response.json({ error: "La programación solo está disponible del 25 al último día del mes anterior" }, { status: 403 });
+      if (!esAdministrador && (usuario?.cargo !== "ANALISTA SIG" || !mismaFincaActividad(usuario.fincaEAI, actividad.finca))) return Response.json({ error: "Solo el Analista SIG de la finca o ADMIN puede programar esta actividad" }, { status: 403 });
+      if ((!esAdministrador && !ventana.abierta) || actividad.fechaPlaneada < ventana.inicioMesDestino || actividad.fechaPlaneada >= ventana.finMesDestino) return Response.json({ error: "La programación solo está disponible del 25 al último día del mes para las actividades del mes siguiente" }, { status: 403 });
       const area = texto(body.area);
       const fechaPlaneada = fechaProgramadaConservandoHora(actividad.fechaPlaneada, texto(body.fechaPlaneada));
       const areaValida = await prisma.catalogoActividad.findFirst({ where: { tipo: "AREA", valor: area } });
