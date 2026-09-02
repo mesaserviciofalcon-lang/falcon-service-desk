@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       prisma.actividadSupervisor.findMany({ where: { estado: "ASIGNADO", fechaPlaneada: { gte: manana, lt: pasadoManana }, recordatorioPrevioEnviadoAt: null, supervisorCorreo: { not: null } } }),
       prisma.actividadSupervisor.findMany({ where: { estado: { not: "TERMINADO" }, fechaPlaneada: { lt: hoy }, recordatorioIncumplimientoEnviadoAt: null } }),
       prisma.usuario.findMany({ where: { activo: true, cargo: "JEFE SEG" }, select: { email: true } }),
-      prisma.usuario.findMany({ where: { activo: true, cargo: "ANALISTA SIG", fincaEAI: { not: null } }, select: { nombre: true, email: true, fincaEAI: true } }),
+      prisma.usuario.findMany({ where: { activo: true, cargo: { in: ["ANALISTA SIG", "ANALISTA SEGURIDAD"] }, fincaEAI: { not: null } }, select: { nombre: true, email: true, fincaEAI: true } }),
       prisma.simulacroActividad.findMany({ where: { requiereSac: true, solicitudAccion: null, createdAt: { lt: haceTresDias }, recordatorioSacEnviadoAt: null }, include: { actividadSupervisor: true } }),
     ]);
     let enviados = 0;
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
     if (ventanaProgramacion.abierta) {
       const [actividadesProgramables, analistas] = await Promise.all([
         prisma.actividadSupervisor.findMany({ where: { estado: { not: "TERMINADO" }, actividad: { not: "RECOGER EFECTIVO" }, programadoPorAnalistaAt: null, fechaPlaneada: { gte: ventanaProgramacion.inicioMesDestino, lt: ventanaProgramacion.finMesDestino }, OR: [{ recordatorioProgramacionEnviadoAt: null }, { recordatorioProgramacionEnviadoAt: { lt: hoy } }] } }),
-        prisma.usuario.findMany({ where: { activo: true, cargo: "ANALISTA SIG", fincaEAI: { not: null } }, select: { nombre: true, email: true, fincaEAI: true } }),
+        prisma.usuario.findMany({ where: { activo: true, cargo: { in: ["ANALISTA SIG", "ANALISTA SEGURIDAD"] }, fincaEAI: { not: null } }, select: { nombre: true, email: true, fincaEAI: true } }),
       ]);
       for (const analista of analistas) {
         const actividadesAnalista = actividadesProgramables.filter((actividad) => mismaFincaActividad(analista.fincaEAI, actividad.finca));

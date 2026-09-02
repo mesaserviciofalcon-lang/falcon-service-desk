@@ -13,6 +13,12 @@ from "@/lib/auth";
 import { prisma }
 from "@/lib/prisma";
 
+import MetricasVulnerabilidadFinca
+from "@/components/MetricasVulnerabilidadFinca";
+
+import { esAnalistaSig }
+from "@/lib/permisosUsuarios";
+
 type SearchParams = {
   mes?: string;
   anio?: string;
@@ -1213,11 +1219,33 @@ export default async function MetricasAnalisisPage({
       authOptions
     );
 
+  const usuario =
+    session?.user?.email
+      ? await prisma.usuario.findUnique({
+        where: {
+          email: session.user.email,
+        },
+        select: {
+          cargo: true,
+          fincaEAI: true,
+        },
+      })
+      : null;
+  const esAdministrador =
+    session?.user?.role === "ADMIN";
+  const esAnalistaConFinca =
+    esAnalistaSig(usuario?.cargo) &&
+    Boolean(usuario?.fincaEAI);
+
   if (
-    session?.user?.role !==
-    "ADMIN"
+    !esAdministrador &&
+    !esAnalistaConFinca
   ) {
     redirect("/dashboard");
+  }
+
+  if (esAnalistaConFinca) {
+    return <MetricasVulnerabilidadFinca finca={usuario!.fincaEAI!} />;
   }
 
   const params =

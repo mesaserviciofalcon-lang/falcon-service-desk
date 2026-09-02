@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { esDelAnoActualColombia, mismaFincaSimulacro } from "@/lib/simulacros";
+import { esAnalistaSig } from "@/lib/permisosUsuarios";
 
 type SimulacroFila = Awaited<ReturnType<typeof obtenerSimulacros>>[number];
 
@@ -18,7 +19,7 @@ function TablaSimulacros({ simulacros, esAnalista }: { simulacros: SimulacroFila
 export default async function SimulacrosPage() {
   const sesion = await getServerSession(authOptions);
   if (!sesion?.user?.email) return null;
-  const rol = String(sesion.user.role || ""); const esJefatura = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(rol); const esSupervisor = rol === "SUPERVISOR"; const esAnalista = sesion.user.cargo === "ANALISTA SIG";
+  const rol = String(sesion.user.role || ""); const esJefatura = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(rol); const esSupervisor = rol === "SUPERVISOR"; const esAnalista = esAnalistaSig(sesion.user.cargo);
   if (!esJefatura && !esSupervisor && !esAnalista) return <main className="p-8">No tiene permiso para consultar simulacros.</main>;
   const [todos, usuario] = await Promise.all([obtenerSimulacros(), prisma.usuario.findUnique({ where: { email: sesion.user.email }, select: { fincaEAI: true } })]);
   const puedeVerHistorico = ["ADMIN", "JEFE_SEG"].includes(rol);

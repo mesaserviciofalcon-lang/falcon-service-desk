@@ -6,6 +6,7 @@ import { enviarCorreo } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { definicionSimulacro, desarrolloInicial, esActividadSimulacro, mismaFincaSimulacro, rangoAnoActualColombia, requiereSac } from "@/lib/simulacros";
 import { getAppUrl } from "@/lib/appUrl";
+import { esAnalistaSig } from "@/lib/permisosUsuarios";
 
 function texto(valor: unknown) {
   return String(valor || "").trim();
@@ -27,7 +28,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const definicion = definicionSimulacro(actividad.actividad, actividad.area, actividad.finca);
     if (!definicion) return Response.json({ error: "Tipo de simulacro no configurado" }, { status: 400 });
     const usuariosInformados = await prisma.usuario.findMany({ where: { activo: true }, select: { nombre: true, email: true, cargo: true, rol: true, fincaEAI: true } });
-    const analistaAsignado = usuariosInformados.find((usuario) => usuario.cargo === "ANALISTA SIG" && mismaFincaSimulacro(usuario.fincaEAI, actividad.finca));
+    const analistaAsignado = usuariosInformados.find((usuario) => esAnalistaSig(usuario.cargo) && mismaFincaSimulacro(usuario.fincaEAI, actividad.finca));
     const personasInformadas = [`${analistaAsignado?.nombre || definicion.analista} - ANALISTA SIG`, ...usuariosInformados.filter((usuario) => ["JEFE_SEG", "DIRECTOR_SEG"].includes(usuario.rol) || ["JEFE SEG", "DIRECTOR SEG"].includes(String(usuario.cargo || ""))).map((usuario) => `${usuario.nombre} - ${usuario.cargo || usuario.rol}`)].join(" / ");
     const analista = analistaAsignado?.nombre || definicion.analista;
     const correoAnalista = analistaAsignado?.email || definicion.correoAnalista;

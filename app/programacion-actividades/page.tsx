@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import ProgramacionActividadesPanel from "@/components/ProgramacionActividadesPanel";
 import { authOptions } from "@/lib/auth";
 import { mismaFincaActividad, ventanaProgramacionAnalista } from "@/lib/actividadesSupervisores";
+import { esAnalistaSig } from "@/lib/permisosUsuarios";
 import { prisma } from "@/lib/prisma";
 
 export default async function ProgramacionActividadesPage() {
@@ -11,8 +12,8 @@ export default async function ProgramacionActividadesPage() {
   if (!session?.user?.email) redirect("/login");
   const esAdministrador = session.user.role === "ADMIN";
   const usuario = await prisma.usuario.findUnique({ where: { email: session.user.email }, select: { cargo: true, fincaEAI: true } });
-  const esAnalistaSig = usuario?.cargo === "ANALISTA SIG" && Boolean(usuario.fincaEAI);
-  if (!esAdministrador && !esAnalistaSig) redirect("/dashboard");
+  const esAnalistaAsignado = esAnalistaSig(usuario?.cargo) && Boolean(usuario?.fincaEAI);
+  if (!esAdministrador && !esAnalistaAsignado) redirect("/dashboard");
 
   const ventana = ventanaProgramacionAnalista();
   const [actividadesMes, actividadesOcupadas, catalogos] = await Promise.all([

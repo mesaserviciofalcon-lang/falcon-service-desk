@@ -5,7 +5,7 @@ import Image from "next/image";
 import { type ReactNode, useState } from "react";
 import { AlertTriangle, BarChart3, CalendarDays, ChevronDown, ClipboardList, FileText, ImageIcon, LayoutDashboard, MapPinned, Network, ShieldCheck, TableProperties, Ticket, Users } from "lucide-react";
 
-import { puedeVerVulnerabilidades } from "@/lib/permisosUsuarios";
+import { esAnalistaSig, puedeVerVulnerabilidades } from "@/lib/permisosUsuarios";
 import { puedeConsultarVisitas } from "@/lib/permisosVisitas";
 import { puedeVerAnuario, puedeVerOrganigramaSeguridad } from "@/lib/permisosAnuario";
 
@@ -25,12 +25,12 @@ export default function Sidebar({ role, cargo, nombre }: { role: string; cargo?:
   const puedeVerVisitas = puedeConsultarVisitas(cargo);
   const puedeGestionMasiva = ["ADMIN", "DIRECTOR_SEG", "JEFE_SEG", "SUPERVISOR"].includes(role);
   const puedeVerVulnerabilidad = puedeVerVulnerabilidades(role, cargo);
-  const puedeVerMetricasVulnerabilidad = role === "ADMIN";
+  const puedeVerMetricasVulnerabilidad = role === "ADMIN" || esAnalistaSig(cargo);
   const puedeVerActividades = ["ADMIN", "JEFE_SEG", "SUPERVISOR"].includes(role);
-  const puedeProgramarActividades = cargo === "ANALISTA SIG" || role === "ADMIN";
+  const puedeProgramarActividades = esAnalistaSig(cargo) || role === "ADMIN";
   const puedeVerMetricasActividades = ["ADMIN", "JEFE_SEG", "SUPERVISOR"].includes(role);
-  const puedeVerSimulacros = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(role) || cargo === "ANALISTA SIG";
-  const puedeVerMetricasSimulacros = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(role);
+  const puedeVerSimulacros = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(role) || esAnalistaSig(cargo);
+  const puedeVerMetricasSimulacros = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(role) || esAnalistaSig(cargo);
   const puedeVerEquipo = puedeVerAnuario({ rol: role, cargo, nombre });
   const puedeVerOrganigrama = puedeVerOrganigramaSeguridad({ rol: role });
 

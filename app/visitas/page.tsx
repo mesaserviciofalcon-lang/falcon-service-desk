@@ -13,6 +13,9 @@ from "@/lib/prisma";
 import { puedeConsultarVisitas }
 from "@/lib/permisosVisitas";
 
+import { puedeVerTodasLasFincasEnVisitas }
+from "@/lib/permisosConsultasSeguridad";
+
 function formatearFechaSoloDia(
   fecha?: Date | string | null
 ) {
@@ -80,11 +83,35 @@ export default async function VisitasPage({
       .replace(/\D/g, "")
       .trim();
 
+  const puedeVerTodasLasFincas =
+    puedeVerTodasLasFincasEnVisitas(
+      session?.user?.role
+    );
+  const usuario =
+    session?.user?.email
+      ? await prisma.usuario.findUnique({
+          where: {
+            email: session.user.email,
+          },
+          select: {
+            fincaEAI: true,
+          },
+        })
+      : null;
+  const alcanceFinca =
+    puedeVerTodasLasFincas
+      ? {}
+      : {
+          fincaEAI:
+            usuario?.fincaEAI || "",
+        };
+
   const registros =
     cedula.length >= 5
       ? await prisma.visitaHistorica.findMany({
           where: {
             cedula,
+            ...alcanceFinca,
           },
           select: {
             id: true,
@@ -119,7 +146,9 @@ export default async function VisitasPage({
         </h1>
 
         <p className="mt-2 text-gray-600">
-          Busque por cedula para consultar el historial de visitas domiciliarias.
+          {puedeVerTodasLasFincas
+            ? "Busque por cedula para consultar el historial de visitas domiciliarias de todas las fincas."
+            : "Busque por cedula para consultar únicamente el historial de visitas de su finca."}
         </p>
       </div>
 

@@ -23,17 +23,18 @@ function datosVigencia(visita: ReferenciaVisita): VisitaVigente {
   return { ...visita, fechaVencimiento, diasRestantes, puedeRenovar: diasRestantes <= 30 };
 }
 
-export async function validarVisitaPorCedula(cedula?: string | null): Promise<ResultadoValidacionVisita> {
+export async function validarVisitaPorCedula(cedula?: string | null, fincaEAI?: string | null): Promise<ResultadoValidacionVisita> {
   const cedulaNormalizada = normalizarCedula(cedula);
   if (cedulaNormalizada.length < 5) return { cedula: cedulaNormalizada, pendiente: null, vigente: null };
+  const alcanceFinca = fincaEAI ? { fincaEAI } : {};
 
   const [visitasActuales, visitasHistoricas] = await Promise.all([
     prisma.solicitudVisita.findMany({
-      where: { cedula: cedulaNormalizada },
+      where: { cedula: cedulaNormalizada, ...alcanceFinca },
       select: { fechaRealizada: true, resultadoVisita: true, solicitud: { select: { id: true, estado: true, fechaCierre: true } } },
     }),
     prisma.visitaHistorica.findMany({
-      where: { cedula: cedulaNormalizada, fechaVisitaDate: { not: null } },
+      where: { cedula: cedulaNormalizada, ...alcanceFinca, fechaVisitaDate: { not: null } },
       select: { fechaVisitaDate: true },
       orderBy: { fechaVisitaDate: "desc" },
     }),

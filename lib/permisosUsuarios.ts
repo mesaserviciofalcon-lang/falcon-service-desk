@@ -23,6 +23,15 @@ export function normalizarCargoUsuario(
     .toUpperCase();
 }
 
+export function esAnalistaSig(
+  cargo?: string | null
+) {
+  return [
+    "ANALISTA SIG",
+    "ANALISTA SEGURIDAD",
+  ].includes(normalizarCargoUsuario(cargo));
+}
+
 export function puedeVerVulnerabilidades(
   rol?: string | null,
   cargo?: string | null
@@ -34,8 +43,7 @@ export function puedeVerVulnerabilidades(
       "JEFE_SEG",
       "SUPERVISOR",
     ].includes(String(rol || "")) ||
-    normalizarCargoUsuario(cargo) ===
-      "ANALISTA SIG"
+    esAnalistaSig(cargo)
   );
 }
 
@@ -43,5 +51,5 @@ export function puedeGestionarVulnerabilidadesAsignadas(
   rol?: string | null,
   cargo?: string | null
 ) {
-  return normalizarCargoUsuario(cargo) === "ANALISTA SIG";
+  return esAnalistaSig(cargo);
 }

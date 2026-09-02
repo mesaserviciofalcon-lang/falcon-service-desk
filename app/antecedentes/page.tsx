@@ -13,6 +13,9 @@ import {
   puedeVerAntecedenteCompleto,
 } from "@/lib/antecedentesCatalogos";
 
+import { puedeVerTodasLasFincasEnConsultas }
+from "@/lib/permisosConsultasSeguridad";
+
 import ImportarHistoricoAntecedentes
 from "@/components/ImportarHistoricoAntecedentes";
 
@@ -57,6 +60,22 @@ export default async function AntecedentesPage({
       session?.user?.role
     );
 
+  const puedeVerTodasLasFincas =
+    puedeVerTodasLasFincasEnConsultas(
+      session?.user?.role
+    );
+  const usuario =
+    session?.user?.email
+      ? await prisma.usuario.findUnique({
+          where: {
+            email: session.user.email,
+          },
+          select: {
+            fincaEAI: true,
+          },
+        })
+      : null;
+
   const registros =
     identificacion.length >= 5
       ? await prisma.antecedenteRegistro.findMany({
@@ -64,10 +83,9 @@ export default async function AntecedentesPage({
           where: {
             identificacion,
             eai:
-              puedeVerCompleto
+              puedeVerTodasLasFincas
                 ? undefined
-                : session?.user
-                    ?.fincaEAI || "",
+                : usuario?.fincaEAI || "",
           },
 
           select: {
@@ -111,7 +129,9 @@ export default async function AntecedentesPage({
           Consulta de antecedentes
         </h1>
         <p className="text-gray-600 mt-2">
-          Busque por numero de identificacion para ver el historial registrado.
+          {puedeVerTodasLasFincas
+            ? "Busque por numero de identificacion para ver el historial registrado de todas las fincas."
+            : "Busque por numero de identificacion para ver únicamente el historial registrado de su finca."}
         </p>
       </div>
 

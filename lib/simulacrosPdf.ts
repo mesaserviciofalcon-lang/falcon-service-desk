@@ -58,8 +58,8 @@ function encabezadoFormato(doc: PDFKit.PDFDocument, pagina: number) {
   dibujarLogo(doc, y);
   doc.fillColor("#111111").font("Helvetica").fontSize(12).text("FALCON FARMS DE COLOMBIA S.A.", 194, y + 20, { width: 280, align: "center", height: 14 });
   doc.font("Helvetica-Bold").fontSize(12).text("PLANEACIÓN Y EVALUACIÓN DE SIMULACRO", 190, y + 40, { width: 288, align: "center" });
-  doc.font("Helvetica").fontSize(8.5).text("Versión 01", 486, y + 7, { width: 78, align: "center" });
-  doc.text("Mayo 2019", 486, y + 31, { width: 78, align: "center" });
+  doc.font("Helvetica").fontSize(8.5).text("Versión 02", 486, y + 7, { width: 78, align: "center" });
+  doc.text("Septiembre 2026", 486, y + 31, { width: 78, align: "center" });
   doc.text(`Página ${pagina} de 3`, 486, y + 55, { width: 78, align: "center" });
 }
 
@@ -73,8 +73,8 @@ function encabezadoSacFormato(doc: PDFKit.PDFDocument, pagina: number) {
   dibujarLogo(doc, y);
   doc.fillColor("#111111").font("Helvetica-Bold").fontSize(13).text("FALCON FARMS DE COLOMBIA S.A.", 190, y + 15, { width: 288, align: "center", height: 16 });
   doc.font("Helvetica-Bold").fontSize(13).text("SOLICITUD DE ACCIÓN", 190, y + 37, { width: 288, align: "center" });
-  doc.font("Helvetica").fontSize(10).text("Versión 6", 486, y + 13, { width: 78, align: "center" });
-  doc.text("Julio 2026", 486, y + 37, { width: 78, align: "center" });
+  doc.font("Helvetica").fontSize(10).text("Versión 7", 486, y + 13, { width: 78, align: "center" });
+  doc.text("Septiembre 2026", 486, y + 37, { width: 78, align: "center" });
   doc.fontSize(8).text(`Página ${pagina} de 2`, 486, y + 55, { width: 78, align: "center", height: 10 });
 }
 

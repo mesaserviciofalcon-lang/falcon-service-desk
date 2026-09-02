@@ -116,9 +116,10 @@ export default function GestionEquipoAdministrativo() {
       </div>
 
       {fotoUrl && (
-        <p className="mt-4 text-sm font-medium text-emerald-700">
-          Foto cargada correctamente.
-        </p>
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-emerald-50 p-3 text-sm font-medium text-emerald-700">
+          <span>Foto cargada correctamente.</span>
+          <button type="button" onClick={() => setFotoUrl("")} className="font-semibold text-red-700 hover:underline">Quitar adjunto</button>
+        </div>
       )}
 
       <button

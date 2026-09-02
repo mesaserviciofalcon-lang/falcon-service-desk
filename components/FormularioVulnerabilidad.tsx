@@ -312,15 +312,13 @@ export default function FormularioVulnerabilidad() {
         {fotos.length > 0 && (
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
             {fotos.map((foto) => (
-              <a
+              <div
                 key={foto.url}
-                href={foto.url}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg border bg-white p-2 text-sm font-semibold text-[#0F3D1F] hover:bg-gray-50"
+                className="flex items-center justify-between gap-2 rounded-lg border bg-white p-2 text-sm font-semibold text-[#0F3D1F]"
               >
-                {foto.nombre}
-              </a>
+                <a href={foto.url} target="_blank" rel="noreferrer" className="hover:underline">{foto.nombre}</a>
+                <button type="button" onClick={() => setFotos((actuales) => actuales.filter((item) => item.url !== foto.url))} className="shrink-0 text-red-700 hover:underline">Quitar adjunto</button>
+              </div>
             ))}
           </div>
         )}

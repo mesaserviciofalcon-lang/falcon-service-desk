@@ -222,7 +222,10 @@ export async function POST(
         );
       }
 
-      const validacionVisita = await validarVisitaPorCedula(body.cedula);
+      const validacionVisita = await validarVisitaPorCedula(
+        body.cedula,
+        fincaSolicitud
+      );
       if (validacionVisita.pendiente) {
         return Response.json({ error: `Visita solicitada anteriormente bajo el ticket #${validacionVisita.pendiente.ticketId}, que se encuentra ${validacionVisita.pendiente.estado.toLowerCase()}.` }, { status: 409 });
       }

@@ -16,6 +16,9 @@ import {
   tipoDocumentoOpciones,
 } from "@/lib/antecedentesCatalogos";
 
+import { puedeVerTodasLasFincasEnConsultas }
+from "@/lib/permisosConsultasSeguridad";
+
 import {
   validarRegistroAntecedente,
 } from "@/lib/validacionAntecedentesGestion";
@@ -80,6 +83,27 @@ export async function GET(
     );
   }
 
+  const usuario =
+    session?.user?.email
+      ? await prisma.usuario.findUnique({
+          where: {
+            email: session.user.email,
+          },
+          select: {
+            fincaEAI: true,
+          },
+        })
+      : null;
+  const alcanceFinca =
+    puedeVerTodasLasFincasEnConsultas(
+      session?.user?.role
+    )
+      ? {}
+      : {
+          eai:
+            usuario?.fincaEAI || "__SIN_FINCA__",
+        };
+
   const url =
     new URL(request.url);
 
@@ -100,6 +124,7 @@ export async function GET(
     await prisma.antecedenteRegistro.findFirst({
       where: {
         identificacion,
+        ...alcanceFinca,
         fechaExpedicionDocumento: {
           not: null,
         },
@@ -145,6 +170,18 @@ export async function POST(
     const body =
       await request.json();
 
+    const usuario =
+      session?.user?.email
+        ? await prisma.usuario.findUnique({
+            where: {
+              email: session.user.email,
+            },
+            select: {
+              fincaEAI: true,
+            },
+          })
+        : null;
+
     const fechaActual =
       obtenerFechaActualColombiaISO();
 
@@ -187,6 +224,23 @@ export async function POST(
       observaciones:
         texto(body.observaciones),
     };
+
+    if (
+      !puedeVerTodasLasFincasEnConsultas(
+        session?.user?.role
+      ) &&
+      registro.eai !== usuario?.fincaEAI
+    ) {
+      return Response.json(
+        {
+          error:
+            "Solo puede registrar antecedentes para su propia finca",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
 
     if (
       !registro.identificacion ||

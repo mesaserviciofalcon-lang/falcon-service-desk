@@ -140,20 +140,27 @@ NextAuthOptions = {
 
       if (session.user) {
 
+        const usuarioActual = session.user.email
+          ? await prisma.usuario.findUnique({
+              where: { email: session.user.email },
+              select: { nombre: true, rol: true, cargo: true, fincaEAI: true, debeCambiarPassword: true },
+            })
+          : null;
+
         session.user.role =
-          token.role as string;
+          usuarioActual?.rol || token.role as string;
 
         session.user.cargo =
-          token.cargo as string;
+          usuarioActual?.cargo || token.cargo as string;
 
         session.user.id =
           token.id as string;
 
         session.user.fincaEAI =
-          token.fincaEAI as string;
+          usuarioActual?.fincaEAI || token.fincaEAI as string;
 
         session.user.debeCambiarPassword =
-          token.debeCambiarPassword as boolean;
+          usuarioActual?.debeCambiarPassword ?? token.debeCambiarPassword as boolean;
       }
 
       return session;

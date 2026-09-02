@@ -31,6 +31,10 @@ import {
   tecnicoPuedeGestionarCctv,
 } from "@/lib/cctvEjecucion";
 
+import {
+  puedeVerTodasLasFincasEnVisitas,
+} from "@/lib/permisosConsultasSeguridad";
+
 export default async function TicketDetalle({
 
   params,
@@ -165,7 +169,12 @@ export default async function TicketDetalle({
     solicitud.tipo ===
       "VISITA DOMICILIARIA"
       ? await obtenerUltimaVisitaHistorica(
-          solicitud.visita?.cedula
+          solicitud.visita?.cedula,
+          puedeVerTodasLasFincasEnVisitas(
+            session?.user?.role
+          )
+            ? null
+            : session?.user?.fincaEAI
         )
       : null;
 

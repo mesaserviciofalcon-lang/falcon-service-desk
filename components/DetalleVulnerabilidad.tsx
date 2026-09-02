@@ -600,11 +600,9 @@ export default function DetalleVulnerabilidad({
           {evidencias.length > 0 && (
             <div className="mt-3 flex flex-col gap-2">
               {evidencias.map((archivo) => (
-                <div
-                  key={archivo.url}
-                  className="rounded-lg border bg-gray-50 p-2 text-sm"
-                >
-                  {archivo.nombre}
+                <div key={archivo.url} className="flex items-center justify-between gap-3 rounded-lg border bg-gray-50 p-2 text-sm">
+                  <span>{archivo.nombre}</span>
+                  <button type="button" onClick={() => setEvidencias((actuales) => actuales.filter((item) => item.url !== archivo.url))} className="font-semibold text-red-700 hover:underline">Quitar adjunto</button>
                 </div>
               ))}
             </div>

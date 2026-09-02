@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { definicionSimulacro, esDelAnoActualColombia, mismaFincaSimulacro } from "@/lib/simulacros";
 import { generarPdfSimulacro } from "@/lib/simulacrosPdf";
+import { esAnalistaSig } from "@/lib/permisosUsuarios";
 
 export async function GET(_: Request, context: { params: Promise<{ id: string }> }) {
   const sesion = await getServerSession(authOptions);
@@ -13,7 +14,7 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
   const definicion = definicionSimulacro(simulacro.tipo, simulacro.area, simulacro.finca);
   const usuario = await prisma.usuario.findUnique({ where: { email: sesion.user.email }, select: { cargo: true, fincaEAI: true } });
   const esJefatura = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(String(sesion.user.role || ""));
-  const esAnalista = usuario?.cargo === "ANALISTA SIG" && mismaFincaSimulacro(usuario.fincaEAI, simulacro.finca);
+  const esAnalista = esAnalistaSig(usuario?.cargo) && mismaFincaSimulacro(usuario?.fincaEAI, simulacro.finca);
   const esSupervisor = sesion.user.role === "SUPERVISOR";
   if (!esJefatura && !esAnalista && !esSupervisor) return Response.json({ error: "No tiene permiso para ver este informe" }, { status: 403 });
   if (!["ADMIN", "JEFE_SEG"].includes(String(sesion.user.role || "")) && !esDelAnoActualColombia(simulacro.createdAt)) return Response.json({ error: "El histórico solo está disponible para Administración y Jefe de Seguridad" }, { status: 403 });

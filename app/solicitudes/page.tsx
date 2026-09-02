@@ -887,11 +887,10 @@ setTimeout(() => {
             "
           >
 
-            <p className="font-medium">
-
-              {archivo.nombre}
-
-            </p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-medium">{archivo.nombre}</p>
+              <button type="button" onClick={() => setArchivos((actual) => actual.filter((_, indice) => indice !== index))} className="font-semibold text-red-700 hover:underline">Quitar adjunto</button>
+            </div>
 
           </div>
         )

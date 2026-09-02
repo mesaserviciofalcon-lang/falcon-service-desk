@@ -6,6 +6,7 @@ import FormularioSac from "@/components/FormularioSac";
 import { authOptions } from "@/lib/auth";
 import { esDelAnoActualColombia, mismaFincaSimulacro } from "@/lib/simulacros";
 import { prisma } from "@/lib/prisma";
+import { esAnalistaSig } from "@/lib/permisosUsuarios";
 
 type Fila = { actividad: string; responsable: string; fecha: string };
 type Archivo = { url: string; nombre: string; tipo?: string };
@@ -17,7 +18,7 @@ export default async function SolicitudAccionPage({ params }: { params: Promise<
   if (!simulacro?.requiereSac) notFound();
   const usuario = session?.user?.email ? await prisma.usuario.findUnique({ where: { email: session.user.email }, select: { cargo: true, fincaEAI: true } }) : null;
   const rol = String(session?.user?.role || "");
-  const esAnalista = usuario?.cargo === "ANALISTA SIG" && mismaFincaSimulacro(usuario.fincaEAI, simulacro.finca);
+  const esAnalista = esAnalistaSig(usuario?.cargo) && mismaFincaSimulacro(usuario?.fincaEAI, simulacro.finca);
   const puedeVer = esAnalista || ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG", "SUPERVISOR"].includes(rol);
   if (!puedeVer) redirect("/dashboard");
   if (!["ADMIN", "JEFE_SEG"].includes(rol) && !esDelAnoActualColombia(simulacro.createdAt)) redirect("/simulacros");

@@ -10,7 +10,8 @@ export function normalizarCedula(
 }
 
 export async function obtenerUltimaVisitaHistorica(
-  cedula?: string | null
+  cedula?: string | null,
+  fincaEAI?: string | null
 ) {
   const cedulaNormalizada =
     normalizarCedula(cedula);
@@ -23,6 +24,11 @@ export async function obtenerUltimaVisitaHistorica(
     where: {
       cedula:
         cedulaNormalizada,
+      ...(fincaEAI
+        ? {
+            fincaEAI,
+          }
+        : {}),
     },
     select: {
       id: true,
