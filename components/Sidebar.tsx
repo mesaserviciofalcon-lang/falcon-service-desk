@@ -283,6 +283,13 @@ export default function Sidebar({
             </Link>
           )}
 
+          {["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(role) && (
+            <Link href="/simulacros/metricas" className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#2FAE4A] transition">
+              <BarChart3 size={20} />
+              Métricas simulacros
+            </Link>
+          )}
+
           {["ADMIN", "JEFE_SEG", "SUPERVISOR"].includes(role) && (
             <Link
               href="/actividades-supervisores/metricas"
