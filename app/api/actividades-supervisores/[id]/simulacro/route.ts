@@ -28,10 +28,26 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const definicion = definicionSimulacro(actividad.actividad, actividad.area, actividad.finca);
     if (!definicion) return Response.json({ error: "Tipo de simulacro no configurado" }, { status: 400 });
     const usuariosInformados = await prisma.usuario.findMany({ where: { activo: true }, select: { nombre: true, email: true, cargo: true, rol: true, fincaEAI: true } });
-    const analistaAsignado = usuariosInformados.find((usuario) => esAnalistaSig(usuario.cargo) && mismaFincaSimulacro(usuario.fincaEAI, actividad.finca));
-    const personasInformadas = [`${analistaAsignado?.nombre || definicion.analista} - ANALISTA SIG`, ...usuariosInformados.filter((usuario) => ["JEFE_SEG", "DIRECTOR_SEG"].includes(usuario.rol) || ["JEFE SEG", "DIRECTOR SEG"].includes(String(usuario.cargo || ""))).map((usuario) => `${usuario.nombre} - ${usuario.cargo || usuario.rol}`)].join(" / ");
-    const analista = analistaAsignado?.nombre || definicion.analista;
-    const correoAnalista = analistaAsignado?.email || definicion.correoAnalista;
+    const analistasAsignados = usuariosInformados.filter(
+      (usuario) => esAnalistaSig(usuario.cargo) && mismaFincaSimulacro(usuario.fincaEAI, actividad.finca),
+    );
+    const personasInformadas = [
+      ...(analistasAsignados.length
+        ? analistasAsignados.map((usuario) => `${usuario.nombre} - ANALISTA SIG`)
+        : [`${definicion.analista} - ANALISTA SIG`]),
+      ...usuariosInformados
+        .filter((usuario) => ["JEFE_SEG", "DIRECTOR_SEG"].includes(usuario.rol) || ["JEFE SEG", "DIRECTOR SEG"].includes(String(usuario.cargo || "")))
+        .map((usuario) => `${usuario.nombre} - ${usuario.cargo || usuario.rol}`),
+    ].join(" / ");
+    const analista = analistasAsignados[0]?.nombre || definicion.analista;
+    const correosAnalistas = Array.from(
+      new Set(
+        (analistasAsignados.length
+          ? analistasAsignados.map((usuario) => usuario.email)
+          : [definicion.correoAnalista]
+        ).map(normalizarCorreo).filter(Boolean),
+      ),
+    );
     const horaInicio = texto(body.horaInicio);
     const resultado = texto(body.resultado).toUpperCase();
     const cumplimientoObjetivo = texto(body.cumplimientoObjetivo);
@@ -80,13 +96,17 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     });
 
     const jefatura = await prisma.usuario.findMany({ where: { activo: true, OR: [{ rol: { in: ["JEFE_SEG", "DIRECTOR_SEG"] } }, { cargo: { in: ["JEFE SEG", "DIRECTOR SEG"] } }] }, select: { email: true } });
-    const copias = Array.from(new Set([definicion.gerente?.correo, ...jefatura.map((usuario) => usuario.email)].filter(Boolean) as string[]));
-    if (correoAnalista) {
+    const copias = Array.from(new Set(
+      [definicion.gerente?.correo, ...jefatura.map((usuario) => usuario.email)]
+        .map(normalizarCorreo)
+        .filter((correo): correo is string => Boolean(correo) && !correosAnalistas.includes(correo)),
+    ));
+    if (correosAnalistas.length) {
       const fueDetectado = resultado === "DETECTADO";
       const resultadoDestacado = `<p style="margin:18px 0;padding:12px 16px;border-radius:6px;font-size:18px;font-weight:700;color:${fueDetectado ? "#166534" : "#b91c1c"};background:${fueDetectado ? "#dcfce7" : "#fee2e2"};">${fueDetectado ? "FUE DETECTADO" : "PERDIDO"}</p>`;
       const enlaceSac = `${getAppUrl()}/solicitudes-accion/${simulacro.id}`;
       await enviarCorreo({
-        to: correoAnalista,
+        to: correosAnalistas.join(","),
         cc: copias.length ? copias.join(",") : undefined,
         subject: `Informe de ${definicion.tipo} - ${actividad.finca}`,
         html: `<p>Se registró el informe <strong>${simulacro.consecutivo}</strong> del simulacro realizado en la finca <strong>${actividad.finca}</strong>.</p>${resultadoDestacado}<ul><li><strong>Simulacro:</strong> ${definicion.tipo}</li><li><strong>Área:</strong> ${actividad.area || "No registrada"}</li><li><strong>Fecha de ejecución:</strong> ${fechaEjecutada.toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}</li><li><strong>Supervisor:</strong> ${session.user.name || session.user.email}</li><li><strong>Evaluación:</strong> ${promedioEvaluacion.toFixed(2)} / 1 (${Math.round(promedioEvaluacion * 100)}%)</li></ul><p>El informe queda disponible en Falcon Service Desk.</p>${debeGenerarSac ? `<p><strong>Debe ingresar al aplicativo para realizar la Solicitud de Acción Correctiva (SAC). Cuenta con tres (3) días para efectuar el cierre.</strong></p><p><a href="${enlaceSac}">Crear Solicitud de Acción Correctiva</a></p>` : ""}`,

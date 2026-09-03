@@ -217,6 +217,27 @@ export function recordatorioActividadesJefeTemplate({
   `;
 }
 
+export function recordatorioAsignacionActividadesJefeTemplate({
+  actividades,
+  etiquetaMes,
+  totalMes,
+}: {
+  actividades: ActividadRecordatorio[];
+  etiquetaMes: string;
+  totalMes: number;
+}) {
+  return `
+    <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.5">
+      <h2 style="color:#b45309">Asignación pendiente de actividades</h2>
+      <p>Buen día, Jefe de Seguridad.</p>
+      <p>Para <strong>${etiquetaMes}</strong> hay <strong>${actividades.length}</strong> ${actividades.length === 1 ? "actividad pendiente por asignar" : "actividades pendientes por asignar"}, de un total de <strong>${totalMes}</strong> actividades programadas para el mes.</p>
+      <p>Asigne un supervisor a cada actividad para detener este recordatorio diario.</p>
+      ${tablaRecordatorioActividades(actividades, true)}
+      <p style="margin-top:24px"><a href="${getAppUrl()}/actividades-supervisores" style="background:#0F3D1F;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:bold">Asignar actividades</a></p>
+    </div>
+  `;
+}
+
 export function recordatorioActividadTemplate({
   actividad,
 }: {

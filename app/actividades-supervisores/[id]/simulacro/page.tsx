@@ -19,8 +19,11 @@ export default async function SimulacroActividadPage({ params }: { params: Promi
   const definicion = definicionSimulacro(actividad.actividad, actividad.area, actividad.finca);
   if (!definicion) notFound();
   const usuarios = await prisma.usuario.findMany({ where: { activo: true }, select: { nombre: true, cargo: true, rol: true, fincaEAI: true } });
-  const analista = usuarios.find((usuario) => esAnalistaSig(usuario.cargo) && mismaFincaSimulacro(usuario.fincaEAI, actividad.finca));
+  const analistas = usuarios.filter((usuario) => esAnalistaSig(usuario.cargo) && mismaFincaSimulacro(usuario.fincaEAI, actividad.finca));
   const personasFijas = usuarios.filter((usuario) => ["JEFE_SEG", "DIRECTOR_SEG"].includes(usuario.rol) || ["JEFE SEG", "DIRECTOR SEG"].includes(String(usuario.cargo || ""))).map((usuario) => `${usuario.nombre} - ${usuario.cargo || usuario.rol}`);
-  const personasInformadas = [`${analista?.nombre || definicion.analista} - ANALISTA SIG`, ...personasFijas].join(" / ");
-  return <FormularioSimulacro actividad={actividad} definicion={{ ...definicion, analista: analista?.nombre || definicion.analista }} personasInformadasInicial={personasInformadas} />;
+  const personasInformadas = [
+    ...(analistas.length ? analistas.map((analista) => `${analista.nombre} - ANALISTA SIG`) : [`${definicion.analista} - ANALISTA SIG`]),
+    ...personasFijas,
+  ].join(" / ");
+  return <FormularioSimulacro actividad={actividad} definicion={{ ...definicion, analista: analistas[0]?.nombre || definicion.analista }} personasInformadasInicial={personasInformadas} />;
 }
