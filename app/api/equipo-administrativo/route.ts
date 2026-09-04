@@ -53,3 +53,36 @@ export async function POST(request: Request) {
 
   return Response.json(integrante, { status: 201 });
 }
+
+export async function PATCH(request: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (
+    !puedeAdministrarAnuario({
+      rol: session?.user?.role,
+    })
+  ) {
+    return Response.json(
+      { error: "No tiene permiso para actualizar fotografías" },
+      { status: 403 }
+    );
+  }
+
+  const body = await request.json();
+  const id = Number(body.id);
+  const fotoUrl = String(body.fotoUrl || "").trim();
+
+  if (!Number.isInteger(id) || id <= 0 || !fotoUrl) {
+    return Response.json(
+      { error: "Debe indicar el integrante y una fotografía válida" },
+      { status: 400 }
+    );
+  }
+
+  const integrante = await prisma.equipoAdministrativo.update({
+    where: { id },
+    data: { fotoUrl },
+  });
+
+  return Response.json(integrante);
+}

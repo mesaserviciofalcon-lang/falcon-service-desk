@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
 import GestionEquipoAdministrativo from "@/components/GestionEquipoAdministrativo";
+import EditarFotoEquipoAdministrativo from "@/components/EditarFotoEquipoAdministrativo";
 import { authOptions } from "@/lib/auth";
 import {
   puedeAdministrarAnuario,
@@ -62,6 +63,11 @@ export default async function EquipoAdministrativoPage() {
                 <p className="mt-1 text-sm font-medium text-emerald-700">
                   {integrante.cargo}
                 </p>
+                {puedeAdministrar && (
+                  <EditarFotoEquipoAdministrativo
+                    integranteId={integrante.id}
+                  />
+                )}
               </div>
             </article>
           ))}

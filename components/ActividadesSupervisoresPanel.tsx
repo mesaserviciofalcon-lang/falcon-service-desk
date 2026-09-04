@@ -71,6 +71,7 @@ export default function ActividadesSupervisoresPanel({
   puedeAdministrar: boolean;
 }) {
   const [mostrarTerminadas, setMostrarTerminadas] = useState(puedeAdministrar);
+  const [soloPendientesAsignar, setSoloPendientesAsignar] = useState(false);
   const [mes, setMes] = useState(() => fechaInput(new Date()).slice(0, 7));
   const [formulario, setFormulario] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -81,9 +82,11 @@ export default function ActividadesSupervisoresPanel({
   const areas = catalogos.filter((item) => item.tipo === "AREA").map((item) => item.valor);
   const visibles = useMemo(
     () => actividades.filter((actividad) =>
-      (mostrarTerminadas || actividad.estado !== "TERMINADO") && mesColombia(actividad.fechaPlaneada) === mes
+      (mostrarTerminadas || actividad.estado !== "TERMINADO") &&
+      (!soloPendientesAsignar || actividad.estado === "PENDIENTE_ASIGNAR") &&
+      mesColombia(actividad.fechaPlaneada) === mes
     ),
-    [actividades, mes, mostrarTerminadas]
+    [actividades, mes, mostrarTerminadas, soloPendientesAsignar]
   );
 
   async function crearActividad(event: React.FormEvent<HTMLFormElement>) {
@@ -177,6 +180,7 @@ export default function ActividadesSupervisoresPanel({
       <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-white p-4 shadow-sm">
         <label className="font-semibold text-slate-700">Mes <input value={mes} onChange={(event) => setMes(event.target.value)} type="month" className="ml-2 rounded border p-2" /></label>
         {puedeAdministrar && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={mostrarTerminadas} onChange={(event) => setMostrarTerminadas(event.target.checked)} /> Mostrar cerradas</label>}
+        {puedeAdministrar && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={soloPendientesAsignar} onChange={(event) => setSoloPendientesAsignar(event.target.checked)} /> Solo pendientes por asignar</label>}
         <span className="text-sm text-slate-500">{visibles.length} actividad(es)</span>
       </div>
 
