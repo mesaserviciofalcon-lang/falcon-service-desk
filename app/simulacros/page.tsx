@@ -3,8 +3,9 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { esDelAnoActualColombia, mismaFincaSimulacro } from "@/lib/simulacros";
+import { esDelAnoActualColombia } from "@/lib/simulacros";
 import { esAnalistaSig } from "@/lib/permisosUsuarios";
+import { analistaTieneAccesoAFinca } from "@/lib/fincasAnalistaSig";
 
 type SimulacroFila = Awaited<ReturnType<typeof obtenerSimulacros>>[number];
 
@@ -21,9 +22,9 @@ export default async function SimulacrosPage() {
   if (!sesion?.user?.email) return null;
   const rol = String(sesion.user.role || ""); const esJefatura = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(rol); const esSupervisor = rol === "SUPERVISOR"; const esAnalista = esAnalistaSig(sesion.user.cargo);
   if (!esJefatura && !esSupervisor && !esAnalista) return <main className="p-8">No tiene permiso para consultar simulacros.</main>;
-  const [todos, usuario] = await Promise.all([obtenerSimulacros(), prisma.usuario.findUnique({ where: { email: sesion.user.email }, select: { fincaEAI: true } })]);
+  const [todos, usuario] = await Promise.all([obtenerSimulacros(), prisma.usuario.findUnique({ where: { email: sesion.user.email }, select: { nombre: true, fincaEAI: true } })]);
   const puedeVerHistorico = ["ADMIN", "JEFE_SEG"].includes(rol);
-  const simulacrosPermitidos = (esJefatura || esSupervisor) ? todos : todos.filter((item) => mismaFincaSimulacro(usuario?.fincaEAI, item.finca));
+  const simulacrosPermitidos = (esJefatura || esSupervisor) ? todos : todos.filter((item) => analistaTieneAccesoAFinca(usuario, item.finca));
   const simulacros = puedeVerHistorico ? simulacrosPermitidos : simulacrosPermitidos.filter((item) => esDelAnoActualColombia(item.createdAt));
   const porFinca = simulacros.reduce<Record<string, SimulacroFila[]>>((grupos, simulacro) => { (grupos[simulacro.finca] ||= []).push(simulacro); return grupos; }, {});
   const agrupar = esJefatura || esSupervisor;

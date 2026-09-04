@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { tiposSimulacro } from "@/lib/simulacros";
 import { esAnalistaSig } from "@/lib/permisosUsuarios";
+import { fincasAsignadasAnalistaSig } from "@/lib/fincasAnalistaSig";
 
 type SearchParams = Promise<{ anio?: string; mes?: string }>;
 type Conteo = { informes: number; detectados: number; perdidos: number; reprogramados: number };
@@ -50,19 +51,19 @@ function estadoSac(informe: InformeClasificado) {
 export default async function MetricasSimulacrosPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getServerSession(authOptions);
   const rol = String(session?.user?.role || "");
-  const usuario = session?.user?.email ? await prisma.usuario.findUnique({ where: { email: session.user.email }, select: { cargo: true, fincaEAI: true } }) : null;
+  const usuario = session?.user?.email ? await prisma.usuario.findUnique({ where: { email: session.user.email }, select: { nombre: true, cargo: true, fincaEAI: true } }) : null;
   const esJefatura = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(rol);
   const esAnalistaConFinca = esAnalistaSig(usuario?.cargo) && Boolean(usuario?.fincaEAI);
   if (!esJefatura && !esAnalistaConFinca) redirect("/dashboard");
 
   const params = await searchParams;
   const anioActual = Number(partesColombia().year);
-  const mesActual = mesColombia(new Date());
-  const anio = esAnalistaConFinca ? anioActual : obtenerAnio(params.anio);
-  const mesFiltro = esAnalistaConFinca ? mesActual : obtenerMes(params.mes);
+  const anio = obtenerAnio(params.anio);
+  const mesFiltro = obtenerMes(params.mes);
   const inicioAnio = new Date(Date.UTC(anio, 0, 1, 5));
   const finAnio = new Date(Date.UTC(anio + 1, 0, 1, 5));
-  const alcanceFinca = esAnalistaConFinca ? { finca: usuario!.fincaEAI! } : {};
+  const fincasAnalista = fincasAsignadasAnalistaSig(usuario);
+  const alcanceFinca = esAnalistaConFinca ? { finca: { in: fincasAnalista } } : {};
 
   const informes = await prisma.simulacroActividad.findMany({ where: { ...alcanceFinca, createdAt: { gte: inicioAnio, lt: finAnio } }, include: { actividadSupervisor: { select: { fechaPlaneada: true, origenId: true } }, solicitudAccion: { select: { estado: true, actividadReprogramadaId: true, fechaReprogramacion: true, fechaCierre: true } } }, orderBy: [{ finca: "asc" }, { createdAt: "asc" }, { id: "asc" }] }) as Informe[];
   const sacsConReprogramacion = informes.length ? await prisma.solicitudAccion.findMany({ where: { actividadReprogramadaId: { in: informes.map((informe) => informe.actividadId) } }, select: { actividadReprogramadaId: true } }) : [];
@@ -83,7 +84,7 @@ export default async function MetricasSimulacrosPage({ searchParams }: { searchP
   const mesesDetalle = mesFiltro ? [mesFiltro] : Array.from({ length: 12 }, (_, indice) => indice + 1);
   const etiquetaDetalle = mesFiltro ? `Detalle de ${nombreMes(anio, mesFiltro)} de ${anio}` : `Vista general de ${anio}`;
 
-  return <main className="mx-auto max-w-7xl space-y-6 p-6"><div className="flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-bold text-[#0F3D1F]">Métricas de simulacros</h1><p className="mt-1 capitalize text-slate-600">{etiquetaDetalle}. {esAnalistaConFinca ? `Indicadores exclusivos de la finca ${usuario!.fincaEAI}; solo se muestra el mes en curso.` : "Los conteos se calculan exclusivamente con los informes cargados."}</p></div>{!esAnalistaConFinca && <form action="/simulacros/metricas" className="flex flex-wrap items-end gap-2 rounded-xl border bg-white p-3 shadow-sm"><label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">Año<input name="anio" type="number" min="2020" max={String(anioActual + 1)} defaultValue={anio} className="w-28 rounded-lg border p-2 font-normal" /></label><label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">Mes<select name="mes" defaultValue={mesFiltro ? String(mesFiltro) : ""} className="rounded-lg border p-2 font-normal"><option value="">Todo el año</option>{Array.from({ length: 12 }, (_, indice) => indice + 1).map((mes) => <option key={mes} value={mes} className="capitalize">{nombreMes(anio, mes)}</option>)}</select></label><button className="rounded-lg bg-[#0F3D1F] px-4 py-2 font-semibold text-white">Ver métricas</button></form>}</div>
+  return <main className="mx-auto max-w-7xl space-y-6 p-6"><div className="flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-bold text-[#0F3D1F]">Métricas de simulacros</h1><p className="mt-1 capitalize text-slate-600">{etiquetaDetalle}. {esAnalistaConFinca ? `Indicadores exclusivos de las fincas ${fincasAnalista.join(" y ")}.` : "Los conteos se calculan exclusivamente con los informes cargados."}</p></div><form action="/simulacros/metricas" className="flex flex-wrap items-end gap-2 rounded-xl border bg-white p-3 shadow-sm"><label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">Año<input name="anio" type="number" min="2020" max={String(anioActual + 1)} defaultValue={anio} className="w-28 rounded-lg border p-2 font-normal" /></label><label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">Mes<select name="mes" defaultValue={mesFiltro ? String(mesFiltro) : ""} className="rounded-lg border p-2 font-normal"><option value="">Todo el año</option>{Array.from({ length: 12 }, (_, indice) => indice + 1).map((mes) => <option key={mes} value={mes} className="capitalize">{nombreMes(anio, mes)}</option>)}</select></label><button className="rounded-lg bg-[#0F3D1F] px-4 py-2 font-semibold text-white">Ver métricas</button></form></div>
     <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5"><Tarjeta etiqueta="Meta inicial anual" valor={fincas.length * 8} /><Tarjeta etiqueta="Informes cargados" valor={clasificados.length} color="text-[#0F3D1F]" /><Tarjeta etiqueta="Iniciales evaluados" valor={iniciales.length} color="text-sky-700" /><Tarjeta etiqueta="Reprogramados" valor={clasificados.filter((informe) => informe.esReprogramado).length} color="text-amber-700" /><Tarjeta etiqueta="Perdidos iniciales" valor={perdidosIniciales.length} color="text-red-700" /></section>
     <section className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900"><strong>Fuente del indicador:</strong> se cuentan únicamente los informes de simulacro que ya existen en Falcon. La meta es de 8 simulacros iniciales por finca al año. Un informe se marca como reprogramado solo si corresponde al mismo tipo de un simulacro perdido previamente o si fue creado como reprogramación de una SAC.</section>
     <section className="rounded-xl border bg-white p-5 shadow-sm"><h2 className="text-xl font-bold text-[#0F3D1F]">Informes por mes y tipo de simulacro</h2><p className="mt-1 text-sm text-slate-500">Los resultados de esta tabla incluyen todos los informes realizados, incluso los reprogramados.</p><div className="mt-5 overflow-x-auto"><table className="min-w-full text-sm"><thead className="border-b bg-slate-50 text-left"><tr><th className="p-3">Mes</th><th className="p-3">Tipo</th><th className="p-3 text-center">Informes</th><th className="p-3 text-center">Detectados</th><th className="p-3 text-center">Perdidos</th><th className="p-3 text-center">Reprogramados</th></tr></thead><tbody>{mesesDetalle.flatMap((mes) => [...tiposSimulacro].map((tipo, indice) => { const conteo = porMesTipo.get(`${mes}-${tipo}`) || { informes: 0, detectados: 0, perdidos: 0, reprogramados: 0 }; return <tr key={`${mes}-${tipo}`} className="border-b last:border-0"><td className="p-3 capitalize">{indice === 0 ? nombreMes(anio, mes) : ""}</td><td className="p-3 font-medium">{etiquetaTipo(tipo)}</td><td className="p-3 text-center font-bold">{conteo.informes}</td><td className="p-3 text-center font-bold text-green-700">{conteo.detectados}</td><td className="p-3 text-center font-bold text-red-700">{conteo.perdidos}</td><td className="p-3 text-center text-amber-800">{conteo.reprogramados}</td></tr>; }))}</tbody></table></div></section>

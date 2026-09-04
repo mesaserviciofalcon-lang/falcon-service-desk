@@ -5,12 +5,12 @@ import {
   fechaHoraColombiaDesdeInput,
   fechaProgramadaConservandoHora,
   inicioDiaColombia,
-  mismaFincaActividad,
   normalizarCorreo,
   puedeAdministrarActividades,
   ventanaProgramacionAnalista,
 } from "@/lib/actividadesSupervisores";
 import { esAnalistaSig } from "@/lib/permisosUsuarios";
+import { analistaTieneAccesoAFinca } from "@/lib/fincasAnalistaSig";
 import { prisma } from "@/lib/prisma";
 
 function texto(valor: unknown) {
@@ -34,9 +34,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const esAdministrador = puedeAdministrarActividades(session.user.role);
 
     if (body.accion === "programarAnalista") {
-      const usuario = await prisma.usuario.findUnique({ where: { email: session.user.email }, select: { cargo: true, fincaEAI: true } });
+      const usuario = await prisma.usuario.findUnique({ where: { email: session.user.email }, select: { nombre: true, cargo: true, fincaEAI: true } });
       const ventana = ventanaProgramacionAnalista();
-      if (!esAdministrador && (!esAnalistaSig(usuario?.cargo) || !mismaFincaActividad(usuario?.fincaEAI, actividad.finca))) return Response.json({ error: "Solo el Analista SIG de la finca o ADMIN puede programar esta actividad" }, { status: 403 });
+      if (!esAdministrador && (!esAnalistaSig(usuario?.cargo) || !analistaTieneAccesoAFinca(usuario, actividad.finca))) return Response.json({ error: "Solo el Analista SIG asignado a la finca o ADMIN puede programar esta actividad" }, { status: 403 });
       if ((!esAdministrador && !ventana.abierta) || actividad.fechaPlaneada < ventana.inicioMesDestino || actividad.fechaPlaneada >= ventana.finMesDestino) return Response.json({ error: "La programación solo está disponible del 25 al último día del mes para las actividades del mes siguiente" }, { status: 403 });
       const area = texto(body.area);
       const fechaPlaneada = fechaProgramadaConservandoHora(actividad.fechaPlaneada, texto(body.fechaPlaneada));
@@ -111,8 +111,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       const esSupervisorAsignado =
         session.user.role === "SUPERVISOR" &&
         normalizarCorreo(actividad.supervisorCorreo) === normalizarCorreo(session.user.email);
-      if (!esSupervisorAsignado) {
-        return Response.json({ error: "Solo el supervisor asignado puede cerrar esta actividad" }, { status: 403 });
+      if (!esSupervisorAsignado && !esAdministrador) {
+        return Response.json({ error: "Solo el supervisor asignado o Administración puede cerrar esta actividad" }, { status: 403 });
       }
       if (actividad.estado === "TERMINADO") {
         return Response.json({ error: "La actividad ya está terminada" }, { status: 400 });

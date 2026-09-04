@@ -2,7 +2,6 @@ import { enviarCorreo } from "@/lib/email";
 import {
   inicioDiaColombia,
   incumplimientoActividadTemplate,
-  mismaFincaActividad,
   normalizarCorreo,
   recordatorioActividadesAnalistaTemplate,
   recordatorioActividadesJefeTemplate,
@@ -10,6 +9,7 @@ import {
   recordatorioProgramacionActividadesTemplate,
   ventanaProgramacionAnalista,
 } from "@/lib/actividadesSupervisores";
+import { analistaTieneAccesoAFinca } from "@/lib/fincasAnalistaSig";
 import { prisma } from "@/lib/prisma";
 import { definicionSimulacro } from "@/lib/simulacros";
 
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     }
 
     for (const analista of analistasSig) {
-      const actividadesAnalista = paraRecordar.filter((actividad) => actividad.actividad !== "RECOGER EFECTIVO" && mismaFincaActividad(analista.fincaEAI, actividad.finca));
+      const actividadesAnalista = paraRecordar.filter((actividad) => actividad.actividad !== "RECOGER EFECTIVO" && analistaTieneAccesoAFinca(analista, actividad.finca));
       if (!actividadesAnalista.length || !analista.email) continue;
       await enviarCorreo({
         to: analista.email,
@@ -90,9 +90,16 @@ export async function GET(request: Request) {
     const correosJefatura = await prisma.usuario.findMany({ where: { activo: true, OR: [{ rol: { in: ["JEFE_SEG", "DIRECTOR_SEG"] } }, { cargo: { in: ["JEFE SEG", "DIRECTOR SEG"] } }] }, select: { email: true } });
     for (const simulacro of sacPendientes) {
       const contactos = definicionSimulacro(simulacro.tipo, simulacro.area, simulacro.finca);
-      if (!contactos?.correoAnalista) continue;
-      const copias = Array.from(new Set([contactos.gerente?.correo, ...correosJefatura.map((usuario) => usuario.email)].filter(Boolean))).join(",");
-      await enviarCorreo({ to: contactos.correoAnalista, cc: copias || undefined, subject: `Recordatorio SAC pendiente - ${simulacro.finca}`, html: `<p>Han transcurrido más de tres días desde el simulacro <strong>${simulacro.tipo}</strong> con resultado no detectado.</p><p>Por favor diligencie la <a href="${process.env.NEXTAUTH_URL || "https://falconseguridad.com"}/solicitudes-accion/${simulacro.id}">Solicitud de Acción Correctiva</a>.</p>` });
+      const destinatariosAnalistas = Array.from(new Set(
+        analistasSig
+          .filter((analista) => analistaTieneAccesoAFinca(analista, simulacro.finca))
+          .map((analista) => normalizarCorreo(analista.email))
+          .filter(Boolean),
+      ));
+      if (!destinatariosAnalistas.length && contactos?.correoAnalista) destinatariosAnalistas.push(contactos.correoAnalista);
+      if (!destinatariosAnalistas.length) continue;
+      const copias = Array.from(new Set([contactos?.gerente?.correo, ...correosJefatura.map((usuario) => usuario.email)].filter(Boolean))).join(",");
+      await enviarCorreo({ to: destinatariosAnalistas.join(","), cc: copias || undefined, subject: `Recordatorio SAC pendiente - ${simulacro.finca}`, html: `<p>Han transcurrido más de tres días desde el simulacro <strong>${simulacro.tipo}</strong> con resultado no detectado.</p><p>Por favor diligencie la <a href="${process.env.NEXTAUTH_URL || "https://falconseguridad.com"}/solicitudes-accion/${simulacro.id}">Solicitud de Acción Correctiva</a>.</p>` });
       await prisma.simulacroActividad.update({ where: { id: simulacro.id }, data: { recordatorioSacEnviadoAt: new Date() } });
       enviados += 1;
     }
@@ -104,7 +111,7 @@ export async function GET(request: Request) {
         prisma.usuario.findMany({ where: { activo: true, cargo: { in: ["ANALISTA SIG", "ANALISTA SEGURIDAD"] }, fincaEAI: { not: null } }, select: { nombre: true, email: true, fincaEAI: true } }),
       ]);
       for (const analista of analistas) {
-        const actividadesAnalista = actividadesProgramables.filter((actividad) => mismaFincaActividad(analista.fincaEAI, actividad.finca));
+        const actividadesAnalista = actividadesProgramables.filter((actividad) => analistaTieneAccesoAFinca(analista, actividad.finca));
         if (!actividadesAnalista.length) continue;
         await enviarCorreo({ to: analista.email, subject: `Programación pendiente de actividades - ${ventanaProgramacion.etiquetaMes}`, html: recordatorioProgramacionActividadesTemplate({ analista: analista.nombre, actividades: actividadesAnalista, etiquetaMes: ventanaProgramacion.etiquetaMes, etiquetaVentana: ventanaProgramacion.etiquetaMesActual, etiquetaUltimoDiaVentana: ventanaProgramacion.etiquetaUltimoDiaVentana }) });
         await prisma.actividadSupervisor.updateMany({ where: { id: { in: actividadesAnalista.map((actividad) => actividad.id) } }, data: { recordatorioProgramacionEnviadoAt: new Date() } });

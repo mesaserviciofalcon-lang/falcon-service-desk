@@ -28,7 +28,7 @@ import {
 } from "@/lib/visitasHistoricas";
 
 import {
-  tecnicoPuedeGestionarCctv,
+  tecnicoPuedeVerCctv,
 } from "@/lib/cctvEjecucion";
 
 import {
@@ -133,11 +133,10 @@ export default async function TicketDetalle({
     session?.user?.role === "TECNICO" &&
     !(
       solicitud.tipo === "CCTV" &&
-      tecnicoPuedeGestionarCctv({
+      tecnicoPuedeVerCctv({
         rol: session.user.role,
         correo: session.user.email,
         eai: solicitud.cctv?.fincaEAI,
-        estado: solicitud.estado,
       })
     )
   ) {
@@ -149,6 +148,7 @@ export default async function TicketDetalle({
   }
 
   if (
+    session?.user?.role !== "TECNICO" &&
     !visibleEnBandejaPorRol(
       solicitud,
       session?.user?.role

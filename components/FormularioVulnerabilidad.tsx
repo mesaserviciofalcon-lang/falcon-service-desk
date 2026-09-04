@@ -43,10 +43,6 @@ export default function FormularioVulnerabilidad() {
   const [form, setForm] =
     useState({
       eai: "",
-      fecha:
-        new Date()
-          .toISOString()
-          .slice(0, 10),
       actoInseguro: "",
       vulnerabilidad: "",
       planAccionSugerido: "",
@@ -171,20 +167,11 @@ export default function FormularioVulnerabilidad() {
 
         <div className="flex flex-col gap-1">
           <label className="text-sm font-semibold text-gray-600">
-            Fecha
+            Fecha y hora de ejecucion
           </label>
-          <input
-            type="date"
-            value={form.fecha}
-            onChange={(event) =>
-              actualizar(
-                "fecha",
-                event.target.value
-              )
-            }
-            className="rounded-lg border p-3"
-            required
-          />
+          <p className="rounded-lg border bg-slate-100 p-3 text-sm text-slate-600">
+            Se registran automaticamente al guardar el analisis.
+          </p>
         </div>
 
         <div className="flex flex-col gap-1">

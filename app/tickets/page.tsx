@@ -21,7 +21,7 @@ import {
 } from "@/lib/visibilidadTickets";
 
 import {
-  tecnicoPuedeGestionarCctv,
+  tecnicoPuedeVerCctv,
 } from "@/lib/cctvEjecucion";
 
 function obtenerWherePorRol(
@@ -121,10 +121,17 @@ const fincaEAI =
   let solicitudes =
     todasSolicitudes.filter(
       (solicitud) =>
-        visibleEnBandejaPorRol(
-          solicitud,
-          role
-        )
+        role === "TECNICO"
+          ? solicitud.tipo === "CCTV" &&
+            tecnicoPuedeVerCctv({
+              rol: role,
+              correo: email,
+              eai: solicitud.cctv?.fincaEAI,
+            })
+          : visibleEnBandejaPorRol(
+              solicitud,
+              role
+            )
     );
 
   // TECNICO
@@ -155,12 +162,11 @@ const fincaEAI =
 
         return role === "TECNICO"
           ? solicitud.tipo === "CCTV" &&
-            tecnicoPuedeGestionarCctv({
+            tecnicoPuedeVerCctv({
               rol: role,
               correo: email,
               eai:
                 solicitud.cctv?.fincaEAI,
-              estado: solicitud.estado,
             })
           : (
               solicitud.tipo === "CCTV" ||

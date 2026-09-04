@@ -6,7 +6,6 @@ export const actosInsegurosVulnerabilidad = [
   "FALTA DE ILUMINACION",
   "OBJETO O MATERIAL ABANDONADO",
   "PUERTAS, VENTANAS Y CANDADOS SIN ASEGURAR",
-  "OTROS",
 ];
 
 function normalizarTextoCatalogo(
@@ -43,7 +42,6 @@ export function normalizarActoInseguroUnico(
   > = {
     "EQUIPO SIN DISPOSITIVO DE SEGURIDAD":
       "EQUIPOS SIN DISPOSITIVOS DE SEGURIDAD",
-    OTRO: "OTROS",
   };
 
   if (aliases[normalizado]) {
@@ -65,6 +63,40 @@ export function normalizarActoInseguroUnico(
   return limpio
     .split(",")[0]
     .trim();
+}
+
+export const diasCierrePorActoInseguro: Record<string, number> = {
+  "BARRERAS ESTRUCTURALES": 8,
+  "BARRERAS PERIMETRALES": 5,
+  "EQUIPOS SIN DISPOSITIVOS DE SEGURIDAD": 2,
+  "FALLAS CCTV": 3,
+  "FALTA DE ILUMINACION": 5,
+  "OBJETO O MATERIAL ABANDONADO": 2,
+  "PUERTAS, VENTANAS Y CANDADOS SIN ASEGURAR": 2,
+};
+
+export function diasMaximosCierreVulnerabilidad(
+  actoInseguro: string
+) {
+  return (
+    diasCierrePorActoInseguro[
+      normalizarActoInseguroUnico(actoInseguro)
+    ] || 5
+  );
+}
+
+export function estaVencidoCierreVulnerabilidad(
+  fecha: Date | string,
+  actoInseguro: string,
+  ahora = new Date()
+) {
+  const limite = new Date(fecha);
+  limite.setDate(
+    limite.getDate() +
+      diasMaximosCierreVulnerabilidad(actoInseguro)
+  );
+
+  return ahora >= limite;
 }
 
 export const procesosVulnerabilidad = [
@@ -477,6 +509,7 @@ export function recordatorioVulnerabilidadesTemplate({
     vulnerabilidad: string;
     supervisor: string;
     reportadoPor?: string | null;
+    diasMaximosCierre?: number;
   }>;
 }) {
   const filas =
@@ -494,6 +527,7 @@ export function recordatorioVulnerabilidadesTemplate({
         <td style="border:1px solid #d1d5db;padding:8px">${informe.actoInseguro}</td>
         <td style="border:1px solid #d1d5db;padding:8px">${reportadoPor}</td>
         <td style="border:1px solid #d1d5db;padding:8px">${informe.vulnerabilidad}</td>
+        <td style="border:1px solid #d1d5db;padding:8px">${informe.diasMaximosCierre || diasMaximosCierreVulnerabilidad(informe.actoInseguro)} dias</td>
       </tr>
     `;
     }).join("");
@@ -503,8 +537,8 @@ export function recordatorioVulnerabilidadesTemplate({
       <h2 style="color:#0F3D1F">Analisis de vulnerabilidad pendientes por cerrar</h2>
       <p>Buen dia${analista ? `, ${analista}` : ""}.</p>
       <p>
-        Se relacionan los analisis de vulnerabilidad que llevan mas de 8 dias
-        abiertos y aun se encuentran pendientes de cierre.
+        Se relacionan los analisis de vulnerabilidad que excedieron el plazo de
+        cierre definido para su tipo de novedad y aun se encuentran pendientes.
       </p>
       <table style="border-collapse:collapse;width:100%;font-size:13px">
         <thead>
@@ -514,6 +548,7 @@ export function recordatorioVulnerabilidadesTemplate({
             <th style="border:1px solid #0F3D1F;padding:8px;text-align:left">Acto inseguro</th>
             <th style="border:1px solid #0F3D1F;padding:8px;text-align:left">Reportado por</th>
             <th style="border:1px solid #0F3D1F;padding:8px;text-align:left">Vulnerabilidad</th>
+            <th style="border:1px solid #0F3D1F;padding:8px;text-align:left">Plazo de cierre</th>
           </tr>
         </thead>
         <tbody>

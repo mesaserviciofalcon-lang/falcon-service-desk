@@ -26,9 +26,9 @@ export default function Sidebar({ role, cargo, nombre }: { role: string; cargo?:
   const puedeGestionMasiva = ["ADMIN", "DIRECTOR_SEG", "JEFE_SEG", "SUPERVISOR"].includes(role);
   const puedeVerVulnerabilidad = puedeVerVulnerabilidades(role, cargo);
   const puedeVerMetricasVulnerabilidad = role === "ADMIN" || esAnalistaSig(cargo);
-  const puedeVerActividades = ["ADMIN", "JEFE_SEG", "SUPERVISOR"].includes(role);
+  const puedeVerActividades = ["ADMIN", "JEFE_SEG", "SUPERVISOR"].includes(role) || esAnalistaSig(cargo);
   const puedeProgramarActividades = esAnalistaSig(cargo) || role === "ADMIN";
-  const puedeVerMetricasActividades = ["ADMIN", "JEFE_SEG", "SUPERVISOR"].includes(role);
+  const puedeVerMetricasActividades = ["ADMIN", "JEFE_SEG", "SUPERVISOR"].includes(role) || esAnalistaSig(cargo);
   const puedeVerSimulacros = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(role) || esAnalistaSig(cargo);
   const puedeVerMetricasSimulacros = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(role) || esAnalistaSig(cargo);
   const puedeVerEquipo = puedeVerAnuario({ rol: role, cargo, nombre });

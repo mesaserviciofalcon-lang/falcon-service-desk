@@ -5,14 +5,15 @@ import GestionSimulacro from "@/components/GestionSimulacro";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { esAnalistaSig } from "@/lib/permisosUsuarios";
-import { calcularPromedioSimulacro, definicionSimulacro, esDelAnoActualColombia, mismaFincaSimulacro } from "@/lib/simulacros";
+import { analistaTieneAccesoAFinca } from "@/lib/fincasAnalistaSig";
+import { calcularPromedioSimulacro, definicionSimulacro, esDelAnoActualColombia } from "@/lib/simulacros";
 
 export default async function DetalleSimulacro({ params }: { params: Promise<{ id: string }> }) {
   const sesion = await getServerSession(authOptions); const { id } = await params;
   const simulacro = await prisma.simulacroActividad.findUnique({ where: { id: Number(id) }, include: { solicitudAccion: true } });
   if (!simulacro) notFound(); if (!sesion?.user?.email) redirect("/login");
-  const rol = String(sesion.user.role || ""); const definicion = definicionSimulacro(simulacro.tipo, simulacro.area, simulacro.finca); const usuario = await prisma.usuario.findUnique({ where: { email: sesion.user.email }, select: { cargo: true, fincaEAI: true } });
-  const puedeVer = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG", "SUPERVISOR"].includes(rol) || (esAnalistaSig(usuario?.cargo) && mismaFincaSimulacro(usuario?.fincaEAI, simulacro.finca));
+  const rol = String(sesion.user.role || ""); const definicion = definicionSimulacro(simulacro.tipo, simulacro.area, simulacro.finca); const usuario = await prisma.usuario.findUnique({ where: { email: sesion.user.email }, select: { nombre: true, cargo: true, fincaEAI: true } });
+  const puedeVer = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG", "SUPERVISOR"].includes(rol) || (esAnalistaSig(usuario?.cargo) && analistaTieneAccesoAFinca(usuario, simulacro.finca));
   if (!puedeVer) redirect("/dashboard");
   if (!["ADMIN", "JEFE_SEG"].includes(rol) && !esDelAnoActualColombia(simulacro.createdAt)) redirect("/simulacros");
   const aspectos = simulacro.aspectos as Array<{ nombre: string; calificacion: number }>;

@@ -5,6 +5,7 @@ import { prisma }
 from "@/lib/prisma";
 
 import {
+  estaVencidoCierreVulnerabilidad,
   obtenerCopiasVulnerabilidad,
   recordatorioVulnerabilidadesTemplate,
 } from "@/lib/vulnerabilidades";
@@ -106,13 +107,12 @@ export async function GET(
 
   try {
     const ahora = new Date();
-    const fechaLimite =
+    const fechaLimiteVisitas =
       new Date(ahora);
 
-    fechaLimite.setDate(
-      fechaLimite.getDate() - 8
+    fechaLimiteVisitas.setDate(
+      fechaLimiteVisitas.getDate() - 8
     );
-
     const fechaLimiteCctv =
       new Date(ahora);
     fechaLimiteCctv.setDate(
@@ -127,10 +127,6 @@ export async function GET(
             estado: {
               not:
                 "CERRADO",
-            },
-            fecha: {
-              lte:
-                fechaLimite,
             },
             analistaSigCorreo: {
               not:
@@ -166,13 +162,22 @@ export async function GET(
           },
         });
 
+    const pendientesVencidos =
+      pendientes.filter((informe) =>
+        estaVencidoCierreVulnerabilidad(
+          informe.fecha,
+          informe.actoInseguro,
+          ahora
+        )
+      );
+
     const grupos =
       new Map<
         string,
-        typeof pendientes
+        typeof pendientesVencidos
       >();
 
-    for (const informe of pendientes) {
+    for (const informe of pendientesVencidos) {
       const clave =
         claveGrupo(informe);
 
@@ -217,7 +222,7 @@ export async function GET(
               ],
             },
             fechaCreacion: {
-              lte: fechaLimite,
+              lte: fechaLimiteVisitas,
             },
           },
           orderBy: {
@@ -504,10 +509,8 @@ export async function GET(
 
     return Response.json({
       ok: true,
-      fechaLimite:
-        fechaLimite.toISOString(),
       pendientes:
-        pendientes.length,
+        pendientesVencidos.length,
       grupos:
         grupos.size,
       correosEnviados,

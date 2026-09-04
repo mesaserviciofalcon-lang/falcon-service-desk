@@ -18,6 +18,8 @@ from "@/components/MetricasVulnerabilidadFinca";
 
 import { esAnalistaSig }
 from "@/lib/permisosUsuarios";
+import { fincasAsignadasAnalistaSig } from "@/lib/fincasAnalistaSig";
+import { estaVencidoCierreVulnerabilidad } from "@/lib/vulnerabilidades";
 
 type SearchParams = {
   mes?: string;
@@ -1226,6 +1228,7 @@ export default async function MetricasAnalisisPage({
           email: session.user.email,
         },
         select: {
+          nombre: true,
           cargo: true,
           fincaEAI: true,
         },
@@ -1244,12 +1247,12 @@ export default async function MetricasAnalisisPage({
     redirect("/dashboard");
   }
 
-  if (esAnalistaConFinca) {
-    return <MetricasVulnerabilidadFinca finca={usuario!.fincaEAI!} />;
-  }
-
   const params =
     await searchParams;
+  if (esAnalistaConFinca) {
+    return <MetricasVulnerabilidadFinca fincas={fincasAsignadasAnalistaSig(usuario)} mes={params.mes} />;
+  }
+
   const mes =
     params.mes || mesActualBogota();
   const anio =
@@ -1285,7 +1288,7 @@ export default async function MetricasAnalisisPage({
     total,
     abiertos,
     cerrados,
-    pendientes8,
+    pendientesAbiertos,
     porEstado,
     porEai,
     porActo,
@@ -1351,23 +1354,16 @@ export default async function MetricasAnalisisPage({
       }),
     prisma
       .vulnerabilidadInforme
-      .count({
+      .findMany({
         where: {
           estado: {
             not:
               "CERRADO",
           },
-          fecha: {
-            lte:
-              new Date(
-                Date.now() -
-                8 *
-                  24 *
-                  60 *
-                  60 *
-                  1000
-              ),
-          },
+        },
+        select: {
+          fecha: true,
+          actoInseguro: true,
         },
       }),
     prisma
@@ -1714,6 +1710,14 @@ export default async function MetricasAnalisisPage({
       porFincaActoEstado
     );
 
+  const pendientesVencidos =
+    pendientesAbiertos.filter((informe) =>
+      estaVencidoCierreVulnerabilidad(
+        informe.fecha,
+        informe.actoInseguro
+      )
+    ).length;
+
   const supervisorFinca =
     mapearSupervisorFinca(
       porSupervisorFinca
@@ -1878,9 +1882,9 @@ export default async function MetricasAnalisisPage({
           color="text-green-700"
         />
         <Tarjeta
-          titulo="Pendientes +8 dias"
-          valor={pendientes8}
-          detalle="Abiertos fuera del plazo"
+          titulo="Pendientes vencidos"
+          valor={pendientesVencidos}
+          detalle="Abiertos fuera de su plazo de cierre"
           color="text-red-700"
         />
       </div>

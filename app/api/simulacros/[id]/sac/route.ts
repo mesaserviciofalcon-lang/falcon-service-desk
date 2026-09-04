@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth";
 import { getAppUrl } from "@/lib/appUrl";
 import { enviarCorreo } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
-import { definicionSimulacro, factoresSac, mismaFincaSimulacro } from "@/lib/simulacros";
+import { definicionSimulacro, factoresSac } from "@/lib/simulacros";
 import { fechaHoraColombiaDesdeInput } from "@/lib/actividadesSupervisores";
 import { esAnalistaSig } from "@/lib/permisosUsuarios";
+import { analistaTieneAccesoAFinca } from "@/lib/fincasAnalistaSig";
 
 function texto(valor: unknown) { return String(valor || "").trim(); }
 
@@ -18,8 +19,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   if (!simulacro || !simulacro.requiereSac) return Response.json({ error: "La SAC no está disponible para este simulacro" }, { status: 404 });
   if (simulacro.solicitudAccion) return Response.json({ error: "La SAC ya fue diligenciada" }, { status: 409 });
   const definicion = definicionSimulacro(simulacro.tipo, simulacro.area, simulacro.finca);
-  const usuario = await prisma.usuario.findUnique({ where: { email: session.user.email }, select: { cargo: true, fincaEAI: true } });
-  const esAnalistaAsignado = esAnalistaSig(usuario?.cargo) && mismaFincaSimulacro(usuario?.fincaEAI, simulacro.finca);
+  const usuario = await prisma.usuario.findUnique({ where: { email: session.user.email }, select: { nombre: true, cargo: true, fincaEAI: true } });
+  const esAnalistaAsignado = esAnalistaSig(usuario?.cargo) && analistaTieneAccesoAFinca(usuario, simulacro.finca);
   const esAdmin = ["ADMIN", "JEFE_SEG", "DIRECTOR_SEG"].includes(String(session.user.role || ""));
   if (!esAnalistaAsignado && !esAdmin) return Response.json({ error: "Solo el Analista SIG asignado puede diligenciar esta SAC" }, { status: 403 });
   const correoActor = session.user.email;

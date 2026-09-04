@@ -23,6 +23,7 @@ import {
   puedeGestionarVulnerabilidadesAsignadas,
   puedeVerVulnerabilidades,
 } from "@/lib/permisosUsuarios";
+import { analistaTieneAccesoAFinca } from "@/lib/fincasAnalistaSig";
 
 const rolesSeguridad = [
   "ADMIN",
@@ -51,15 +52,15 @@ function esAnalistaDeLaMismaEai(
   eai: string,
   role: string,
   cargo: string,
-  fincaEAI: string
+  fincaEAI: string,
+  nombre: string
 ) {
   return (
     puedeGestionarVulnerabilidadesAsignadas(
       role,
       cargo
     ) &&
-    String(eai || "").trim().toUpperCase() ===
-      String(fincaEAI || "").trim().toUpperCase()
+    analistaTieneAccesoAFinca({ nombre, fincaEAI }, eai)
   );
 }
 
@@ -120,7 +121,8 @@ export default async function VulnerabilidadDetallePage({
       informe.eai,
       role,
       cargo,
-      fincaEAI
+      fincaEAI,
+      String(session?.user?.name || "")
     );
 
   if (!puedeVer) {
@@ -189,6 +191,12 @@ export default async function VulnerabilidadDetallePage({
     eai: informe.eai,
     fecha:
       informe.fecha.toISOString(),
+    fechaReporte:
+      informe.createdAt.toISOString(),
+    fechaCierre:
+      informe.fechaCierre
+        ? informe.fechaCierre.toISOString()
+        : null,
     actoInseguro:
       informe.actoInseguro,
     vulnerabilidad:

@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 
 import { authOptions } from "@/lib/auth";
 import { puedeVerMetricasActividades } from "@/lib/actividadesSupervisores";
+import { fincasAsignadasAnalistaSig } from "@/lib/fincasAnalistaSig";
+import { esAnalistaSig } from "@/lib/permisosUsuarios";
 import { prisma } from "@/lib/prisma";
 
 type SearchParams = Promise<{ mes?: string }>;
@@ -58,11 +60,13 @@ export default async function MetricasActividadesPage({ searchParams }: { search
   const session = await getServerSession(authOptions);
   const role = session?.user?.role || "";
   const email = String(session?.user?.email || "").trim().toLowerCase();
-  if (!puedeVerMetricasActividades(role)) redirect("/dashboard");
+  const usuario = email ? await prisma.usuario.findUnique({ where: { email }, select: { nombre: true, cargo: true, fincaEAI: true } }) : null;
+  const esAnalista = esAnalistaSig(usuario?.cargo);
+  if (!puedeVerMetricasActividades(role) && !esAnalista) redirect("/dashboard");
 
   const params = await searchParams;
   const rango = rangoMes(params.mes);
-  const alcanceUsuario = role === "SUPERVISOR" ? { supervisorCorreo: email } : {};
+  const alcanceUsuario = role === "SUPERVISOR" ? { supervisorCorreo: email } : esAnalista ? { finca: { in: fincasAsignadasAnalistaSig(usuario) } } : {};
   const dondeMes = { fechaPlaneada: { gte: rango.mes.inicio, lt: rango.mes.fin }, ...alcanceUsuario };
   const dondeAnio = { fechaPlaneada: { gte: rango.anio.inicio, lt: rango.anio.fin }, ...alcanceUsuario };
 

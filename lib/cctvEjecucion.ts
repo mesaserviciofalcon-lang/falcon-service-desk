@@ -90,3 +90,25 @@ export function tecnicoPuedeGestionarCctv({
     esCctvAprobadoParaGestion(estado)
   );
 }
+
+export function tecnicoPuedeVerCctv({
+  rol,
+  correo,
+  eai,
+}: {
+  rol?: string | null;
+  correo?: string | null;
+  eai?: string | null;
+}) {
+  const tecnico =
+    obtenerTecnicoCctvPorEai(eai);
+
+  return (
+    rol === "TECNICO" &&
+    Boolean(tecnico) &&
+    tecnico?.correo ===
+      String(correo || "")
+        .trim()
+        .toLowerCase()
+  );
+}

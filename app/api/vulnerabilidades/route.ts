@@ -11,6 +11,7 @@ import { prisma }
 from "@/lib/prisma";
 
 import {
+  actosInsegurosVulnerabilidad,
   formatearReferenciaVulnerabilidad,
   generarConsecutivoVulnerabilidad,
   normalizarActoInseguroUnico,
@@ -34,47 +35,6 @@ function texto(
 ) {
   return String(valor || "")
     .trim();
-}
-
-function fechaFormulario(
-  valor: unknown
-) {
-  const textoFecha =
-    texto(valor);
-
-  if (!textoFecha) {
-    return new Date();
-  }
-
-  const partesHora =
-    new Intl.DateTimeFormat(
-      "en-US",
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-        timeZone:
-          "America/Bogota",
-      }
-    ).formatToParts(new Date());
-  const obtenerParte = (
-    tipo: string
-  ) =>
-    partesHora.find(
-      (parte) =>
-        parte.type === tipo
-    )?.value || "00";
-  const hora =
-    obtenerParte("hour");
-  const minuto =
-    obtenerParte("minute");
-  const segundo =
-    obtenerParte("second");
-
-  return new Date(
-    `${textoFecha}T${hora}:${minuto}:${segundo}-05:00`
-  );
 }
 
 export async function POST(
@@ -132,6 +92,9 @@ export async function POST(
     if (
       !eai ||
       !actoInseguro ||
+      !actosInsegurosVulnerabilidad.includes(
+        actoInseguro
+      ) ||
       !vulnerabilidad ||
       !planAccionSugerido ||
       !reportadoPor
@@ -205,7 +168,7 @@ export async function POST(
     }
 
     const fechaReporte =
-      fechaFormulario(body.fecha);
+      new Date();
     const consecutivo =
       await generarConsecutivoVulnerabilidad({
         prisma,

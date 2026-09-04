@@ -1,12 +1,13 @@
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { normalizarCorreo } from "@/lib/actividadesSupervisores";
+import { normalizarCorreo, puedeAdministrarActividades } from "@/lib/actividadesSupervisores";
 import { enviarCorreo } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
-import { definicionSimulacro, desarrolloInicial, esActividadSimulacro, mismaFincaSimulacro, rangoAnoActualColombia, requiereSac } from "@/lib/simulacros";
+import { definicionSimulacro, desarrolloInicial, esActividadSimulacro, rangoAnoActualColombia, requiereSac } from "@/lib/simulacros";
 import { getAppUrl } from "@/lib/appUrl";
 import { esAnalistaSig } from "@/lib/permisosUsuarios";
+import { analistaTieneAccesoAFinca } from "@/lib/fincasAnalistaSig";
 
 function texto(valor: unknown) {
   return String(valor || "").trim();
@@ -20,7 +21,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const actividad = await prisma.actividadSupervisor.findUnique({ where: { id: Number(id) } });
   if (!actividad || !esActividadSimulacro(actividad.actividad)) return Response.json({ error: "Actividad de simulacro no encontrada" }, { status: 404 });
   const esSupervisorAsignado = session.user.role === "SUPERVISOR" && normalizarCorreo(actividad.supervisorCorreo) === normalizarCorreo(session.user.email);
-  if (!esSupervisorAsignado) return Response.json({ error: "Solo el supervisor asignado puede diligenciar el simulacro" }, { status: 403 });
+  const esAdministrador = puedeAdministrarActividades(session.user.role);
+  if (!esSupervisorAsignado && !esAdministrador) return Response.json({ error: "Solo el supervisor asignado o Administración puede diligenciar el simulacro" }, { status: 403 });
   if (actividad.estado === "TERMINADO") return Response.json({ error: "La actividad ya está terminada" }, { status: 400 });
 
   try {
@@ -29,7 +31,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (!definicion) return Response.json({ error: "Tipo de simulacro no configurado" }, { status: 400 });
     const usuariosInformados = await prisma.usuario.findMany({ where: { activo: true }, select: { nombre: true, email: true, cargo: true, rol: true, fincaEAI: true } });
     const analistasAsignados = usuariosInformados.filter(
-      (usuario) => esAnalistaSig(usuario.cargo) && mismaFincaSimulacro(usuario.fincaEAI, actividad.finca),
+      (usuario) => esAnalistaSig(usuario.cargo) && analistaTieneAccesoAFinca(usuario, actividad.finca),
     );
     const personasInformadas = [
       ...(analistasAsignados.length

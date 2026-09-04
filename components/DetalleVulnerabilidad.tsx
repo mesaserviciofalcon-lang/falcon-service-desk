@@ -27,6 +27,8 @@ type Informe = {
   consecutivo?: string | null;
   eai: string;
   fecha: string | Date;
+  fechaReporte: string | Date;
+  fechaCierre?: string | Date | null;
   actoInseguro: string;
   vulnerabilidad: string;
   planAccionSugerido: string;
@@ -51,22 +53,6 @@ type Informe = {
   }>;
 };
 
-function formatearFecha(
-  fecha: string | Date
-) {
-  return new Date(fecha)
-    .toLocaleDateString(
-      "es-CO",
-      {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        timeZone:
-          "America/Bogota",
-      }
-    );
-}
-
 function formatearFechaHora(
   fecha: string | Date
 ) {
@@ -83,6 +69,23 @@ function formatearFechaHora(
           "America/Bogota",
       }
     );
+}
+
+function formatearFechaHoraLocal(
+  fecha?: string | null
+) {
+  if (!fecha) {
+    return "No registrada";
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(fecha)) {
+    const [dia, hora] = fecha.split("T");
+    const [anio, mes, numeroDia] = dia.split("-");
+
+    return `${numeroDia}/${mes}/${anio}, ${hora}`;
+  }
+
+  return formatearFechaHora(fecha);
 }
 
 export default function DetalleVulnerabilidad({
@@ -307,7 +310,7 @@ export default function DetalleVulnerabilidad({
             Analisis {informe.consecutivo || `#${informe.id}`} - {informe.eai}
           </h2>
           <p className="text-sm text-gray-500">
-            {formatearFecha(
+            Ejecucion: {formatearFechaHora(
               informe.fecha
             )}{" "}
             | {cerrado ? "CERRADO" : informe.estado}
@@ -331,6 +334,23 @@ export default function DetalleVulnerabilidad({
           <strong>Reportado por:</strong>{" "}
           {informe.reportadoPor ||
             informe.supervisor}
+        </p>
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-3 rounded-lg border bg-slate-50 p-3 text-sm md:grid-cols-3">
+        <p>
+          <strong>Fecha y hora de ejecucion:</strong>{" "}
+          {formatearFechaHora(informe.fecha)}
+        </p>
+        <p>
+          <strong>Fecha y hora de reporte:</strong>{" "}
+          {formatearFechaHora(informe.fechaReporte)}
+        </p>
+        <p>
+          <strong>Fecha y hora de cierre:</strong>{" "}
+          {informe.fechaCierre
+            ? formatearFechaHora(informe.fechaCierre)
+            : "Pendiente de cierre"}
         </p>
       </div>
 
@@ -533,17 +553,20 @@ export default function DetalleVulnerabilidad({
               placeholder="Responsables"
             />
 
-            <input
-              type="date"
-              value={cierre.fechaEjecucion}
-              onChange={(event) =>
-                actualizarCierre(
-                  "fechaEjecucion",
-                  event.target.value
-                )
-              }
-              className="rounded-lg border p-3"
-            />
+            <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">
+              Fecha y hora de ejecucion de acciones
+              <input
+                type="datetime-local"
+                value={cierre.fechaEjecucion}
+                onChange={(event) =>
+                  actualizarCierre(
+                    "fechaEjecucion",
+                    event.target.value
+                  )
+                }
+                className="rounded-lg border p-3 font-normal"
+              />
+            </label>
           </div>
 
           <textarea
@@ -642,9 +665,10 @@ export default function DetalleVulnerabilidad({
                 "No registrado"}
             </p>
             <p>
-              <strong>Fecha de ejecucion:</strong>{" "}
-              {informe.fechaEjecucion ||
-                "No registrada"}
+              <strong>Fecha y hora de ejecucion de acciones:</strong>{" "}
+              {formatearFechaHoraLocal(
+                informe.fechaEjecucion
+              )}
             </p>
           </div>
 

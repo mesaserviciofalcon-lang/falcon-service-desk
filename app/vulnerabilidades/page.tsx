@@ -20,6 +20,7 @@ import {
   puedeGestionarVulnerabilidadesAsignadas,
   puedeVerVulnerabilidades,
 } from "@/lib/permisosUsuarios";
+import { fincasAsignadasAnalistaSig } from "@/lib/fincasAnalistaSig";
 
 const rolesCreacion = [
   "ADMIN",
@@ -68,10 +69,11 @@ export default async function VulnerabilidadesPage({
     session?.user?.role || "";
   const cargo =
     session?.user?.cargo || "";
-  const fincaEAI =
-    String(session?.user?.fincaEAI || "")
-      .trim()
-      .toUpperCase();
+  const fincasAnalista =
+    fincasAsignadasAnalistaSig({
+      nombre: session?.user?.name,
+      fincaEAI: session?.user?.fincaEAI,
+    });
 
   if (!puedeVerVulnerabilidades(role, cargo)) {
     redirect("/dashboard");
@@ -148,10 +150,10 @@ export default async function VulnerabilidadesPage({
       cargo
     )
   ) {
-    const filtroEai = fincaEAI
+    const filtroEai = fincasAnalista.length
       ? {
           eai: {
-            equals: fincaEAI,
+            in: fincasAnalista,
             mode: "insensitive" as const,
           },
         }
@@ -249,13 +251,13 @@ export default async function VulnerabilidadesPage({
             Analisis de vulnerabilidades
           </h1>
           <p className="mt-2 text-gray-600">
-            Consulte los análisis históricos y pendientes de su EAI. Solo puede gestionar los que estén asignados a su correo.
+            Consulte los análisis históricos y pendientes de las fincas a su cargo. Solo puede gestionar los que estén asignados a su correo.
           </p>
         </div>
 
         <div className="mb-4">
           <h2 className="text-xl font-bold text-[#0F3D1F]">
-            Analisis pendientes de mi EAI
+            Analisis pendientes de mis fincas
           </h2>
           <p className="mt-1 text-sm text-gray-600">
             Abra un análisis para consultar su detalle. El cierre se habilita únicamente al analista asignado.
@@ -301,24 +303,27 @@ export default async function VulnerabilidadesPage({
     );
   }
 
-  const where = {
-    OR: [
-      {
-        estado: {
-          not:
-            "CERRADO",
-        },
-      },
-      {
-        estado:
-          "CERRADO",
-        fecha: {
-          gte:
-            rangoCerradosVisibles(),
-        },
-      },
-    ],
-  };
+  const where =
+    role === "SUPERVISOR"
+      ? {}
+      : {
+          OR: [
+            {
+              estado: {
+                not:
+                  "CERRADO",
+                },
+            },
+            {
+              estado:
+                "CERRADO",
+              fecha: {
+                gte:
+                  rangoCerradosVisibles(),
+              },
+            },
+          ],
+        };
 
   const [
     totalInformes,

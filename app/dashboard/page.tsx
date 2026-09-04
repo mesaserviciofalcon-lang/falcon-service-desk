@@ -30,7 +30,7 @@ import {
 } from "@/lib/visibilidadTickets";
 
 import {
-  tecnicoPuedeGestionarCctv,
+  tecnicoPuedeVerCctv,
 } from "@/lib/cctvEjecucion";
 
 import {
@@ -973,11 +973,10 @@ hace5Dias.setDate(
           (
             role === "TECNICO"
               ? s.tipo === "CCTV" &&
-                tecnicoPuedeGestionarCctv({
+                tecnicoPuedeVerCctv({
                   rol: role,
                   correo: email,
                   eai: s.cctv?.fincaEAI,
-                  estado: s.estado,
                 })
               : (
                   s.tipo === "CCTV" ||
@@ -989,7 +988,7 @@ hace5Dias.setDate(
                   )
                 )
           ) &&
-          visible
+          (role === "TECNICO" || visible)
         );
       }
     );
@@ -1049,7 +1048,10 @@ hace5Dias.setDate(
     );
 }
 
-  if (role !== "SUPERVISOR") {
+  if (
+    role !== "SUPERVISOR" &&
+    role !== "TECNICO"
+  ) {
     tickets =
       tickets.filter((ticket: any) =>
         visibleEnBandejaPorRol(
